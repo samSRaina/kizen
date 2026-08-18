@@ -7,12 +7,6 @@ import (
 	"github.com/samSRaina/kizen/services/ticket-service/internal/domain"
 )
 
-// type CreateTicketInput struct {
-// 	ProjectID   uuid.UUID
-// 	Title       string
-// 	Description string
-// }
-
 type service struct {
 	repo domain.TicketRepository
 }

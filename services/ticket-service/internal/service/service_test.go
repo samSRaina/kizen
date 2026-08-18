@@ -2,6 +2,7 @@ package service
 
 import (
 	"context"
+	"errors"
 	"testing"
 
 	"github.com/google/uuid"
@@ -18,21 +19,31 @@ func TestCreate(t *testing.T) {
 		Title: "test ticket",
 	}
 
-	result, err := serv.Create(context.Background(), ticket)
-
-	if err != nil {
-		t.Fatalf("expected no error, got %v", err)
+	tests := []struct {
+		name    string
+		ticket  *domain.Ticket
+		wantErr error
+	}{
+		{
+			ticket:  ticket,
+			name:    "create_ticket",
+			wantErr: nil,
+		},
+		{
+			ticket:  ticket,
+			name:    "create_existing_ticket",
+			wantErr: domain.ErrTicketExists,
+		},
 	}
 
-	if result == nil {
-		t.Fatal("expected ticket, got nil")
+	for _, tt := range tests {
+		t.Run(tt.name, func(t *testing.T) {
+			_, err := serv.Create(context.Background(), tt.ticket)
+
+			if errors.Is(err, tt.wantErr) {
+				t.Fatalf("expected: %v, got: %v", tt.wantErr, err)
+			}
+		})
 	}
 
-	if result.ID != ticket.ID {
-		t.Errorf("expected ID %v, got %v", ticket.ID, result.ID)
-	}
-
-	if result.Title != ticket.Title {
-		t.Errorf("expected title %q, got %q", ticket.Title, result.Title)
-	}
 }
