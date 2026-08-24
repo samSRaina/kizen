@@ -30,7 +30,7 @@ type Ticket struct {
 
 type TicketRepository interface {
 	Create(ctx context.Context, ticket *Ticket) (*Ticket, error)
-	// Delete(ctx context.Context, ticketID uuid.UUID) error
+	//Delete(ctx context.Context, ticketID uuid.UUID) error
 	// Update(ctx context.Context, ticket *Ticket) (*Ticket, error)
 }
 

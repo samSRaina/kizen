@@ -27,3 +27,7 @@ func (s *service) Create(ctx context.Context, ticket *domain.Ticket) (*domain.Ti
 
 	return t, nil
 }
+
+// func (s *service) Delete(ctx context.Context, ticketID uuid.UUID) error {
+// 	const op = "ticket.service.Delete"
+// }

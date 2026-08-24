@@ -11,11 +11,11 @@ func main() {
 	serviceName := flag.String("name", "", "reference the name of the service")
 	flag.Parse()
 
-	Path := filepath.Join("..", "services", *serviceName)
+	Path := filepath.Join("..", "services", *serviceName+"-service")
 	dirs := []string{
 		"cmd",
 		"internal/domain",
-		"internal/service",
+		"internal/handler",
 		"internal/infrastructure",
 		"internal/infrastructure/repository",
 		"internal/service",

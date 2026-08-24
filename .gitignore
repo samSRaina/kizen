@@ -1,6 +1,5 @@
 
 #legacy architecture: not sure what to do about it right now
-internal/
 cmd/
 
 #environment variables
