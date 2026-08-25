@@ -6,6 +6,7 @@ import (
 	"fmt"
 	"net/http"
 
+	"github.com/google/uuid"
 	"github.com/samSRaina/kizen/services/ticket-service/internal/domain"
 )
 
@@ -24,9 +25,13 @@ func NewTicketHandler(service TicketService) *TicketHandler {
 }
 
 type createTicketRequest struct {
-	Title       string
-	Description string
-	Priority    domain.TicketPriority
+	ProjectID   uuid.UUID             `json:"project_id"`
+	Identifier  string                `json:"identifier"`
+	Title       string                `json:"title"`
+	Description string                `json:"description"`
+	Status      domain.TicketStatus   `json:"status"`
+	Priority    domain.TicketPriority `json:"priority"`
+	CreatedBy   uuid.UUID             `json:"created_by"`
 }
 
 func (h *TicketHandler) Create(w http.ResponseWriter, r *http.Request) {
@@ -41,13 +46,18 @@ func (h *TicketHandler) Create(w http.ResponseWriter, r *http.Request) {
 	createdTicket, err := h.service.Create(
 		r.Context(),
 		&domain.Ticket{
+			ProjectID:   ticket.ProjectID,
+			Identifier:  ticket.Identifier,
 			Title:       ticket.Title,
 			Description: ticket.Description,
+			Status:      ticket.Status,
 			Priority:    ticket.Priority,
+			CreatedBy:   ticket.CreatedBy,
 		},
 	)
 	if err != nil {
 		http.Error(w, fmt.Errorf("%s: %w", op, err).Error(), http.StatusInternalServerError)
+		return
 	}
 
 	w.Header().Set("Content-Type", "application/json")
