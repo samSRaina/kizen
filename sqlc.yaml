@@ -1,12 +1,12 @@
 version : "2"
 sql:
   - engine : postgresql
-    queries: internal/database/sql/queries
-    schema: internal/database/sql/migrations
+    queries: sql/queries
+    schema: sql/migrations
     gen:
       go :
         package: postgres
-        out: internal/database/postgres
+        out: internal/database
         sql_package: pgx/v5
         emit_json_tags: true
         emit_pointers_for_null_types: true
