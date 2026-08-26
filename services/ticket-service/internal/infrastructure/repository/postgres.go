@@ -6,17 +6,17 @@ import (
 	"github.com/google/uuid"
 	"github.com/jackc/pgx/v5/pgtype"
 	"github.com/jackc/pgx/v5/pgxpool"
-	postgres "github.com/samSRaina/kizen/internal/database"
+	"github.com/samSRaina/kizen/internal/database"
 	"github.com/samSRaina/kizen/services/ticket-service/internal/domain"
 )
 
 type TicketRepository struct {
-	q *postgres.Queries
+	q *database.Queries
 }
 
 func NewTicketRepository(pool *pgxpool.Pool) *TicketRepository {
 	return &TicketRepository{
-		q: postgres.New(pool),
+		q: database.New(pool),
 	}
 }
 
@@ -26,13 +26,13 @@ func NewTicketRepository(pool *pgxpool.Pool) *TicketRepository {
 // }
 
 func (r *TicketRepository) Create(ctx context.Context, ticket *domain.Ticket) (*domain.Ticket, error) {
-	row, err := r.q.CreateTicket(ctx, postgres.CreateTicketParams{
+	row, err := r.q.CreateTicket(ctx, database.CreateTicketParams{
 		ProjectID:   pgtype.UUID{Bytes: ticket.ProjectID, Valid: true},
 		Identifier:  ticket.Identifier,
 		Title:       ticket.Title,
 		Description: ticket.Description,
-		Status:      postgres.Status(ticket.Status),
-		Priority:    postgres.Priority(ticket.Priority),
+		Status:      database.Status(ticket.Status),
+		Priority:    database.Priority(ticket.Priority),
 		CreatedBy:   pgtype.UUID{Bytes: ticket.CreatedBy, Valid: true},
 	})
 	if err != nil {

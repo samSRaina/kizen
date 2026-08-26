@@ -1,4 +1,17 @@
 services:
+  traefik:
+    image: traefik:v3.7
+    command:
+      - "--api.insecure=true"
+      - "--providers.docker=true"
+      - "--entrypoints.web.address=:80"
+    ports:
+      - "80:80"
+      - "8080:8080"
+    volumes:
+      - /var/run/docker.sock:/var/run/docker.sock
+
+
   database:
     image: postgres:17-alpine
     #container_name: postgres_db
@@ -16,7 +29,7 @@ services:
 
     volumes:
       - postgres_data:/var/lib/postgresql/data
-      - ./internal/database/sql/migrations/tickets.sql:/docker-entrypoint-initdb.d/001_tickets.sql:ro
+      - ./sql/migrations/tickets.sql:/docker-entrypoint-initdb.d/001_tickets.sql:ro
 
     healthcheck:
           test: ["CMD-SHELL", "pg_isready -U ${POSTGRES_USER} -d ${POSTGRES_DB}"]
@@ -26,6 +39,7 @@ services:
 
     networks:
       - kizen
+
 
   ticket-service:
     image: kizen/ticket-service
@@ -41,11 +55,14 @@ services:
       SERVER_PORT: ${TICKET_SERVICE_PORT}
       DATABASE_URL: postgres://${POSTGRES_USER}:${POSTGRES_PASSWORD}@database:5432/${POSTGRES_DB}?sslmode=disable
     ports:
-      - "8080:8080" #host:container
+      - "8181:${TICKET_SERVICE_PORT}" #host:container
 
     depends_on:
       database:
         condition: service_healthy
+
+    networks:
+      - kizen
 
 
 volumes:

@@ -1,8 +1,8 @@
-
-#legacy architecture: not sure what to do about it right now
-cmd/
-
-#environment variables
+# ENVIRONMENT VARIABLES
 .env
-.env.developement
+
+# COMPILED GO APPLICATIONS
 build/
+
+# TESTS
+services/ticket-service/test_cases

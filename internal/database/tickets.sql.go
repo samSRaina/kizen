@@ -3,7 +3,7 @@
 //   sqlc v1.31.1
 // source: tickets.sql
 
-package postgres
+package database
 
 import (
 	"context"
@@ -13,23 +13,21 @@ import (
 
 const createTicket = `-- name: CreateTicket :one
 INSERT INTO tickets (
-    project_id, identifier, title, description, status, priority, created_by, assignee, due_date
+    project_id, identifier, title, description, status, priority, created_by
 ) VALUES (
-$1, $2, $3, $4, $5, $6 , $7, $8, $9
+$1, $2, $3, $4, $5, $6, $7
 )
 RETURNING id, project_id, identifier, title, description, status, priority, created_by, assignee, due_date, created_at, updated_at
 `
 
 type CreateTicketParams struct {
-	ProjectID   pgtype.UUID        `json:"project_id"`
-	Identifier  string             `json:"identifier"`
-	Title       string             `json:"title"`
-	Description string             `json:"description"`
-	Status      Status             `json:"status"`
-	Priority    Priority           `json:"priority"`
-	CreatedBy   pgtype.UUID        `json:"created_by"`
-	Assignee    pgtype.UUID        `json:"assignee"`
-	DueDate     pgtype.Timestamptz `json:"due_date"`
+	ProjectID   pgtype.UUID `json:"project_id"`
+	Identifier  string      `json:"identifier"`
+	Title       string      `json:"title"`
+	Description string      `json:"description"`
+	Status      Status      `json:"status"`
+	Priority    Priority    `json:"priority"`
+	CreatedBy   pgtype.UUID `json:"created_by"`
 }
 
 func (q *Queries) CreateTicket(ctx context.Context, arg CreateTicketParams) (Ticket, error) {
@@ -41,8 +39,6 @@ func (q *Queries) CreateTicket(ctx context.Context, arg CreateTicketParams) (Tic
 		arg.Status,
 		arg.Priority,
 		arg.CreatedBy,
-		arg.Assignee,
-		arg.DueDate,
 	)
 	var i Ticket
 	err := row.Scan(

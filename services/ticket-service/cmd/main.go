@@ -2,7 +2,6 @@ package main
 
 import (
 	"context"
-	"fmt"
 	"log"
 	"net/http"
 
@@ -25,18 +24,18 @@ func main() {
 	defer pool.Close()
 
 	if err := pool.Ping(ctx); err != nil {
-		return err
+		log.Fatalf("failed to ping database: %v", err)
 	}
 
-	inMemRepo := repository.NewInMemRepo()
 	repo := repository.NewTicketRepository(pool)
-	serv := service.NewService(inMemRepo)
+	serv := service.NewService(repo)
 	ticketHandler := handler.NewTicketHandler(serv)
 
 	router := chi.NewRouter()
 	router.Post("/tickets", ticketHandler.Create)
 
-	fmt.Println("server started on: " + cfg.ServerPort)
+	log.Printf("ticket-service listening on :%s", cfg.ServerPort)
+
 	log.Fatal(http.ListenAndServe(":"+cfg.ServerPort, router))
 
 }

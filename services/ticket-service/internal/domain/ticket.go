@@ -1,16 +1,14 @@
 package domain
 
 import (
-	"context"
 	"time"
 
 	"github.com/google/uuid"
 )
 
 type Ticket struct {
-	ID        uuid.UUID
-	ProjectID uuid.UUID
-
+	ID         uuid.UUID
+	ProjectID  uuid.UUID
 	Identifier string
 
 	Title       string
@@ -26,12 +24,6 @@ type Ticket struct {
 
 	CreatedAt time.Time
 	UpdatedAt time.Time
-}
-
-type TicketRepository interface {
-	Create(ctx context.Context, ticket *Ticket) (*Ticket, error)
-	//Delete(ctx context.Context, ticketID uuid.UUID) error
-	// Update(ctx context.Context, ticket *Ticket) (*Ticket, error)
 }
 
 type TicketPriority string
