@@ -70,7 +70,7 @@ func (s *service) Create(ctx context.Context, ticket *domain.Ticket) (*domain.Ti
 	}
 
 	if err := validateTicket(t); err != nil {
-		return nil, fmt.Errorf("%s: %w", op, err)
+		return nil, fmt.Errorf("%s: %w: %w", op, domain.ErrInvalidTicket, err)
 	}
 
 	return t, nil

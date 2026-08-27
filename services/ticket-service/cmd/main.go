@@ -3,7 +3,9 @@ package main
 import (
 	"context"
 	"log"
+	"log/slog"
 	"net/http"
+	"os"
 
 	"github.com/go-chi/chi/v5"
 	"github.com/samSRaina/kizen/services/ticket-service/internal/config"
@@ -29,7 +31,12 @@ func main() {
 
 	repo := repository.NewTicketRepository(pool)
 	serv := service.NewService(repo)
-	ticketHandler := handler.NewTicketHandler(serv)
+
+	logger := slog.New(
+		slog.NewJSONHandler(os.Stdout, nil),
+	)
+
+	ticketHandler := handler.NewTicketHandler(serv, logger)
 
 	router := chi.NewRouter()
 	router.Post("/tickets", ticketHandler.Create)

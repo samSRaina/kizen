@@ -3,7 +3,8 @@ package handler
 import (
 	"context"
 	"encoding/json"
-	"fmt"
+	"errors"
+	"log/slog"
 	"net/http"
 
 	"github.com/google/uuid"
@@ -16,11 +17,13 @@ type TicketService interface {
 
 type TicketHandler struct {
 	service TicketService
+	logger  *slog.Logger
 }
 
-func NewTicketHandler(service TicketService) *TicketHandler {
+func NewTicketHandler(service TicketService, logger *slog.Logger) *TicketHandler {
 	return &TicketHandler{
 		service: service,
+		logger:  logger,
 	}
 }
 
@@ -38,7 +41,7 @@ func (h *TicketHandler) Create(w http.ResponseWriter, r *http.Request) {
 	var ticket createTicketRequest
 
 	if err := json.NewDecoder(r.Body).Decode(&ticket); err != nil {
-		http.Error(w, "invalid request body", http.StatusBadRequest)
+		writeJSONError(w, http.StatusBadRequest, "failed to parse json data")
 		return
 	}
 
@@ -54,8 +57,27 @@ func (h *TicketHandler) Create(w http.ResponseWriter, r *http.Request) {
 			CreatedBy:   ticket.CreatedBy,
 		},
 	)
+
 	if err != nil {
-		http.Error(w, fmt.Errorf("%s: %w", op, err).Error(), http.StatusInternalServerError)
+		switch {
+		case errors.Is(err, domain.ErrInvalidTicket):
+			h.logger.Warn("invalid ticket", "error", err)
+			writeJSONError(w, http.StatusBadRequest, "invalid request")
+
+		case errors.Is(err, domain.ErrTicketExists):
+			h.logger.Warn(
+				"ticket already exists",
+				"error", err,
+				"project_id", ticket.ProjectID,
+				"identifier", ticket.Identifier,
+			)
+			writeJSONError(w, http.StatusConflict, "ticket already exists")
+
+		default:
+			h.logger.Error("failed to create ticket", "error", err)
+			writeJSONError(w, http.StatusInternalServerError, "internal server error")
+		}
+
 		return
 	}
 
@@ -63,7 +85,7 @@ func (h *TicketHandler) Create(w http.ResponseWriter, r *http.Request) {
 	w.WriteHeader(http.StatusCreated)
 
 	if err := json.NewEncoder(w).Encode(createdTicket); err != nil {
-		return
+		h.logger.Error("failed to encode ticket response", "error", err)
 	}
 
 }

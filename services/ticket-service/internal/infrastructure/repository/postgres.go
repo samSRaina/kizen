@@ -2,8 +2,10 @@ package repository
 
 import (
 	"context"
+	"errors"
 
 	"github.com/google/uuid"
+	"github.com/jackc/pgx/v5/pgconn"
 	"github.com/jackc/pgx/v5/pgtype"
 	"github.com/jackc/pgx/v5/pgxpool"
 	"github.com/samSRaina/kizen/internal/database"
@@ -36,6 +38,12 @@ func (r *TicketRepository) Create(ctx context.Context, ticket *domain.Ticket) (*
 		CreatedBy:   pgtype.UUID{Bytes: ticket.CreatedBy, Valid: true},
 	})
 	if err != nil {
+		var pgErr *pgconn.PgError
+
+		if errors.As(err, &pgErr) && pgErr.Code == "23505" {
+			return nil, domain.ErrTicketExists
+		}
+
 		return nil, err
 	}
 
