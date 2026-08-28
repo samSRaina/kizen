@@ -64,13 +64,13 @@ func validateTicket(ticket *domain.Ticket) error {
 func (s *service) Create(ctx context.Context, ticket *domain.Ticket) (*domain.Ticket, error) {
 	const op = "ticket.service.Create"
 
+	if err := validateTicket(ticket); err != nil {
+		return nil, fmt.Errorf("%s: %w: %w", op, domain.ErrInvalidTicket, err)
+	}
+
 	t, err := s.repo.Create(ctx, ticket)
 	if err != nil {
 		return nil, fmt.Errorf("%s: %w", op, err)
-	}
-
-	if err := validateTicket(t); err != nil {
-		return nil, fmt.Errorf("%s: %w: %w", op, domain.ErrInvalidTicket, err)
 	}
 
 	return t, nil

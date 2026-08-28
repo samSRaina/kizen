@@ -15,7 +15,9 @@ local_resource(
       './go.mod',
       './go.sum',
       './internal/database/postgres',
-  ], labels="compiles")
+  ],
+  labels=['compiles']
+)
 
 
 docker_build(
@@ -43,3 +45,7 @@ docker_build(
 # # # # # # # # # # # # # # # # # # # # ## # # # # # #
 
 docker_compose('docker-compose.yaml')
+dc_resource(
+    'ticket-service',
+    resource_deps=['ticket-service-compile'],
+)

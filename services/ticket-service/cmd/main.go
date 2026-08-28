@@ -39,7 +39,7 @@ func main() {
 	ticketHandler := handler.NewTicketHandler(serv, logger)
 
 	router := chi.NewRouter()
-	router.Post("/tickets", ticketHandler.Create)
+	router.Post("/api/tickets", ticketHandler.Create)
 
 	log.Printf("ticket-service listening on :%s", cfg.ServerPort)
 

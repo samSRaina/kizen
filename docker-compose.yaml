@@ -11,6 +11,23 @@ services:
     volumes:
       - /var/run/docker.sock:/var/run/docker.sock
 
+    networks:
+      - kizen
+
+  web:
+    build:
+      context: ./web
+
+    env_file:
+      - .env
+
+    labels:
+      - "traefik.enable=true"
+      - "traefik.http.routers.web.entrypoints=web"
+      - "traefik.http.services.web.loadbalancer.server.port=${WEB_SERVICE_PORT}"
+
+    networks:
+      - kizen
 
   database:
     image: postgres:17-alpine
@@ -24,8 +41,8 @@ services:
       POSTGRES_PASSWORD: ${POSTGRES_PASSWORD}
       POSTGRES_DB: ${POSTGRES_DB}
 
-    ports:
-      - "5432:5432"   #host:container
+    # ports:
+    #   - "5432:5432"
 
     volumes:
       - postgres_data:/var/lib/postgresql/data
@@ -51,11 +68,18 @@ services:
     #   context: .
     #   dockerfile: infra/docker/ticket-service.Dockerfile
 
+    labels:
+      - "traefik.enable=true"
+      - "traefik.http.routers.ticket-service.rule=Host(`localhost`) && PathPrefix(`/api/tickets`)"
+      - "traefik.http.routers.ticket-service.entrypoints=web"
+      - "traefik.http.services.ticket-service.loadbalancer.server.port=${TICKET_SERVICE_PORT}"
+
     environment:
       SERVER_PORT: ${TICKET_SERVICE_PORT}
       DATABASE_URL: postgres://${POSTGRES_USER}:${POSTGRES_PASSWORD}@database:5432/${POSTGRES_DB}?sslmode=disable
-    ports:
-      - "8181:${TICKET_SERVICE_PORT}" #host:container
+
+    # ports:
+    #   - "8181:${TICKET_SERVICE_PORT}" #host:container
 
     depends_on:
       database:
