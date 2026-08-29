@@ -100,24 +100,24 @@ func (ns NullStatus) Value() (driver.Value, error) {
 }
 
 type Organizaton struct {
-	ID          pgtype.UUID `json:"id"`
-	Name        string      `json:"name"`
-	Slug        string      `json:"slug"`
-	Description string      `json:"description"`
-	CreatedBy   pgtype.UUID `json:"created_by"`
-	CreatedAt   interface{} `json:"created_at"`
-	Updatedat   interface{} `json:"updatedat"`
+	ID          pgtype.UUID        `json:"id"`
+	Name        string             `json:"name"`
+	Slug        string             `json:"slug"`
+	Description string             `json:"description"`
+	CreatedBy   pgtype.UUID        `json:"created_by"`
+	CreatedAt   pgtype.Timestamptz `json:"created_at"`
+	Updatedat   pgtype.Timestamptz `json:"updatedat"`
 }
 
 type Project struct {
-	ID             pgtype.UUID `json:"id"`
-	OrganizationID pgtype.UUID `json:"organization_id"`
-	Name           string      `json:"name"`
-	Description    string      `json:"description"`
-	CreatedBy      pgtype.UUID `json:"created_by"`
-	Archived       bool        `json:"archived"`
-	CreatedAt      interface{} `json:"created_at"`
-	UpdatedAt      interface{} `json:"updated_at"`
+	ID             pgtype.UUID        `json:"id"`
+	OrganizationID pgtype.UUID        `json:"organization_id"`
+	Name           string             `json:"name"`
+	Description    string             `json:"description"`
+	CreatedBy      pgtype.UUID        `json:"created_by"`
+	Archived       bool               `json:"archived"`
+	CreatedAt      pgtype.Timestamptz `json:"created_at"`
+	UpdatedAt      pgtype.Timestamptz `json:"updated_at"`
 }
 
 type Ticket struct {

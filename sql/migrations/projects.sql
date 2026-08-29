@@ -8,8 +8,8 @@ CREATE TABLE projects (
 	created_by UUID NOT NULL REFERENCES users(id),
 	archived bool NOT NULL,
 
-	created_at TIMESTAMPZ  NOT NULL DEFAULT NOW(),
-	updated_at TIMESTAMPZ NOT NULL DEFAULT NOW()
+	created_at TIMESTAMPTZ  NOT NULL DEFAULT NOW(),
+	updated_at TIMESTAMPTZ NOT NULL DEFAULT NOW()
 )
 
 

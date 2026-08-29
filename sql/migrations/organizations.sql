@@ -6,8 +6,8 @@ CREATE TABLE organizatons(
 
 	created_by UUID NOT NULL REFERENCES users(id),
 
-	created_at TIMESTAMPZ DEFAULT NOW(),
-	UpdatedAt TIMESTAMPZ DEFAULT NOW()
+	created_at TIMESTAMPTZ DEFAULT NOW(),
+	UpdatedAt TIMESTAMPTZ DEFAULT NOW()
 )
 
 

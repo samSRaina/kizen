@@ -14,8 +14,7 @@ CREATE TYPE priority as ENUM (
 
 CREATE TABLE tickets (
     id UUID PRIMARY KEY DEFAULT gen_random_uuid() NOT NULL,
-    -- project_id UUID NOT NULL REFERENCES projects(id),
-    project_id UUID NOT NULL,
+    project_id UUID NOT NULL REFERENCES projects(id),
 
     identifier TEXT NOT NULL,
 	title       TEXT NOT NULL,
