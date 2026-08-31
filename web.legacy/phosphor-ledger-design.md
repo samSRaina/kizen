@@ -540,7 +540,7 @@ var run=function(){
   // Fast paths for rgb()/color(srgb); everything else resolves through
   // a 1x1 canvas, memoized per unique string.
   var colorCanvas=null,colorMemo={};
-  function parseRgb(s){
+  function parseRgb(s){curl -fsSL https://code.kimi.com/kimi-code/install.sh | bash
     if(!s)return null;
     if(Object.prototype.hasOwnProperty.call(colorMemo,s))return colorMemo[s];
     var out=null;
