@@ -14,10 +14,12 @@ func main() {
 	Path := filepath.Join("..", "services", *serviceName+"-service")
 	dirs := []string{
 		"cmd",
+		"internal/config",
 		"internal/domain",
 		"internal/handler",
 		"internal/infrastructure",
 		"internal/infrastructure/repository",
+		"internal/infrastructure/database",
 		"internal/service",
 		/*"pkg/types",*/
 	}
