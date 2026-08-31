@@ -76,6 +76,16 @@ func (s *service) Create(ctx context.Context, ticket *domain.Ticket) (*domain.Ti
 	return t, nil
 }
 
+func (s *service) GetByID(ctx context.Context, id uuid.UUID) (*domain.Ticket, error) {
+	const op = "ticket.service.GetByID"
+
+	t, err := s.repo.GetByID(ctx, id)
+	if err != nil {
+		return nil, fmt.Errorf("%s: %w", op, err)
+	}
+	return t, nil
+}
+
 // func (s *service) Delete(ctx context.Context, ticketID uuid.UUID) error {
 // 	const op = "ticket.service.Delete"
 // }

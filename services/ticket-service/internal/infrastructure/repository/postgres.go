@@ -5,6 +5,7 @@ import (
 	"errors"
 
 	"github.com/google/uuid"
+	"github.com/jackc/pgx/v5"
 	"github.com/jackc/pgx/v5/pgconn"
 	"github.com/jackc/pgx/v5/pgtype"
 	"github.com/jackc/pgx/v5/pgxpool"
@@ -56,7 +57,39 @@ func (r *TicketRepository) Create(ctx context.Context, ticket *domain.Ticket) (*
 		Status:      domain.TicketStatus(row.Status),
 		Priority:    domain.TicketPriority(row.Priority),
 		CreatedBy:   uuid.UUID(row.CreatedBy.Bytes),
-		CreatedAt:   row.CreatedAt.Time,
-		UpdatedAt:   row.UpdatedAt.Time,
+		// Assignee:    uuidPtr(row.Assignee),
+		// DueDate:     timePtr(row.DueDate),
+		CreatedAt: row.CreatedAt.Time,
+		UpdatedAt: row.UpdatedAt.Time,
+	}, nil
+}
+
+func (r *TicketRepository) GetByID(ctx context.Context, id uuid.UUID) (*domain.Ticket, error) {
+	row, err := r.q.GetTicket(ctx, pgtype.UUID{
+		Bytes: id,
+		Valid: true,
+	})
+	if err != nil {
+		// !! add specific error code for UUID if applicable
+		if errors.Is(err, pgx.ErrNoRows) {
+			return nil, domain.ErrTicketNotFound
+		}
+		return nil, err
+	}
+
+	return &domain.Ticket{
+		ID:          uuid.UUID(row.ID.Bytes),
+		ProjectID:   uuid.UUID(row.ProjectID.Bytes),
+		Identifier:  row.Identifier,
+		Title:       row.Title,
+		Description: row.Description,
+		Status:      domain.TicketStatus(row.Status),
+		Priority:    domain.TicketPriority(row.Priority),
+		CreatedBy:   uuid.UUID(row.CreatedBy.Bytes),
+		// !! Havent added helpers for nullable postgresql values
+		// Assignee:    uuidPtr(row.Assignee),
+		// DueDate:     timePtr(row.DueDate),
+		CreatedAt: row.CreatedAt.Time,
+		UpdatedAt: row.UpdatedAt.Time,
 	}, nil
 }

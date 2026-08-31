@@ -7,12 +7,14 @@ import (
 	"log/slog"
 	"net/http"
 
+	"github.com/go-chi/chi/v5"
 	"github.com/google/uuid"
 	"github.com/samSRaina/kizen/services/ticket-service/internal/domain"
 )
 
 type TicketService interface {
 	Create(ctx context.Context, ticket *domain.Ticket) (*domain.Ticket, error)
+	GetByID(ctx context.Context, id uuid.UUID) (*domain.Ticket, error)
 }
 
 type TicketHandler struct {
@@ -85,6 +87,38 @@ func (h *TicketHandler) Create(w http.ResponseWriter, r *http.Request) {
 	w.WriteHeader(http.StatusCreated)
 
 	if err := json.NewEncoder(w).Encode(createdTicket); err != nil {
+		h.logger.Error("failed to encode ticket response", "error", err)
+	}
+
+}
+
+func (h *TicketHandler) Get(w http.ResponseWriter, r *http.Request) {
+	const op = "ticket.handler.Get"
+
+	id, err := uuid.Parse(chi.URLParam(r, "id"))
+	if err != nil {
+		writeJSONError(w, http.StatusBadRequest, "invalid ticket id")
+	}
+
+	t, err := h.service.GetByID(r.Context(), id)
+	if err != nil {
+		switch {
+		case errors.Is(err, domain.ErrTicketNotFound):
+			h.logger.Warn("ticket nt found", "error", err)
+			writeJSONError(w, http.StatusNotFound, "ticket not found")
+
+		default:
+			h.logger.Error("failed to get ticket", "error", err)
+			writeJSONError(w, http.StatusInternalServerError, "internal server error")
+		}
+
+		return
+	}
+
+	w.Header().Set("Content-Type", "application/json")
+	w.WriteHeader(http.StatusCreated)
+
+	if err := json.NewEncoder(w).Encode(t); err != nil {
 		h.logger.Error("failed to encode ticket response", "error", err)
 	}
 
