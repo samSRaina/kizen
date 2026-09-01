@@ -41,6 +41,7 @@ func main() {
 	router := chi.NewRouter()
 	router.Post("/api/tickets", ticketHandler.Create)
 	router.Get("/api/tickets/{id}", ticketHandler.Get)
+	router.Delete("/api/projects/{project_id}/tickets/{id}", ticketHandler.Delete)
 
 	log.Printf("ticket-service listening on :%s", cfg.ServerPort)
 

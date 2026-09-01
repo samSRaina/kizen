@@ -14,7 +14,8 @@ import (
 
 type TicketService interface {
 	Create(ctx context.Context, ticket *domain.Ticket) (*domain.Ticket, error)
-	GetByID(ctx context.Context, id uuid.UUID) (*domain.Ticket, error)
+	GetByID(ctx context.Context, project_id uuid.UUID, identifier string) (*domain.Ticket, error)
+	Delete(ctx context.Context, projectID uuid.UUID, identifier string) error
 }
 
 type TicketHandler struct {
@@ -95,16 +96,21 @@ func (h *TicketHandler) Create(w http.ResponseWriter, r *http.Request) {
 func (h *TicketHandler) Get(w http.ResponseWriter, r *http.Request) {
 	const op = "ticket.handler.Get"
 
-	id, err := uuid.Parse(chi.URLParam(r, "id"))
+	pID, err := uuid.Parse(chi.URLParam(r, "project_id"))
 	if err != nil {
-		writeJSONError(w, http.StatusBadRequest, "invalid ticket id")
+		writeJSONError(w, http.StatusBadRequest, "invalid project id")
 	}
 
-	t, err := h.service.GetByID(r.Context(), id)
+	id := chi.URLParam(r, "identifier")
+	if id == "" {
+		writeJSONError(w, http.StatusBadRequest, "invalid ticket identifier")
+	}
+
+	t, err := h.service.GetByID(r.Context(), pID, id)
 	if err != nil {
 		switch {
 		case errors.Is(err, domain.ErrTicketNotFound):
-			h.logger.Warn("ticket nt found", "error", err)
+			h.logger.Warn("ticket not found", "error", err)
 			writeJSONError(w, http.StatusNotFound, "ticket not found")
 
 		default:
@@ -116,10 +122,47 @@ func (h *TicketHandler) Get(w http.ResponseWriter, r *http.Request) {
 	}
 
 	w.Header().Set("Content-Type", "application/json")
-	w.WriteHeader(http.StatusCreated)
+	w.WriteHeader(http.StatusOK) //200 OK FOR A GET REQUEST INSTEAD OF StatusCreated.
 
 	if err := json.NewEncoder(w).Encode(t); err != nil {
 		h.logger.Error("failed to encode ticket response", "error", err)
 	}
+
+}
+
+func (h *TicketHandler) Delete(w http.ResponseWriter, r *http.Request) {
+	const op = "ticket.handler.Delete"
+
+	pID, err := uuid.Parse(chi.URLParam(r, "project_id"))
+	if err != nil {
+		writeJSONError(w, http.StatusBadRequest, "invalid project id")
+	}
+
+	id := chi.URLParam(r, "identifier")
+	if id == "" {
+		writeJSONError(w, http.StatusBadRequest, "invalid ticket identifier")
+	}
+
+	err = h.service.Delete(r.Context(), pID, id)
+	if err != nil {
+		switch {
+		case errors.Is(err, domain.ErrTicketNotFound):
+			h.logger.Warn("ticket not found", "error", err)
+			writeJSONError(w, http.StatusNotFound, "ticket not found")
+
+		default:
+			h.logger.Error("failed to delete ticket", "error", err)
+			writeJSONError(w, http.StatusInternalServerError, "internal server error")
+		}
+		return
+	}
+
+	//no need for writing header, because no body is being returned
+	//w.Header().Set("Content-Type", "application/json")
+	w.WriteHeader(http.StatusNoContent)
+
+	// if err := json.NewEncoder(w).Encode(w); err != nil {
+	// 	h.logger.Error("failed to encode ticket response", "error", err)
+	// }
 
 }

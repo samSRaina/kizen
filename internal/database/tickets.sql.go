@@ -58,13 +58,35 @@ func (q *Queries) CreateTicket(ctx context.Context, arg CreateTicketParams) (Tic
 	return i, err
 }
 
-const getTicket = `-- name: GetTicket :one
+const delete = `-- name: Delete :exec
 SELECT id, project_id, identifier, title, description, status, priority, created_by, assignee, due_date, created_at, updated_at FROM tickets
-WHERE id = $1
+WHERE project_id = $1
+AND identifier = $2
 `
 
-func (q *Queries) GetTicket(ctx context.Context, id pgtype.UUID) (Ticket, error) {
-	row := q.db.QueryRow(ctx, getTicket, id)
+type DeleteParams struct {
+	ProjectID  pgtype.UUID `json:"project_id"`
+	Identifier string      `json:"identifier"`
+}
+
+func (q *Queries) Delete(ctx context.Context, arg DeleteParams) error {
+	_, err := q.db.Exec(ctx, delete, arg.ProjectID, arg.Identifier)
+	return err
+}
+
+const getTicket = `-- name: GetTicket :one
+SELECT id, project_id, identifier, title, description, status, priority, created_by, assignee, due_date, created_at, updated_at FROM tickets
+WHERE project_id = $1
+AND identifier = $2
+`
+
+type GetTicketParams struct {
+	ProjectID  pgtype.UUID `json:"project_id"`
+	Identifier string      `json:"identifier"`
+}
+
+func (q *Queries) GetTicket(ctx context.Context, arg GetTicketParams) (Ticket, error) {
+	row := q.db.QueryRow(ctx, getTicket, arg.ProjectID, arg.Identifier)
 	var i Ticket
 	err := row.Scan(
 		&i.ID,

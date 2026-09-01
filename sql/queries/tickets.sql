@@ -8,4 +8,10 @@ RETURNING *;
 
 -- name: GetTicket :one
 SELECT * FROM tickets
-WHERE id = $1;
+WHERE project_id = $1
+AND identifier = $2;
+
+-- name: Delete :exec
+SELECT * FROM tickets
+WHERE project_id = $1
+AND identifier = $2;

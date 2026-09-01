@@ -4,7 +4,7 @@ CREATE TABLE organizatons(
 	slug        TEXT NOT NULL,
 	description TEXT NOT NULL,
 
-	created_by UUID NOT NULL REFERENCES users(id),
+	created_by  UUID NOT NULL REFERENCES users(id),
 
 	created_at TIMESTAMPTZ DEFAULT NOW(),
 	UpdatedAt TIMESTAMPTZ DEFAULT NOW()

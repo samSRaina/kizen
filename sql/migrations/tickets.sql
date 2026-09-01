@@ -33,8 +33,8 @@ CREATE TABLE tickets (
 	updated_at TIMESTAMPTZ NOT NULL DEFAULT NOW()
 );
 
-ALTER TABLE tickets ADD CONSTRAINT uq_ticket_project_identifier UNIQUE (project_id, identifier);
+ALTER TABLE tickets
+ADD CONSTRAINT uq_ticket_project_identifier
+UNIQUE (project_id, identifier);
 
-
-CREATE INDEX idx_tickets_project_id ON tickets(project_id);
 CREATE INDEX idx_tickets_assignee ON tickets(assignee);

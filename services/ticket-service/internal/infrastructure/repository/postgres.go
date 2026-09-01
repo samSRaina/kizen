@@ -64,10 +64,13 @@ func (r *TicketRepository) Create(ctx context.Context, ticket *domain.Ticket) (*
 	}, nil
 }
 
-func (r *TicketRepository) GetByID(ctx context.Context, id uuid.UUID) (*domain.Ticket, error) {
-	row, err := r.q.GetTicket(ctx, pgtype.UUID{
-		Bytes: id,
-		Valid: true,
+func (r *TicketRepository) GetByID(ctx context.Context, projectID uuid.UUID, identifier string) (*domain.Ticket, error) {
+	row, err := r.q.GetTicket(ctx, database.GetTicketParams{
+		ProjectID: pgtype.UUID{
+			Bytes: projectID,
+			Valid: true,
+		},
+		Identifier: identifier,
 	})
 	if err != nil {
 		// !! add specific error code for UUID if applicable
@@ -92,4 +95,24 @@ func (r *TicketRepository) GetByID(ctx context.Context, id uuid.UUID) (*domain.T
 		CreatedAt: row.CreatedAt.Time,
 		UpdatedAt: row.UpdatedAt.Time,
 	}, nil
+}
+
+func (r *TicketRepository) Delete(ctx context.Context, project_id uuid.UUID, identifier string) error {
+	err := r.q.Delete(ctx, database.DeleteParams{
+		ProjectID: pgtype.UUID{
+			Bytes: project_id,
+			Valid: true,
+		},
+		Identifier: identifier,
+	})
+
+	if err != nil {
+		// !! add specific error code for UUID if applicable
+		if errors.Is(err, pgx.ErrNoRows) {
+			return domain.ErrTicketNotFound
+		}
+		return err
+	}
+
+	return nil
 }
