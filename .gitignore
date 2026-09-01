@@ -6,3 +6,4 @@ build/
 
 # TESTS
 services/ticket-service/test_cases
+web.legacy/
