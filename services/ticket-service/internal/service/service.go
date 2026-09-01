@@ -86,9 +86,12 @@ func (s *service) GetByID(ctx context.Context, project_id uuid.UUID, identifier 
 	return t, nil
 }
 
-// func (s *service) Delete(ctx context.Context, projectID uuid.UUID, identifier string) error {
-// 	const op = "ticket.service.Delete"
+func (s *service) Delete(ctx context.Context, projectID uuid.UUID, identifier string) error {
+	const op = "ticket.service.Delete"
 
-// 	err := s.repo.Delete(ctx, projectID, identifier)
-
-// }
+	err := s.repo.Delete(ctx, projectID, identifier)
+	if err != nil {
+		return fmt.Errorf("%s: %w", op, err)
+	}
+	return nil
+}
