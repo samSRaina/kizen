@@ -2,10 +2,14 @@ package main
 
 import (
 	"context"
-	"log"
+	"errors"
+	"fmt"
 	"log/slog"
 	"net/http"
 	"os"
+	"os/signal"
+	"syscall"
+	"time"
 
 	"github.com/go-chi/chi/v5"
 	"github.com/samSRaina/kizen/services/ticket-service/internal/config"
@@ -16,35 +20,83 @@ import (
 )
 
 func main() {
-	ctx := context.Background()
-	cfg := config.Load()
+	logger := slog.New(
+		slog.NewJSONHandler(os.Stdout, &slog.HandlerOptions{
+			Level: slog.LevelInfo,
+		}),
+	)
 
+	if err := run(logger); err != nil {
+		logger.Error("application failed", "error", err)
+		os.Exit(1)
+	}
+}
+
+func run(logger *slog.Logger) error {
+	cfg := config.Load()
+	ctx := context.Background()
+
+	//database
 	pool, err := database.NewPool(ctx, cfg.DatabaseURL)
 	if err != nil {
-		log.Fatalf("failed to connect to database: %v", err)
+		return fmt.Errorf("create database pool: %w", err)
 	}
 	defer pool.Close()
 
 	if err := pool.Ping(ctx); err != nil {
-		log.Fatalf("failed to ping database: %v", err)
+		return fmt.Errorf("ping database: %v", err)
 	}
+	logger.Info("database connection established")
 
+	// wiring
 	repo := repository.NewTicketRepository(pool)
-	serv := service.NewService(repo)
+	service := service.NewService(repo)
+	ticketHandler := handler.NewTicketHandler(service, logger)
 
-	logger := slog.New(
-		slog.NewJSONHandler(os.Stdout, nil),
-	)
-
-	ticketHandler := handler.NewTicketHandler(serv, logger)
-
+	// router
 	router := chi.NewRouter()
 	router.Post("/api/tickets", ticketHandler.Create)
 	router.Get("/api/tickets/{id}", ticketHandler.Get)
 	router.Delete("/api/projects/{project_id}/tickets/{id}", ticketHandler.Delete)
 
-	log.Printf("ticket-service listening on :%s", cfg.ServerPort)
+	// http-server
+	server := &http.Server{
+		Addr:    cfg.ServerPort,
+		Handler: router,
+	}
 
-	log.Fatal(http.ListenAndServe(":"+cfg.ServerPort, router))
+	//star server
+	serverErrors := make(chan error, 1)
+	go func() {
+		logger.Info("server starting", "addr", cfg.ServerPort)
+		if err := server.ListenAndServe(); err != nil && !errors.Is(err, http.ErrServerClosed) {
+			serverErrors <- err
+		}
+	}()
 
+	//waiting for server failure
+	shutdown := make(chan os.Signal, 1)
+	signal.Notify(shutdown, os.Interrupt, syscall.SIGTERM)
+	defer signal.Stop(shutdown)
+
+	select {
+	case err := <-serverErrors:
+		return err
+
+	case sig := <-shutdown:
+		logger.Info("shutdown signal received", "signal", sig)
+	}
+
+	//graceful shutdown
+	shutdownCtx, cancel := context.WithTimeout(
+		context.Background(),
+		10*time.Second, //timeout to give server time to finish whatever it has been doing
+	)
+	defer cancel()
+
+	if err := server.Shutdown(shutdownCtx); err != nil {
+		return err
+	}
+	logger.Info("server stopped")
+	return nil
 }
