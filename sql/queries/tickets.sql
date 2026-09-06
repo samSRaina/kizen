@@ -12,6 +12,6 @@ WHERE project_id = $1
 AND identifier = $2;
 
 -- name: Delete :exec
-SELECT * FROM tickets
+DELETE FROM tickets
 WHERE project_id = $1
 AND identifier = $2;

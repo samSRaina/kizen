@@ -59,7 +59,7 @@ func (q *Queries) CreateTicket(ctx context.Context, arg CreateTicketParams) (Tic
 }
 
 const delete = `-- name: Delete :exec
-SELECT id, project_id, identifier, title, description, status, priority, created_by, assignee, due_date, created_at, updated_at FROM tickets
+DELETE FROM tickets
 WHERE project_id = $1
 AND identifier = $2
 `
