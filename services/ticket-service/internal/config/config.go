@@ -11,7 +11,7 @@ type Config struct {
 
 func Load() *Config {
 	return &Config{
-		ServerPort:  os.Getenv("SERVER_PORT"),
+		ServerPort:  os.Getenv("TICKET_SERVER_PORT"),
 		DatabaseURL: os.Getenv("DATABASE_URL"),
 	}
 }

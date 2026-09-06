@@ -34,7 +34,7 @@ docker_build(
 
   live_update=[
     sync('./build', '/app/build'),
-    sync('./shared', '/app/shared'),
+    #sync('./shared', '/app/shared'),
     restart_container()
   ],
 )

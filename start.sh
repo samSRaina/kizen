@@ -1,3 +1,4 @@
+#!/bin/bash
 sudo systemctl start docker
-minikub start
+minikube start
 tilt up
