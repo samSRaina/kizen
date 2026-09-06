@@ -5,6 +5,7 @@ import (
 	"errors"
 	"fmt"
 	"log/slog"
+	"net"
 	"net/http"
 	"os"
 	"os/signal"
@@ -33,7 +34,11 @@ func main() {
 }
 
 func run(logger *slog.Logger) error {
-	cfg := config.Load()
+	cfg, err := config.Load()
+	if err != nil {
+		return fmt.Errorf("load config: %w", err)
+	}
+
 	ctx := context.Background()
 
 	//database
@@ -55,13 +60,13 @@ func run(logger *slog.Logger) error {
 
 	// router
 	router := chi.NewRouter()
-	router.Post("/api/tickets", ticketHandler.Create)
-	router.Get("/api/tickets/{id}", ticketHandler.Get)
-	router.Delete("/api/projects/{project_id}/tickets/{id}", ticketHandler.Delete)
+	router.Post("/api/v1/tickets", ticketHandler.Create)
+	router.Get("/api/v1/tickets/{id}", ticketHandler.Get)
+	router.Delete("/api/v1/projects/{project_id}/tickets/{id}", ticketHandler.Delete)
 
 	// http-server
 	server := &http.Server{
-		Addr:    cfg.ServerPort,
+		Addr:    net.JoinHostPort("", cfg.ServerPort),
 		Handler: router,
 	}
 
