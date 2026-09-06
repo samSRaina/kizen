@@ -1,7 +1,0 @@
-package: api
-output: ../../services/ticket-service/internal/api/ticket.gen.go
-generate:
-  - types
-  - chi-server
-  - strict-server
-  - spec

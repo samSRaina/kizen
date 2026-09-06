@@ -1,0 +1,692 @@
+openapi: 3.1.0
+
+# ─────────────────────────────────────────────────────────────────────────────
+# Kizen API — the single source of truth for the entire HTTP surface.
+#
+# Rules of this contract:
+#   1. HAND-EDITED ONLY. Nothing in this file is generated. Server types
+#      (oapi-codegen) and client types (openapi-typescript) are GENERATED FROM
+#      this file — the arrow of truth always points here.
+#   2. Module ownership (tags = modules, all sharing one Postgres today):
+#        Identity       → /api/v1/auth/*, /api/v1/me, /api/v1/users/*   (planned)
+#        Organizations  → /api/v1/organizations/*, projects CRUD        (planned)
+#        Tickets        → /api/v1/projects/{projectId}/tickets/*       (this release)
+#   3. Cross-module references are IDs + summary objects (UserSummary,
+#      ProjectSummary) — never nested graphs. One call per concern.
+#   4. All errors are RFC 7807 problem+json (components/schemas/Problem).
+#   5. Security: cookieAuth is DECLARED on every operation but not yet
+#      ENFORCED server-side. When identity lands, ops return 401/403 as
+#      documented here — no contract change, no client regeneration.
+# ─────────────────────────────────────────────────────────────────────────────
+info:
+  title: Kizen API
+  version: 1.0.0
+  description: |
+    Issue-tracking API for Kizen — a hybrid modular-monolith backend over a
+    single shared PostgreSQL database.
+
+    **Pagination.** List endpoints use opaque keyset cursors, never offsets.
+    Take `next_cursor` from a response and pass it back as the `cursor` query
+    parameter, verbatim. It is not meant to be parsed, ordered, or constructed
+    by clients. `next_cursor` is absent when there are no more pages.
+
+    **Identifiers.** Ticket identifiers (`NW-143`) are allocated by the
+    server, atomically per project. Clients never supply or predict them.
+    Create requests containing an `identifier` field are rejected (unknown
+    field → 400) precisely so this rule cannot be silently broken.
+
+    **Updates.** PATCH bodies are partial: only fields present are changed.
+    Because JSON `null` is ambiguous in a partial body ("clear the field"
+    vs "field not sent"), clearing an assignee is an explicit
+    `clear_assignee: true` flag. An empty PATCH (no fields) is a 400.
+
+    **Errors.** Every non-2xx response is `application/problem+json`
+    (RFC 7807). Validation failures carry per-field messages in
+    `Problem.errors`.
+
+    **Status values.** The workflow statuses are exactly the four defined
+    here (mirroring the database). There is no `todo` status; adding statuses
+    later means extending this enum and regenerating — never inventing values
+    client-side.
+
+security:
+  - cookieAuth: []
+
+servers:
+  - url: http://localhost
+    description: Local development via the Traefik edge (port 80).
+  - url: http://localhost:8181
+    description: Local development, ticket-service directly.
+
+tags:
+  - name: Tickets
+    description: |
+      Ticket CRUD scoped to a project. Owned by the tickets module. Paths are
+      nested under a project because a ticket cannot exist outside one, and
+      the project scope is the natural unit for authorization.
+  - name: Identity
+    description: |
+      (Planned — defined here to reserve the surface, no operations yet.)
+      Registration, login/logout, session lifecycle, and /me. Owned by the
+      identity module. Users are referenced by other modules via
+      UserSummary, never by embedding the full user resource.
+  - name: Organizations
+    description: |
+      (Planned — defined here to reserve the surface, no operations yet.)
+      Organizations, their members and roles, and project CRUD. Owned by the
+      organizations module. Projects are referenced by other modules via
+      ProjectSummary.
+
+# ─────────────────────────────────────────────────────────────────────────────
+paths:
+  /api/v1/projects/{projectId}/tickets:
+    parameters:
+      - $ref: '#/components/parameters/ProjectId'
+
+    post:
+      operationId: createTicket
+      tags: [Tickets]
+      summary: Create a ticket in a project
+      description: |
+        Creates a ticket in the given project. The `identifier` and `number`
+        are allocated by the server atomically per project; the `reporter` is
+        derived from the authenticated session, never from the request body.
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/CreateTicketRequest'
+            examples:
+              minimal:
+                summary: Minimal ticket
+                value:
+                  title: Fix invoice PDF export losing line-item tax breakdown
+                  description: Subtotal calculation truncates decimals with tiered taxes.
+                  priority: high
+              with-assignee:
+                summary: Assigned with a due date
+                value:
+                  title: Migrate client portal auth to OAuth2 refresh tokens
+                  description: Implement silent rotation to keep sessions alive.
+                  priority: medium
+                  assignee_id: 00000000-0000-0000-0000-000000000002
+                  due_date: '2026-09-30T17:00:00Z'
+      responses:
+        '201':
+          description: |
+            Created. The response is the complete ticket, including the
+            server-assigned identifier, number, timestamps, and expanded
+            project/reporter/assignee summaries.
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Ticket'
+              example:
+                id: 0f9b8c2e-1d4a-4b6f-8e2d-3c5a7b9d1e01
+                number: 143
+                identifier: NW-143
+                project:
+                  id: 00000000-0000-0000-0000-000000000001
+                  key: NW
+                  name: Northwind Retail
+                title: Fix invoice PDF export losing line-item tax breakdown
+                description: Subtotal calculation truncates decimals with tiered taxes.
+                status: backlog
+                priority: high
+                reporter:
+                  id: 00000000-0000-0000-0000-000000000002
+                  username: jordan
+                  display_name: Jordan Diaz
+                assignee: null
+                due_date: null
+                created_at: '2026-09-06T12:00:00Z'
+                updated_at: '2026-09-06T12:00:00Z'
+        '400':
+          $ref: '#/components/responses/BadRequest'
+        '401':
+          $ref: '#/components/responses/Unauthorized'
+        '404':
+          $ref: '#/components/responses/NotFound'
+        '500':
+          $ref: '#/components/responses/InternalError'
+
+    get:
+      operationId: listTickets
+      tags: [Tickets]
+      summary: List a project's tickets
+      description: |
+        Keyset-paginated listing with optional filters and a whitelisted sort.
+        Filters for `status` and `priority` are repeatable query parameters and
+        combine with OR within a field and AND across fields.
+      parameters:
+        - name: status
+          in: query
+          description: Filter by status. Repeatable (`status=backlog&status=done`).
+          required: false
+          style: form
+          explode: true
+          schema:
+            type: array
+            items:
+              $ref: '#/components/schemas/TicketStatus'
+        - name: priority
+          in: query
+          description: Filter by priority. Repeatable.
+          required: false
+          style: form
+          explode: true
+          schema:
+            type: array
+            items:
+              $ref: '#/components/schemas/TicketPriority'
+        - name: assignee
+          in: query
+          required: false
+          description: |
+            Filter by assignee. A user UUID, or the literal `none` for
+            unassigned tickets.
+          schema:
+            type: string
+            pattern: '^(none|[0-9a-fA-F]{8}-[0-9a-fA-F]{4}-[0-9a-fA-F]{4}-[0-9a-fA-F]{4}-[0-9a-fA-F]{12})$'
+        - name: q
+          in: query
+          required: false
+          description: Full-text match against title, description, and identifier.
+          schema:
+            type: string
+            minLength: 1
+            maxLength: 200
+        - name: limit
+          in: query
+          required: false
+          description: Page size.
+          schema:
+            type: integer
+            format: int32
+            minimum: 1
+            maximum: 100
+            default: 25
+        - name: cursor
+          in: query
+          required: false
+          description: Opaque cursor from a previous response's `next_cursor`. Pass back verbatim.
+          schema:
+            type: string
+        - name: sort
+          in: query
+          required: false
+          description: Whitelisted sort. Prefix `-` for descending.
+          schema:
+            type: string
+            default: '-created'
+            enum:
+              - created
+              - -created
+              - updated
+              - -updated
+              - priority
+              - -priority
+              - due_date
+              - -due_date
+      responses:
+        '200':
+          description: |
+            A page of tickets. `next_cursor` is present only when more pages
+            exist; absent/null means the end of the result set.
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/TicketList'
+        '400':
+          $ref: '#/components/responses/BadRequest'
+        '401':
+          $ref: '#/components/responses/Unauthorized'
+        '404':
+          $ref: '#/components/responses/NotFound'
+        '500':
+          $ref: '#/components/responses/InternalError'
+
+  /api/v1/projects/{projectId}/tickets/{identifier}:
+    parameters:
+      - $ref: '#/components/parameters/ProjectId'
+      - $ref: '#/components/parameters/TicketIdentifier'
+
+    get:
+      operationId: getTicket
+      tags: [Tickets]
+      summary: Fetch one ticket
+      description: |
+        Fetches a single ticket by its project-scoped identifier.
+      responses:
+        '200':
+          description: The ticket.
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Ticket'
+        '400':
+          $ref: '#/components/responses/BadRequest'
+        '401':
+          $ref: '#/components/responses/Unauthorized'
+        '404':
+          $ref: '#/components/responses/NotFound'
+        '500':
+          $ref: '#/components/responses/InternalError'
+
+    patch:
+      operationId: updateTicket
+      tags: [Tickets]
+      summary: Partially update a ticket
+      description: |
+        Updates only the fields present in the body. Absent fields are left
+        unchanged. To unassign a ticket set `clear_assignee: true` (not
+        `null` — see UpdateTicketRequest). An empty body is rejected with 400.
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/UpdateTicketRequest'
+            examples:
+              status:
+                summary: Move to in review
+                value:
+                  status: in_review
+              reassign:
+                summary: Change assignee and priority
+                value:
+                  assignee_id: 00000000-0000-0000-0000-000000000003
+                  priority: critical
+              unassign:
+                summary: Clear the assignee
+                value:
+                  clear_assignee: true
+      responses:
+        '200':
+          description: The updated ticket.
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Ticket'
+        '400':
+          $ref: '#/components/responses/BadRequest'
+        '401':
+          $ref: '#/components/responses/Unauthorized'
+        '403':
+          $ref: '#/components/responses/Forbidden'
+        '404':
+          $ref: '#/components/responses/NotFound'
+        '500':
+          $ref: '#/components/responses/InternalError'
+
+    delete:
+      operationId: deleteTicket
+      tags: [Tickets]
+      summary: Delete a ticket
+      description: |
+        Permanently deletes the ticket. The identifier's sequence number is
+        not reused (soft-delete/audit trail is a planned extension; the
+        contract shape will not change).
+      responses:
+        '204':
+          description: Deleted. No response body.
+        '400':
+          $ref: '#/components/responses/BadRequest'
+        '401':
+          $ref: '#/components/responses/Unauthorized'
+        '403':
+          $ref: '#/components/responses/Forbidden'
+        '404':
+          $ref: '#/components/responses/NotFound'
+        '500':
+          $ref: '#/components/responses/InternalError'
+
+# ─────────────────────────────────────────────────────────────────────────────
+components:
+  securitySchemes:
+    cookieAuth:
+      type: apiKey
+      in: cookie
+      name: kizen_session
+      description: |
+        Session cookie issued by the identity module (planned). Declared now
+        so the contract is stable when enforcement lands; until then the
+        documented 401/403 responses are reserved, not yet produced.
+
+  parameters:
+    ProjectId:
+      name: projectId
+      in: path
+      required: true
+      description: UUID of the project the tickets belong to.
+      schema:
+        type: string
+        format: uuid
+      example: 00000000-0000-0000-0000-000000000001
+    TicketIdentifier:
+      name: identifier
+      in: path
+      required: true
+      description: |
+        Project-scoped ticket key (`PROJECTKEY-number`), e.g. `NW-143`.
+        Always used together with `projectId`; the pair is unique.
+      schema:
+        type: string
+        pattern: '^[A-Z][A-Z0-9]*-[0-9]+$'
+      example: NW-143
+
+  responses:
+    BadRequest:
+      description: |
+        Malformed request or validation failure. Malformed JSON, unknown
+        fields, invalid enum values, bad UUIDs, and rule violations (e.g. an
+        empty PATCH) all land here. Field-level detail in `Problem.errors`.
+      content:
+        application/problem+json:
+          schema:
+            $ref: '#/components/schemas/Problem'
+          example:
+            type: https://kizen.dev/problems/validation
+            title: Bad Request
+            status: 400
+            detail: validation failed
+            instance: /api/v1/projects/00000000-0000-0000-0000-000000000001/tickets
+            errors:
+              title: must not be blank
+              priority: must be one of critical, high, medium, low
+    Unauthorized:
+      description: Not authenticated. The session cookie is missing or invalid.
+      content:
+        application/problem+json:
+          schema:
+            $ref: '#/components/schemas/Problem'
+          example:
+            type: https://kizen.dev/problems/unauthorized
+            title: Unauthorized
+            status: 401
+            detail: authentication required
+    Forbidden:
+      description: |
+        Authenticated but not permitted — e.g. not a member of the project's
+        organization, or lacking the required role.
+      content:
+        application/problem+json:
+          schema:
+            $ref: '#/components/schemas/Problem'
+          example:
+            type: https://kizen.dev/problems/forbidden
+            title: Forbidden
+            status: 403
+            detail: insufficient membership role
+    NotFound:
+      description: |
+        The referenced resource does not exist — or exists but is invisible
+        to the caller (deliberately indistinguishable to avoid leaking
+        existence). For ticket operations this is usually an unknown
+        projectId or identifier.
+      content:
+        application/problem+json:
+          schema:
+            $ref: '#/components/schemas/Problem'
+          example:
+            type: https://kizen.dev/problems/not-found
+            title: Not Found
+            status: 404
+            detail: project not found
+    InternalError:
+      description: |
+        Unexpected server failure. The response deliberately carries no
+        internal detail; correlate via the request id in server logs.
+      content:
+        application/problem+json:
+          schema:
+            $ref: '#/components/schemas/Problem'
+          example:
+            type: about:blank
+            title: Internal Server Error
+            status: 500
+            detail: internal server error
+
+  schemas:
+    # ── Shared error format (RFC 7807) ──────────────────────────────────────
+    Problem:
+      type: object
+      description: |
+        RFC 7807 Problem Details. The error shape for every non-2xx response
+        in the API. `type` names the error class; `errors` (validation only)
+        maps field names to human-readable messages.
+      required: [title, status]
+      properties:
+        type:
+          type: string
+          format: uri-reference
+          default: 'about:blank'
+          description: Machine-readable error class URI.
+        title:
+          type: string
+          description: Short human summary of the status.
+        status:
+          type: integer
+          description: HTTP status code, repeated in the body.
+        detail:
+          type: string
+          description: Human-readable explanation of this occurrence.
+        instance:
+          type: string
+          format: uri-reference
+          description: Request path that triggered the problem.
+        errors:
+          type: object
+          additionalProperties:
+            type: string
+          description: Field-level validation errors; absent for non-validation failures.
+
+    # ── Cross-module summary objects (rule 3: IDs + summaries, no graphs) ────
+    UserSummary:
+      type: object
+      description: |
+        Cross-module reference to a user. The identity module owns the full
+        user resource; other modules embed only this summary.
+      required: [id, username, display_name]
+      properties:
+        id:
+          type: string
+          format: uuid
+        username:
+          type: string
+          example: jordan
+        display_name:
+          type: string
+          example: Jordan Diaz
+
+    ProjectSummary:
+      type: object
+      description: |
+        Cross-module reference to a project, including its `key` — the prefix
+        of every ticket identifier it owns.
+      required: [id, key, name]
+      properties:
+        id:
+          type: string
+          format: uuid
+        key:
+          type: string
+          pattern: '^[A-Z][A-Z0-9]{1,9}$'
+          description: Ticket identifier prefix, e.g. `NW` in `NW-143`.
+          example: NW
+        name:
+          type: string
+          example: Northwind Retail
+
+    # ── Enums (single definition, both generators emit typed enums) ─────────
+    TicketStatus:
+      type: string
+      description: |
+        Workflow status. Exactly the values defined in the database. There
+        is deliberately no `todo`. A future per-project workflow table will
+        extend this via a workflow endpoint — the values below are the v1
+        fixed set.
+      enum:
+        - backlog
+        - in_progress
+        - in_review
+        - done
+
+    TicketPriority:
+      type: string
+      description: Ticket priority. Sort order for `sort=priority` is critical > high > medium > low.
+      enum:
+        - critical
+        - high
+        - medium
+        - low
+
+    # ── Core resource ────────────────────────────────────────────────────────
+    Ticket:
+      type: object
+      description: |
+        A ticket (issue) in a project. `identifier` and `number` are
+        server-assigned and immutable. `reporter` is the session user at
+        creation time.
+      required:
+        - id
+        - number
+        - identifier
+        - project
+        - title
+        - description
+        - status
+        - priority
+        - reporter
+        - created_at
+        - updated_at
+      properties:
+        id:
+          type: string
+          format: uuid
+          readOnly: true
+        number:
+          type: integer
+          format: int64
+          minimum: 1
+          readOnly: true
+          description: Per-project sequence number. The stable numeric sort key behind the identifier.
+        identifier:
+          type: string
+          pattern: '^[A-Z][A-Z0-9]*-[0-9]+$'
+          readOnly: true
+          description: 'Human-readable key: project key + number, e.g. `NW-143`. Server-assigned.'
+          example: NW-143
+        project:
+          allOf:
+            - $ref: '#/components/schemas/ProjectSummary'
+          readOnly: true
+        title:
+          type: string
+          minLength: 1
+          maxLength: 200
+        description:
+          type: string
+          maxLength: 10000
+        status:
+          $ref: '#/components/schemas/TicketStatus'
+        priority:
+          $ref: '#/components/schemas/TicketPriority'
+        reporter:
+          allOf:
+            - $ref: '#/components/schemas/UserSummary'
+          readOnly: true
+        assignee:
+          allOf:
+            - $ref: '#/components/schemas/UserSummary'
+          nullable: true
+          description: Assigned user, or null when unassigned.
+        due_date:
+          type: string
+          format: date-time
+          nullable: true
+        created_at:
+          type: string
+          format: date-time
+          readOnly: true
+        updated_at:
+          type: string
+          format: date-time
+          readOnly: true
+
+    # ── Request payloads ─────────────────────────────────────────────────────
+    CreateTicketRequest:
+      type: object
+      description: |
+        Payload for createTicket. Deliberately has no `identifier` field —
+        the server allocates it atomically per project (analysis §4.5), so
+        two clients can never collide on a key. Unknown extra fields are
+        rejected by the server's strict decoder.
+      required: [title, description, priority]
+      properties:
+        title:
+          type: string
+          minLength: 1
+          maxLength: 200
+          example: Fix invoice PDF export losing line-item tax breakdown
+        description:
+          type: string
+          maxLength: 10000
+          description: Acceptance criteria, steps to reproduce, context. May be empty.
+        priority:
+          $ref: '#/components/schemas/TicketPriority'
+        assignee_id:
+          type: string
+          format: uuid
+          description: Optional. Omit to create unassigned.
+        due_date:
+          type: string
+          format: date-time
+          description: Optional due date.
+
+    UpdateTicketRequest:
+      type: object
+      description: |
+        Partial update: only present fields change. Absent fields keep their
+        values. `clear_assignee` exists because JSON `null` cannot distinguish
+        "clear the assignee" from "don't touch the assignee" in a partial
+        body. At least one field must be present.
+      minProperties: 1
+      properties:
+        title:
+          type: string
+          minLength: 1
+          maxLength: 200
+        description:
+          type: string
+          maxLength: 10000
+        status:
+          $ref: '#/components/schemas/TicketStatus'
+        priority:
+          $ref: '#/components/schemas/TicketPriority'
+        assignee_id:
+          type: string
+          format: uuid
+          description: Assign to this user. Takes precedence over clear_assignee if both are sent (that combination is a client bug).
+        clear_assignee:
+          type: boolean
+          description: Set true to unassign the ticket.
+        due_date:
+          type: string
+          format: date-time
+
+    # ── List envelope ─────────────────────────────────────────────────────────
+    TicketList:
+      type: object
+      description: One page of tickets. `next_cursor` is absent or null at the end of the result set.
+      required: [items]
+      properties:
+        items:
+          type: array
+          items:
+            $ref: '#/components/schemas/Ticket'
+        next_cursor:
+          type: string
+          nullable: true
+          description: Opaque continuation cursor. Pass back as the `cursor` query parameter, verbatim; never parse or construct it.
