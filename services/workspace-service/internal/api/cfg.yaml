@@ -12,7 +12,7 @@
 package: gen
 
 # Relative to this config file's directory.
-output: gen/gen.go
+output: gen.go
 
 generate:
   models: true        # request/response structs + enums (Ticket, Problem, ...)

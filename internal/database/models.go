@@ -55,69 +55,109 @@ func (ns NullPriority) Value() (driver.Value, error) {
 	return string(ns.Priority), nil
 }
 
-type Status string
+type TicketStatus string
 
 const (
-	StatusBacklog    Status = "backlog"
-	StatusInProgress Status = "in_progress"
-	StatusInReview   Status = "in_review"
-	StatusDone       Status = "done"
+	TicketStatusBacklog    TicketStatus = "backlog"
+	TicketStatusInProgress TicketStatus = "in_progress"
+	TicketStatusInReview   TicketStatus = "in_review"
+	TicketStatusDone       TicketStatus = "done"
 )
 
-func (e *Status) Scan(src interface{}) error {
+func (e *TicketStatus) Scan(src interface{}) error {
 	switch s := src.(type) {
 	case []byte:
-		*e = Status(s)
+		*e = TicketStatus(s)
 	case string:
-		*e = Status(s)
+		*e = TicketStatus(s)
 	default:
-		return fmt.Errorf("unsupported scan type for Status: %T", src)
+		return fmt.Errorf("unsupported scan type for TicketStatus: %T", src)
 	}
 	return nil
 }
 
-type NullStatus struct {
-	Status Status `json:"status"`
-	Valid  bool   `json:"valid"` // Valid is true if Status is not NULL
+type NullTicketStatus struct {
+	TicketStatus TicketStatus `json:"ticket_status"`
+	Valid        bool         `json:"valid"` // Valid is true if TicketStatus is not NULL
 }
 
 // Scan implements the Scanner interface.
-func (ns *NullStatus) Scan(value interface{}) error {
+func (ns *NullTicketStatus) Scan(value interface{}) error {
 	if value == nil {
-		ns.Status, ns.Valid = "", false
+		ns.TicketStatus, ns.Valid = "", false
 		return nil
 	}
 	ns.Valid = true
-	return ns.Status.Scan(value)
+	return ns.TicketStatus.Scan(value)
 }
 
 // Value implements the driver Valuer interface.
-func (ns NullStatus) Value() (driver.Value, error) {
+func (ns NullTicketStatus) Value() (driver.Value, error) {
 	if !ns.Valid {
 		return nil, nil
 	}
-	return string(ns.Status), nil
+	return string(ns.TicketStatus), nil
 }
 
-type Organizaton struct {
-	ID          pgtype.UUID        `json:"id"`
-	Name        string             `json:"name"`
-	Slug        string             `json:"slug"`
-	Description string             `json:"description"`
-	CreatedBy   pgtype.UUID        `json:"created_by"`
-	CreatedAt   pgtype.Timestamptz `json:"created_at"`
-	Updatedat   pgtype.Timestamptz `json:"updatedat"`
+type TimeEntryStatus string
+
+const (
+	TimeEntryStatusPending TimeEntryStatus = "pending"
+	TimeEntryStatusCleared TimeEntryStatus = "cleared"
+)
+
+func (e *TimeEntryStatus) Scan(src interface{}) error {
+	switch s := src.(type) {
+	case []byte:
+		*e = TimeEntryStatus(s)
+	case string:
+		*e = TimeEntryStatus(s)
+	default:
+		return fmt.Errorf("unsupported scan type for TimeEntryStatus: %T", src)
+	}
+	return nil
+}
+
+type NullTimeEntryStatus struct {
+	TimeEntryStatus TimeEntryStatus `json:"time_entry_status"`
+	Valid           bool            `json:"valid"` // Valid is true if TimeEntryStatus is not NULL
+}
+
+// Scan implements the Scanner interface.
+func (ns *NullTimeEntryStatus) Scan(value interface{}) error {
+	if value == nil {
+		ns.TimeEntryStatus, ns.Valid = "", false
+		return nil
+	}
+	ns.Valid = true
+	return ns.TimeEntryStatus.Scan(value)
+}
+
+// Value implements the driver Valuer interface.
+func (ns NullTimeEntryStatus) Value() (driver.Value, error) {
+	if !ns.Valid {
+		return nil, nil
+	}
+	return string(ns.TimeEntryStatus), nil
 }
 
 type Project struct {
-	ID             pgtype.UUID        `json:"id"`
-	OrganizationID pgtype.UUID        `json:"organization_id"`
-	Name           string             `json:"name"`
-	Description    string             `json:"description"`
-	CreatedBy      pgtype.UUID        `json:"created_by"`
-	Archived       bool               `json:"archived"`
-	CreatedAt      pgtype.Timestamptz `json:"created_at"`
-	UpdatedAt      pgtype.Timestamptz `json:"updated_at"`
+	ID                 pgtype.UUID        `json:"id"`
+	WorkspaceID        pgtype.UUID        `json:"workspace_id"`
+	Name               string             `json:"name"`
+	Description        string             `json:"description"`
+	HourlyRateOverride *int32             `json:"hourly_rate_override"`
+	Archived           bool               `json:"archived"`
+	TicketCounter      int32              `json:"ticket_counter"`
+	CreatedAt          pgtype.Timestamptz `json:"created_at"`
+	UpdatedAt          pgtype.Timestamptz `json:"updated_at"`
+}
+
+type Settlement struct {
+	ID          pgtype.UUID        `json:"id"`
+	WorkspaceID pgtype.UUID        `json:"workspace_id"`
+	TotalAmount int32              `json:"total_amount"`
+	ClearedAt   pgtype.Timestamptz `json:"cleared_at"`
 }
 
 type Ticket struct {
@@ -126,20 +166,29 @@ type Ticket struct {
 	Identifier  string             `json:"identifier"`
 	Title       string             `json:"title"`
 	Description string             `json:"description"`
-	Status      Status             `json:"status"`
+	Status      TicketStatus       `json:"status"`
 	Priority    Priority           `json:"priority"`
-	CreatedBy   pgtype.UUID        `json:"created_by"`
-	Assignee    pgtype.UUID        `json:"assignee"`
-	DueDate     pgtype.Timestamptz `json:"due_date"`
+	Tags        []string           `json:"tags"`
 	CreatedAt   pgtype.Timestamptz `json:"created_at"`
 	UpdatedAt   pgtype.Timestamptz `json:"updated_at"`
 }
 
-type User struct {
-	ID           pgtype.UUID        `json:"id"`
-	Username     string             `json:"username"`
-	Email        string             `json:"email"`
-	PasswordHash string             `json:"password_hash"`
-	CreatedAt    pgtype.Timestamptz `json:"created_at"`
-	UpdatedAt    pgtype.Timestamptz `json:"updated_at"`
+type TimeEntry struct {
+	ID              pgtype.UUID        `json:"id"`
+	TicketID        pgtype.UUID        `json:"ticket_id"`
+	SettlementID    pgtype.UUID        `json:"settlement_id"`
+	DurationMinutes int32              `json:"duration_minutes"`
+	IsBillable      bool               `json:"is_billable"`
+	Status          TimeEntryStatus    `json:"status"`
+	CreatedAt       pgtype.Timestamptz `json:"created_at"`
+	UpdatedAt       pgtype.Timestamptz `json:"updated_at"`
+}
+
+type Workspace struct {
+	ID                pgtype.UUID        `json:"id"`
+	Name              string             `json:"name"`
+	DefaultHourlyRate int32              `json:"default_hourly_rate"`
+	Description       string             `json:"description"`
+	CreatedAt         pgtype.Timestamptz `json:"created_at"`
+	UpdatedAt         pgtype.Timestamptz `json:"updated_at"`
 }

@@ -13,21 +13,21 @@ import (
 
 const createTicket = `-- name: CreateTicket :one
 INSERT INTO tickets (
-    project_id, identifier, title, description, status, priority, created_by
+    project_id, identifier, title, description, status, priority, tags
 ) VALUES (
 $1, $2, $3, $4, $5, $6, $7
 )
-RETURNING id, project_id, identifier, title, description, status, priority, created_by, assignee, due_date, created_at, updated_at
+RETURNING id, project_id, identifier, title, description, status, priority, tags, created_at, updated_at
 `
 
 type CreateTicketParams struct {
-	ProjectID   pgtype.UUID `json:"project_id"`
-	Identifier  string      `json:"identifier"`
-	Title       string      `json:"title"`
-	Description string      `json:"description"`
-	Status      Status      `json:"status"`
-	Priority    Priority    `json:"priority"`
-	CreatedBy   pgtype.UUID `json:"created_by"`
+	ProjectID   pgtype.UUID  `json:"project_id"`
+	Identifier  string       `json:"identifier"`
+	Title       string       `json:"title"`
+	Description string       `json:"description"`
+	Status      TicketStatus `json:"status"`
+	Priority    Priority     `json:"priority"`
+	Tags        []string     `json:"tags"`
 }
 
 func (q *Queries) CreateTicket(ctx context.Context, arg CreateTicketParams) (Ticket, error) {
@@ -38,7 +38,7 @@ func (q *Queries) CreateTicket(ctx context.Context, arg CreateTicketParams) (Tic
 		arg.Description,
 		arg.Status,
 		arg.Priority,
-		arg.CreatedBy,
+		arg.Tags,
 	)
 	var i Ticket
 	err := row.Scan(
@@ -49,33 +49,15 @@ func (q *Queries) CreateTicket(ctx context.Context, arg CreateTicketParams) (Tic
 		&i.Description,
 		&i.Status,
 		&i.Priority,
-		&i.CreatedBy,
-		&i.Assignee,
-		&i.DueDate,
+		&i.Tags,
 		&i.CreatedAt,
 		&i.UpdatedAt,
 	)
 	return i, err
 }
 
-const delete = `-- name: Delete :exec
-DELETE FROM tickets
-WHERE project_id = $1
-AND identifier = $2
-`
-
-type DeleteParams struct {
-	ProjectID  pgtype.UUID `json:"project_id"`
-	Identifier string      `json:"identifier"`
-}
-
-func (q *Queries) Delete(ctx context.Context, arg DeleteParams) error {
-	_, err := q.db.Exec(ctx, delete, arg.ProjectID, arg.Identifier)
-	return err
-}
-
 const getTicket = `-- name: GetTicket :one
-SELECT id, project_id, identifier, title, description, status, priority, created_by, assignee, due_date, created_at, updated_at FROM tickets
+SELECT id, project_id, identifier, title, description, status, priority, tags, created_at, updated_at FROM tickets
 WHERE project_id = $1
 AND identifier = $2
 `
@@ -96,11 +78,46 @@ func (q *Queries) GetTicket(ctx context.Context, arg GetTicketParams) (Ticket, e
 		&i.Description,
 		&i.Status,
 		&i.Priority,
-		&i.CreatedBy,
-		&i.Assignee,
-		&i.DueDate,
+		&i.Tags,
 		&i.CreatedAt,
 		&i.UpdatedAt,
 	)
 	return i, err
+}
+
+const listTicketsByProject = `-- name: ListTicketsByProject :many
+SELECT id, project_id, identifier, title, description, status, priority, tags, created_at, updated_at FROM tickets
+WHERE project_id = $1
+ORDER BY created_at DESC
+`
+
+func (q *Queries) ListTicketsByProject(ctx context.Context, projectID pgtype.UUID) ([]Ticket, error) {
+	rows, err := q.db.Query(ctx, listTicketsByProject, projectID)
+	if err != nil {
+		return nil, err
+	}
+	defer rows.Close()
+	var items []Ticket
+	for rows.Next() {
+		var i Ticket
+		if err := rows.Scan(
+			&i.ID,
+			&i.ProjectID,
+			&i.Identifier,
+			&i.Title,
+			&i.Description,
+			&i.Status,
+			&i.Priority,
+			&i.Tags,
+			&i.CreatedAt,
+			&i.UpdatedAt,
+		); err != nil {
+			return nil, err
+		}
+		items = append(items, i)
+	}
+	if err := rows.Err(); err != nil {
+		return nil, err
+	}
+	return items, nil
 }
