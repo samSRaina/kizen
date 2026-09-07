@@ -7,13 +7,17 @@ import (
 )
 
 type Ticket struct {
-	ID         uuid.UUID
-	ProjectID  uuid.UUID
+	ID        uuid.UUID
+	ProjectID uuid.UUID
+
 	Identifier string
 
 	Title       string
 	Description string
 
+	// Position float64
+
+	// Type TicketType
 	Status   TicketStatus
 	Priority TicketPriority
 
@@ -24,8 +28,20 @@ type Ticket struct {
 
 	CreatedAt time.Time
 	UpdatedAt time.Time
+	// DeleteAt : soft deletes
+	// DeletedAt *time.Time
 }
 
+// type TicketType string
+//
+// const (
+//
+//	TicketTypeTask  TicketType = "task"
+//	TicketTypeBug   TicketType = "bug"
+//	TicketTypeStory TicketType = "story"
+//	TicketTypeEpic  TicketType = "epic"
+//
+// )
 type TicketPriority string
 
 const (

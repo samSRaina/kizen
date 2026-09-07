@@ -2,22 +2,40 @@ package handler
 
 import (
 	"context"
-	"encoding/json"
 	"errors"
+	"fmt"
 	"log/slog"
 	"net/http"
 
-	"github.com/go-chi/chi/v5"
 	"github.com/google/uuid"
+	gen "github.com/samSRaina/kizen/services/ticket-service/internal/api/gen"
 	"github.com/samSRaina/kizen/services/ticket-service/internal/domain"
 )
 
+// ─────────────────────────────────────────────────────────────────────────────
+// HTTP handlers implementing the generated ServerInterface.
+//
+// The contract (api/openapi.yaml) generates:
+//   - ServerInterface — the exact method set handlers must implement
+//   - request bodies  — gen.CreateTicketRequest etc.
+//   - Problem         — the error shape (see problem.go)
+//
+// Handlers translate: HTTP ⇄ generated contract types ⇄ domain ⇄ service.
+// Every error response goes through respondError (problem.go) — one
+// authority, problem+json, correct status, no leaked internals.
+// ─────────────────────────────────────────────────────────────────────────────
+
+// TicketService is the transport-facing port the handler depends on — only
+// the operations the Tickets contract slice needs, nothing more.
 type TicketService interface {
 	Create(ctx context.Context, ticket *domain.Ticket) (*domain.Ticket, error)
-	GetByID(ctx context.Context, project_id uuid.UUID, identifier string) (*domain.Ticket, error)
+	GetByID(ctx context.Context, projectID uuid.UUID, identifier string) (*domain.Ticket, error)
 	Delete(ctx context.Context, projectID uuid.UUID, identifier string) error
 }
 
+// TicketHandler implements gen.ServerInterface. Each method below has the
+// exact signature the generated wrapper calls; adding an operation to the
+// spec + regenerating makes the compiler demand the new method here.
 type TicketHandler struct {
 	service TicketService
 	logger  *slog.Logger
@@ -30,139 +48,84 @@ func NewTicketHandler(service TicketService, logger *slog.Logger) *TicketHandler
 	}
 }
 
-type createTicketRequest struct {
-	ProjectID   uuid.UUID             `json:"project_id"`
-	Identifier  string                `json:"identifier"`
-	Title       string                `json:"title"`
-	Description string                `json:"description"`
-	Priority    domain.TicketPriority `json:"priority"`
-	CreatedBy   uuid.UUID             `json:"created_by"`
+// CreateTicket handles POST /api/v1/projects/{projectId}/tickets.
+// The contract says: no identifier on the wire (server-assigned) and the
+// reporter comes from the session, never the body.
+func (h *TicketHandler) CreateTicket(w http.ResponseWriter, r *http.Request, projectId gen.ProjectId) {
+	var req gen.CreateTicketRequest
+	if err := decodeJSON(r, &req); err != nil {
+		// Decode failures are client errors: malformed JSON, unknown
+		// fields (e.g. a smuggled "identifier" — the spec's strict
+		// decoder rule), wrong types, body too large.
+		respondError(h.logger, w, r, err)
+		return
+	}
+
+	// Contract body → domain. The reporter is the session user; until the
+	// identity module lands there is no session, so a deterministic
+	// system UUID stands in (created_by's FK to users is deliberately
+	// commented out in the schema until identity exists).
+	t := &domain.Ticket{
+		ProjectID:   uuid.UUID(projectId),
+		Title:       req.Title,
+		Description: req.Description,
+		Status:      domain.StatusBacklog,
+		Priority:    domain.TicketPriority(req.Priority),
+		CreatedBy:   systemActorID,
+	}
+
+	created, err := h.service.Create(r.Context(), t)
+	if err != nil {
+		respondError(h.logger, w, r, err)
+		return
+	}
+
+	respondJSON(w, http.StatusCreated, newTicketResponse(created))
 }
 
-func (h *TicketHandler) Create(w http.ResponseWriter, r *http.Request) {
-	const op = "ticket.handler.Create"
-	var ticket createTicketRequest
-
-	if err := json.NewDecoder(r.Body).Decode(&ticket); err != nil {
-		writeJSONError(w, http.StatusBadRequest, "failed to parse json data")
-		return
-	}
-
-	createdTicket, err := h.service.Create(
-		r.Context(),
-		&domain.Ticket{
-			ProjectID:   ticket.ProjectID,
-			Identifier:  ticket.Identifier,
-			Title:       ticket.Title,
-			Description: ticket.Description,
-			Status:      domain.StatusBacklog,
-			Priority:    ticket.Priority,
-			CreatedBy:   ticket.CreatedBy,
-		},
-	)
-
+// GetTicket handles GET /api/v1/projects/{projectId}/tickets/{identifier}.
+func (h *TicketHandler) GetTicket(w http.ResponseWriter, r *http.Request, projectId gen.ProjectId, identifier gen.TicketIdentifier) {
+	t, err := h.service.GetByID(r.Context(), uuid.UUID(projectId), identifier)
 	if err != nil {
-		switch {
-		case errors.Is(err, domain.ErrInvalidTicket):
-			h.logger.Warn("invalid ticket", "error", err)
-			writeJSONError(w, http.StatusBadRequest, "invalid request")
-
-		case errors.Is(err, domain.ErrTicketExists):
-			h.logger.Warn(
-				"ticket already exists",
-				"error", err,
-				"project_id", ticket.ProjectID,
-				"identifier", ticket.Identifier,
-			)
-			writeJSONError(w, http.StatusConflict, "ticket already exists")
-
-		default:
-			h.logger.Error("failed to create ticket", "error", err)
-			writeJSONError(w, http.StatusInternalServerError, "internal server error")
-		}
-
+		respondError(h.logger, w, r, err)
 		return
 	}
 
-	w.Header().Set("Content-Type", "application/json")
-	w.WriteHeader(http.StatusCreated)
-
-	if err := json.NewEncoder(w).Encode(createdTicket); err != nil {
-		h.logger.Error("failed to encode ticket response", "error", err)
-	}
-
+	respondJSON(w, http.StatusOK, newTicketResponse(t))
 }
 
-func (h *TicketHandler) Get(w http.ResponseWriter, r *http.Request) {
-	const op = "ticket.handler.Get"
-
-	pID, err := uuid.Parse(chi.URLParam(r, "project_id"))
-	if err != nil {
-		writeJSONError(w, http.StatusBadRequest, "invalid project id")
-	}
-
-	id := chi.URLParam(r, "identifier")
-	if id == "" {
-		writeJSONError(w, http.StatusBadRequest, "invalid ticket identifier")
-	}
-
-	t, err := h.service.GetByID(r.Context(), pID, id)
-	if err != nil {
-		switch {
-		case errors.Is(err, domain.ErrTicketNotFound):
-			h.logger.Warn("ticket not found", "error", err)
-			writeJSONError(w, http.StatusNotFound, "ticket not found")
-
-		default:
-			h.logger.Error("failed to get ticket", "error", err)
-			writeJSONError(w, http.StatusInternalServerError, "internal server error")
-		}
-
+// DeleteTicket handles DELETE /api/v1/projects/{projectId}/tickets/{identifier}.
+func (h *TicketHandler) DeleteTicket(w http.ResponseWriter, r *http.Request, projectId gen.ProjectId, identifier gen.TicketIdentifier) {
+	if err := h.service.Delete(r.Context(), uuid.UUID(projectId), identifier); err != nil {
+		respondError(h.logger, w, r, err)
 		return
 	}
 
-	w.Header().Set("Content-Type", "application/json")
-	w.WriteHeader(http.StatusOK) //200 OK FOR A GET REQUEST INSTEAD OF StatusCreated.
-
-	if err := json.NewEncoder(w).Encode(t); err != nil {
-		h.logger.Error("failed to encode ticket response", "error", err)
-	}
-
-}
-
-func (h *TicketHandler) Delete(w http.ResponseWriter, r *http.Request) {
-	const op = "ticket.handler.Delete"
-
-	pID, err := uuid.Parse(chi.URLParam(r, "project_id"))
-	if err != nil {
-		writeJSONError(w, http.StatusBadRequest, "invalid project id")
-	}
-
-	id := chi.URLParam(r, "identifier")
-	if id == "" {
-		writeJSONError(w, http.StatusBadRequest, "invalid ticket identifier")
-	}
-
-	err = h.service.Delete(r.Context(), pID, id)
-	if err != nil {
-		switch {
-		case errors.Is(err, domain.ErrTicketNotFound):
-			h.logger.Warn("ticket not found", "error", err)
-			writeJSONError(w, http.StatusNotFound, "ticket not found")
-
-		default:
-			h.logger.Error("failed to delete ticket", "error", err)
-			writeJSONError(w, http.StatusInternalServerError, "internal server error")
-		}
-		return
-	}
-
-	//no need for writing header, because no body is being returned
-	//w.Header().Set("Content-Type", "application/json")
 	w.WriteHeader(http.StatusNoContent)
-
-	// if err := json.NewEncoder(w).Encode(w); err != nil {
-	// 	h.logger.Error("failed to encode ticket response", "error", err)
-	// }
-
 }
+
+// ListTickets and UpdateTicket are declared in the contract but not yet
+// built in the service/repo layers. They answer 501 problem+json — the
+// honest "in the contract, not yet in the code" status — until their
+// queries and service methods exist. When they do, these handlers shrink to
+// the same decode→call→respond shape as the rest.
+func (h *TicketHandler) ListTickets(w http.ResponseWriter, r *http.Request, projectId gen.ProjectId, params gen.ListTicketsParams) {
+	respondError(h.logger, w, r, errNotImplemented("ListTickets"))
+}
+
+func (h *TicketHandler) UpdateTicket(w http.ResponseWriter, r *http.Request, projectId gen.ProjectId, identifier gen.TicketIdentifier) {
+	respondError(h.logger, w, r, errNotImplemented("UpdateTicket"))
+}
+
+// errNotImplemented builds the 501 problem error. Distinct from 500: a
+// client can rely on "designed, not built" vs "something broke".
+func errNotImplemented(op string) error {
+	return fmt.Errorf("%s: %w", op, errNotImplementedSentinel)
+}
+
+var errNotImplementedSentinel = errors.New("not implemented")
+
+// systemActorID is the interim reporter for created_by until the identity
+// module provides real sessions. Deterministic (not random) so rows are
+// traceable to the pre-identity era in the DB.
+var systemActorID = uuid.MustParse("00000000-0000-0000-0000-00000000f00d")

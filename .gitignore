@@ -8,3 +8,8 @@ build/
 services/ticket-service/test_cases
 web.legacy/
 services/ticket-service/internal/service/service_test.legacy
+
+# GO SANDBOX CACHES (local-only build caches)
+.gocache/
+.gomodcache/
+.gopath/

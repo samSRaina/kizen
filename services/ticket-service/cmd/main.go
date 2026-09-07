@@ -8,6 +8,7 @@ import (
 	"os"
 
 	"github.com/go-chi/chi/v5"
+	gen "github.com/samSRaina/kizen/services/ticket-service/internal/api/gen"
 	"github.com/samSRaina/kizen/services/ticket-service/internal/config"
 	"github.com/samSRaina/kizen/services/ticket-service/internal/handler"
 	"github.com/samSRaina/kizen/services/ticket-service/internal/infrastructure/database"
@@ -38,13 +39,17 @@ func main() {
 
 	ticketHandler := handler.NewTicketHandler(serv, logger)
 
+	// Routes come from the contract now: the generated wrapper registers
+	// every Tickets operation with param binding, and BindErrorHandler
+	// turns binding failures (bad UUID, unknown query values) into
+	// problem+json — the same error format every other path produces.
 	router := chi.NewRouter()
-	router.Post("/api/tickets", ticketHandler.Create)
-	router.Get("/api/tickets/{id}", ticketHandler.Get)
-	router.Delete("/api/projects/{project_id}/tickets/{id}", ticketHandler.Delete)
+	srv := gen.HandlerWithOptions(ticketHandler, gen.ChiServerOptions{
+		BaseRouter:       router,
+		ErrorHandlerFunc: handler.BindErrorHandler,
+	})
 
 	log.Printf("ticket-service listening on :%s", cfg.ServerPort)
 
-	log.Fatal(http.ListenAndServe(":"+cfg.ServerPort, router))
-
+	log.Fatal(http.ListenAndServe(":"+cfg.ServerPort, srv))
 }

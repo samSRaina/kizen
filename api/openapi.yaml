@@ -6,7 +6,7 @@ openapi: 3.1.0
 # Rules of this contract:
 #   1. HAND-EDITED ONLY. Nothing in this file is generated. Server types
 #      (oapi-codegen) and client types (openapi-typescript) are GENERATED FROM
-#      this file — the arrow of truth always points here.
+#      this file.
 #   2. Module ownership (tags = modules, all sharing one Postgres today):
 #        Identity       → /api/v1/auth/*, /api/v1/me, /api/v1/users/*   (planned)
 #        Organizations  → /api/v1/organizations/*, projects CRUD        (planned)
@@ -344,15 +344,15 @@ paths:
 
 # ─────────────────────────────────────────────────────────────────────────────
 components:
-  securitySchemes:
-    cookieAuth:
-      type: apiKey
-      in: cookie
-      name: kizen_session
-      description: |
-        Session cookie issued by the identity module (planned). Declared now
-        so the contract is stable when enforcement lands; until then the
-        documented 401/403 responses are reserved, not yet produced.
+  # securitySchemes:
+  #   cookieAuth:
+  #     type: apiKey
+  #     in: cookie
+  #     name: kizen_session
+  #     description: |
+  #       Session cookie issued by the identity module (planned). Declared now
+  #       so the contract is stable when enforcement lands; until then the
+  #       documented 401/403 responses are reserved, not yet produced.
 
   parameters:
     ProjectId:
