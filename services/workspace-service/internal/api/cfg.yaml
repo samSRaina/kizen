@@ -1,0 +1,26 @@
+# oapi-codegen config for the workspaces module.
+#
+# api/openapi.yaml is the single source of truth for every
+# service. Each service generates ONLY the operations it owns, selected by
+# tag — that is how multiple services share one contract file without
+# inheriting each other's surface:
+#
+#   ticket-service  → include-tags: [Tickets]        (this file)
+#   identity        → include-tags: [Identity]       (when it exists)
+#
+# Regenerate: go generate ./... (from repo root)
+package: gen
+
+# Relative to this config file's directory.
+output: gen/gen.go
+
+generate:
+  models: true        # request/response structs + enums (Ticket, Problem, ...)
+  chi-server: true    # ServerInterface + HandlerFrom route registration for chi
+  embedded-spec: true # embed the spec itself in the binary (serves /openapi.json later)
+
+output-options:
+  include-tags:
+    - Workspaces
+  # Prune unreferenced schemas so embedded-spec stays minimal per service.
+  skip-prune: false
