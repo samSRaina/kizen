@@ -34,9 +34,9 @@ func (r *TicketRepository) Create(ctx context.Context, ticket *domain.Ticket) (*
 		Identifier:  ticket.Identifier,
 		Title:       ticket.Title,
 		Description: ticket.Description,
-		Status:      database.Status(ticket.Status),
+		Status:      database.TicketStatus(ticket.Status),
 		Priority:    database.Priority(ticket.Priority),
-		CreatedBy:   pgtype.UUID{Bytes: ticket.CreatedBy, Valid: true},
+		Tags:        ticket.Tags,
 	})
 	if err != nil {
 		var pgErr *pgconn.PgError
@@ -56,11 +56,8 @@ func (r *TicketRepository) Create(ctx context.Context, ticket *domain.Ticket) (*
 		Description: row.Description,
 		Status:      domain.TicketStatus(row.Status),
 		Priority:    domain.TicketPriority(row.Priority),
-		CreatedBy:   uuid.UUID(row.CreatedBy.Bytes),
-		// Assignee:    uuidPtr(row.Assignee),
-		// DueDate:     timePtr(row.DueDate),
-		CreatedAt: row.CreatedAt.Time,
-		UpdatedAt: row.UpdatedAt.Time,
+		CreatedAt:   row.CreatedAt.Time,
+		UpdatedAt:   row.UpdatedAt.Time,
 	}, nil
 }
 
@@ -88,7 +85,6 @@ func (r *TicketRepository) GetByID(ctx context.Context, projectID uuid.UUID, ide
 		Description: row.Description,
 		Status:      domain.TicketStatus(row.Status),
 		Priority:    domain.TicketPriority(row.Priority),
-		CreatedBy:   uuid.UUID(row.CreatedBy.Bytes),
 		// !! Havent added helpers for nullable postgresql values
 		// Assignee:    uuidPtr(row.Assignee),
 		// DueDate:     timePtr(row.DueDate),

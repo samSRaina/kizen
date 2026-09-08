@@ -18,7 +18,7 @@ generate:
   models: true        # request/response structs + enums (Ticket, Problem, ...)
   chi-server: true    # ServerInterface + HandlerFrom route registration for chi
   embedded-spec: true # embed the spec itself in the binary (serves /openapi.json later)
-
+  strict-server: true
 output-options:
   include-tags:
     - Workspaces

@@ -14,14 +14,9 @@ type Ticket struct {
 	Title       string
 	Description string
 
-	Status   TicketStatus
-	Priority TicketPriority
-
-	CreatedBy uuid.UUID
-	Assignee  *uuid.UUID
-
-	DueDate *time.Time
-
+	Status    TicketStatus
+	Priority  TicketPriority
+	Tags      []string
 	CreatedAt time.Time
 	UpdatedAt time.Time
 }
