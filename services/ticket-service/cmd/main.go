@@ -13,7 +13,7 @@ import (
 	"time"
 
 	"github.com/go-chi/chi/v5"
-	"github.com/samSRaina/kizen/services/ticket-service/internal/config"
+	"github.com/samSRaina/kizen/internal/config"
 	"github.com/samSRaina/kizen/services/ticket-service/internal/handler"
 	"github.com/samSRaina/kizen/services/ticket-service/internal/infrastructure/database"
 	"github.com/samSRaina/kizen/services/ticket-service/internal/infrastructure/repository"
@@ -34,13 +34,12 @@ func main() {
 }
 
 func run(logger *slog.Logger) error {
-	cfg, err := config.Load()
+	cfg, err := config.Load("TICKET_SERVICE")
 	if err != nil {
 		return fmt.Errorf("load config: %w", err)
 	}
 
 	ctx := context.Background()
-
 	//database
 	pool, err := database.NewPool(ctx, cfg.DatabaseURL)
 	if err != nil {

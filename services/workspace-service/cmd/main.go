@@ -12,8 +12,8 @@ import (
 	"syscall"
 	"time"
 
+	"github.com/samSRaina/kizen/internal/config"
 	"github.com/samSRaina/kizen/internal/database"
-	"github.com/samSRaina/kizen/services/workspace-service/internal/config"
 	"github.com/samSRaina/kizen/services/workspace-service/internal/postgres"
 	"github.com/samSRaina/kizen/services/workspace-service/internal/server"
 )
@@ -30,13 +30,12 @@ func main() {
 }
 
 func run(logger *slog.Logger) error {
-	cfg, err := config.Load()
+	cfg, err := config.Load("WORKSPACE_SERVICE")
 	if err != nil {
 		return fmt.Errorf("load config: %w", err)
 	}
 
 	ctx := context.Background()
-
 	pool, err := postgres.NewPool(ctx, cfg.DatabaseURL)
 	if err != nil {
 		return fmt.Errorf("create database pool: %w", err)
