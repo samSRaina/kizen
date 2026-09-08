@@ -65,14 +65,14 @@ func run(logger *slog.Logger) error {
 
 	// http-server
 	server := &http.Server{
-		Addr:    net.JoinHostPort("", cfg.ServerPort),
+		Addr:    net.JoinHostPort("", cfg.Port),
 		Handler: router,
 	}
 
 	//star server
 	serverErrors := make(chan error, 1)
 	go func() {
-		logger.Info("server starting", "addr", cfg.ServerPort)
+		logger.Info("server starting", "addr", cfg.Port)
 		if err := server.ListenAndServe(); err != nil && !errors.Is(err, http.ErrServerClosed) {
 			serverErrors <- err
 		}

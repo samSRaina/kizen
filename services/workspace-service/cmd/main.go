@@ -14,7 +14,7 @@ import (
 
 	"github.com/samSRaina/kizen/internal/config"
 	"github.com/samSRaina/kizen/internal/database"
-	"github.com/samSRaina/kizen/services/workspace-service/internal/postgres"
+	"github.com/samSRaina/kizen/internal/postgres"
 	"github.com/samSRaina/kizen/services/workspace-service/internal/server"
 )
 
@@ -30,18 +30,20 @@ func main() {
 }
 
 func run(logger *slog.Logger) error {
+	// Load env variables
 	cfg, err := config.Load("WORKSPACE_SERVICE")
 	if err != nil {
 		return fmt.Errorf("load config: %w", err)
 	}
 
+	//start database pool
 	ctx := context.Background()
-	pool, err := postgres.NewPool(ctx, cfg.DatabaseURL)
+	pool, err := postgres.Pool(ctx, cfg.DatabaseURL)
 	if err != nil {
 		return fmt.Errorf("create database pool: %w", err)
 	}
 	defer pool.Close()
-
+	// Ping database
 	if err := pool.Ping(ctx); err != nil {
 		return fmt.Errorf("ping database: %w", err)
 	}
