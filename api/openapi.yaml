@@ -30,6 +30,8 @@ paths:
             application/json:
               schema:
                 $ref: '#/components/schemas/Workspace'
+        '400':
+          $ref: '#/components/responses/BadRequest'
         '500':
           $ref: '#/components/responses/InternalError'
 
@@ -111,8 +113,7 @@ components:
             $ref: '#/components/schemas/ProblemDetail'
     Forbidden:
       description: |
-        Authenticated but not permitted — e.g. not a member of the project's
-        organization, or lacking the required role.
+        Authenticated but not permitted.
       content:
         application/problem+json:
           schema:
@@ -121,8 +122,7 @@ components:
       description: |
         The referenced resource does not exist — or exists but is invisible
         to the caller (deliberately indistinguishable to avoid leaking
-        existence). For ticket operations this is usually an unknown
-        projectId or identifier.
+        existence).
       content:
         application/problem+json:
           schema:

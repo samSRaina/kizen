@@ -9,10 +9,10 @@
 #   identity        → include-tags: [Identity]       (when it exists)
 #
 # Regenerate: go generate ./... (from repo root)
-package: gen
+package: api
 
 # Relative to this config file's directory.
-output: gen.go
+output: oapi.gen.go
 
 generate:
   models: true        # request/response structs + enums (Ticket, Problem, ...)
