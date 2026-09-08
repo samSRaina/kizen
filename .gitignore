@@ -1,6 +1,9 @@
 # ENVIRONMENT VARIABLES
 .env
 
+# GO BUILD CACHE (local sandbox)
+.gocache/
+
 # COMPILED GO APPLICATIONS
 build/
 

@@ -188,7 +188,7 @@ type Workspace struct {
 	ID                pgtype.UUID        `json:"id"`
 	Name              string             `json:"name"`
 	DefaultHourlyRate int32              `json:"default_hourly_rate"`
-	Description       string             `json:"description"`
+	Description       *string            `json:"description"`
 	CreatedAt         pgtype.Timestamptz `json:"created_at"`
 	UpdatedAt         pgtype.Timestamptz `json:"updated_at"`
 }

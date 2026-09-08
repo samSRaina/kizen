@@ -6,24 +6,24 @@ import (
 )
 
 type Config struct {
-	Server      string
+	Port        string
 	DatabaseURL string
 }
 
 func Load() (*Config, error) {
-	const service = "WORKSPACE_SERVICE_PORT"
+	const envPort = "WORKSPACE_SERVICE_PORT"
+
 	cfg := &Config{
-		Server:      os.Getenv(service),
+		Port:        os.Getenv(envPort),
 		DatabaseURL: os.Getenv("DATABASE_URL"),
 	}
 
 	var missing []string
+	if cfg.Port == "" {
+		missing = append(missing, envPort)
+	}
 	if cfg.DatabaseURL == "" {
 		missing = append(missing, "DATABASE_URL")
-	}
-
-	if cfg.Server == "" {
-		missing = append(missing, service)
 	}
 
 	if len(missing) > 0 {

@@ -34,6 +34,45 @@ paths:
           $ref: '#/components/responses/BadRequest'
         '500':
           $ref: '#/components/responses/InternalError'
+    get:
+      tags: [ Workspaces ]
+      summary: List workspaces
+      operationId: listWorkspaces
+      responses:
+        '200':
+          description: All workspaces, newest first.
+          content:
+            application/json:
+              schema:
+                type: array
+                items:
+                  $ref: '#/components/schemas/Workspace'
+        '500':
+          $ref: '#/components/responses/InternalError'
+
+  /workspaces/{id}:
+    get:
+      tags: [ Workspaces ]
+      summary: Get a workspace by id
+      operationId: getWorkspace
+      parameters:
+        - name: id
+          in: path
+          required: true
+          schema:
+            type: string
+            format: uuid
+      responses:
+        '200':
+          description: The workspace.
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Workspace'
+        '404':
+          $ref: '#/components/responses/NotFound'
+        '500':
+          $ref: '#/components/responses/InternalError'
 
 components:
   schemas:

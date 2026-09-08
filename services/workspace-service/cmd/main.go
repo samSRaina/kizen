@@ -12,18 +12,16 @@ import (
 	"syscall"
 	"time"
 
-	"github.com/go-chi/chi/v5"
-	"github.com/jackc/pgx/v5/pgxpool"
 	"github.com/samSRaina/kizen/internal/database"
-	gen "github.com/samSRaina/kizen/services/workspace-service/internal/api"
 	"github.com/samSRaina/kizen/services/workspace-service/internal/config"
-	"github.com/samSRaina/kizen/services/workspace-service/internal/service"
+	"github.com/samSRaina/kizen/services/workspace-service/internal/postgres"
+	"github.com/samSRaina/kizen/services/workspace-service/internal/server"
 )
 
 func main() {
-	logger := slog.NewJSONHandler(os.Stdout, &slog.HandlerOptions{
+	logger := slog.New(slog.NewJSONHandler(os.Stdout, &slog.HandlerOptions{
 		Level: slog.LevelInfo,
-	})
+	}))
 
 	if err := run(logger); err != nil {
 		logger.Error("application failed", "error", err)
@@ -31,15 +29,15 @@ func main() {
 	}
 }
 
-func run(logger *slog.JSONHandler) error {
+func run(logger *slog.Logger) error {
 	cfg, err := config.Load()
 	if err != nil {
-		return fmt.Errorf("Load config: %w", err)
+		return fmt.Errorf("load config: %w", err)
 	}
 
 	ctx := context.Background()
 
-	pool, err := NewPool(ctx, cfg.DatabaseURL)
+	pool, err := postgres.NewPool(ctx, cfg.DatabaseURL)
 	if err != nil {
 		return fmt.Errorf("create database pool: %w", err)
 	}
@@ -50,30 +48,25 @@ func run(logger *slog.JSONHandler) error {
 	}
 	logger.Info("database connection established")
 
-	queries := database.New(pool)
-	ssi := service.NewServer(queries)
-	strictHandler := gen.NewStrictHandler(ssi, nil)
+	handler := server.Router(logger, database.New(pool), pool.Ping)
 
-	router := chi.NewRouter()
-	router.Route("/api/v1", func(r chi.Router) {
-		gen.HandlerFromMux(strictHandler, r)
-	})
-
-	// http-server
-	server := &http.Server{
-		Addr:    net.JoinHostPort("", cfg.Server),
-		Handler: router,
+	srv := &http.Server{
+		Addr:         net.JoinHostPort("", cfg.Port),
+		Handler:      handler,
+		ReadTimeout:  5 * time.Second,
+		WriteTimeout: 10 * time.Second,
+		IdleTimeout:  30 * time.Second,
 	}
 
 	serverErrors := make(chan error, 1)
 	go func() {
-		logger.Info("server starting", "addr", cfg.Server)
-		if err := server.ListenAndServe(); err != nil && errors.Is(err, http.ErrServerClosed) {
+		logger.Info("server starting", "addr", srv.Addr)
+		// ErrServerClosed is the normal shutdown path, not a failure.
+		if err := srv.ListenAndServe(); err != nil && !errors.Is(err, http.ErrServerClosed) {
 			serverErrors <- err
 		}
 	}()
 
-	//waiting for server failure
 	shutdown := make(chan os.Signal, 1)
 	signal.Notify(shutdown, os.Interrupt, syscall.SIGTERM)
 	defer signal.Stop(shutdown)
@@ -86,21 +79,12 @@ func run(logger *slog.JSONHandler) error {
 		logger.Info("shutdown signal received", "signal", sig)
 	}
 
-	//graceful shutdown
-	shutdownCtx, cancel := context.WithTimeout(
-		context.Background(),
-		10*time.Second, //timeout to give server time to finish whatever it has been doing
-	)
+	shutdownCtx, cancel := context.WithTimeout(context.Background(), srv.WriteTimeout)
 	defer cancel()
 
-	if err := server.Shutdown(shutdownCtx); err != nil {
+	if err := srv.Shutdown(shutdownCtx); err != nil {
 		return err
 	}
 	logger.Info("server stopped")
 	return nil
-
-}
-
-func NewPool(ctx context.Context, databaseURL string) (*pgxpool.Pool, error) {
-	return pgxpool.New(ctx, databaseURL)
 }
