@@ -30,10 +30,6 @@ func validateTicket(ticket *domain.Ticket) error {
 		return fmt.Errorf("%s: project_id is required", op)
 	}
 
-	if ticket.CreatedBy == uuid.Nil {
-		return fmt.Errorf("%s: created_by is required", op)
-	}
-
 	if ticket.Identifier == "" {
 		return fmt.Errorf("%s: identifier is required", op)
 	}

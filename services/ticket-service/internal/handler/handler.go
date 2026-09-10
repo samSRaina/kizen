@@ -57,7 +57,6 @@ func (h *TicketHandler) Create(w http.ResponseWriter, r *http.Request) {
 			Description: ticket.Description,
 			Status:      domain.StatusBacklog,
 			Priority:    ticket.Priority,
-			CreatedBy:   ticket.CreatedBy,
 		},
 	)
 

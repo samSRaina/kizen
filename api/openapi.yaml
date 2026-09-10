@@ -34,45 +34,45 @@ paths:
           $ref: '#/components/responses/BadRequest'
         '500':
           $ref: '#/components/responses/InternalError'
-    get:
-      tags: [ Workspaces ]
-      summary: List workspaces
-      operationId: listWorkspaces
-      responses:
-        '200':
-          description: All workspaces, newest first.
-          content:
-            application/json:
-              schema:
-                type: array
-                items:
-                  $ref: '#/components/schemas/Workspace'
-        '500':
-          $ref: '#/components/responses/InternalError'
+  #   get:
+  #     tags: [ Workspaces ]
+  #     summary: List workspaces
+  #     operationId: listWorkspaces
+  #     responses:
+  #       '200':
+  #         description: All workspaces, newest first.
+  #         content:
+  #           application/json:
+  #             schema:
+  #               type: array
+  #               items:
+  #                 $ref: '#/components/schemas/Workspace'
+  #       '500':
+  #         $ref: '#/components/responses/InternalError'
 
-  /workspaces/{id}:
-    get:
-      tags: [ Workspaces ]
-      summary: Get a workspace by id
-      operationId: getWorkspace
-      parameters:
-        - name: id
-          in: path
-          required: true
-          schema:
-            type: string
-            format: uuid
-      responses:
-        '200':
-          description: The workspace.
-          content:
-            application/json:
-              schema:
-                $ref: '#/components/schemas/Workspace'
-        '404':
-          $ref: '#/components/responses/NotFound'
-        '500':
-          $ref: '#/components/responses/InternalError'
+  # /workspaces/{id}:
+  #   get:
+  #     tags: [ Workspaces ]
+  #     summary: Get a workspace by id
+  #     operationId: getWorkspace
+  #     parameters:
+  #       - name: id
+  #         in: path
+  #         required: true
+  #         schema:
+  #           type: string
+  #           format: uuid
+  #     responses:
+  #       '200':
+  #         description: The workspace.
+  #         content:
+  #           application/json:
+  #             schema:
+  #               $ref: '#/components/schemas/Workspace'
+  #       '404':
+  #         $ref: '#/components/responses/NotFound'
+  #       '500':
+  #         $ref: '#/components/responses/InternalError'
 
 components:
   schemas:
@@ -83,6 +83,8 @@ components:
         - id
         - name
         - default_hourly_rate
+        - created_at
+        - updated_at
       properties:
         id:
           type: string
@@ -91,7 +93,17 @@ components:
           type: string
         default_hourly_rate:
           type: integer
-          description: Baseline rate stored in rupee
+          description: baseline rate
+        description:
+          type: string
+          nullable: true
+        created_at:
+          type: string
+          format: date-time
+        updated_at:
+          type: string
+          format: date-time
+
     # --- Create/Update Payloads ---
     CreateWorkspaceRequest:
       type: object
@@ -99,8 +111,14 @@ components:
       properties:
         name:
           type: string
+          minLength: 1
         default_hourly_rate:
           type: integer
+          minimum: 0
+        description:
+          type: string
+          nullable: true
+
     # --- Error Payloads (RFC 9457) ---
     ProblemDetail:
       type: object
@@ -144,28 +162,28 @@ components:
         application/problem+json:
           schema:
             $ref: '#/components/schemas/ProblemDetail'
-    Unauthorized:
-      description: Not authenticated. The session cookie is missing or invalid.
-      content:
-        application/problem+json:
-          schema:
-            $ref: '#/components/schemas/ProblemDetail'
-    Forbidden:
-      description: |
-        Authenticated but not permitted.
-      content:
-        application/problem+json:
-          schema:
-            $ref: '#/components/schemas/ProblemDetail'
-    NotFound:
-      description: |
-        The referenced resource does not exist — or exists but is invisible
-        to the caller (deliberately indistinguishable to avoid leaking
-        existence).
-      content:
-        application/problem+json:
-          schema:
-            $ref: '#/components/schemas/ProblemDetail'
+    # Unauthorized:
+    #   description: Not authenticated. The session cookie is missing or invalid.
+    #   content:
+    #     application/problem+json:
+    #       schema:
+    #         $ref: '#/components/schemas/ProblemDetail'
+    # Forbidden:
+    #   description: |
+    #     Authenticated but not permitted.
+    #   content:
+    #     application/problem+json:
+    #       schema:
+    #         $ref: '#/components/schemas/ProblemDetail'
+    # NotFound:
+    #   description: |
+    #     The referenced resource does not exist — or exists but is invisible
+    #     to the caller (deliberately indistinguishable to avoid leaking
+    #     existence).
+    #   content:
+    #     application/problem+json:
+    #       schema:
+    #         $ref: '#/components/schemas/ProblemDetail'
     InternalError:
       description: |
         Unexpected server failure. The response deliberately carries no

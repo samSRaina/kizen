@@ -93,22 +93,22 @@ func (r *TicketRepository) GetByID(ctx context.Context, projectID uuid.UUID, ide
 	}, nil
 }
 
-func (r *TicketRepository) Delete(ctx context.Context, project_id uuid.UUID, identifier string) error {
-	err := r.q.Delete(ctx, database.DeleteParams{
-		ProjectID: pgtype.UUID{
-			Bytes: project_id,
-			Valid: true,
-		},
-		Identifier: identifier,
-	})
+// func (r *TicketRepository) Delete(ctx context.Context, project_id uuid.UUID, identifier string) error {
+// 	err := r.q.Delete(ctx, database.DeleteParams{
+// 		ProjectID: pgtype.UUID{
+// 			Bytes: project_id,
+// 			Valid: true,
+// 		},
+// 		Identifier: identifier,
+// 	})
 
-	if err != nil {
-		// !! add specific error code for UUID if applicable
-		if errors.Is(err, pgx.ErrNoRows) {
-			return domain.ErrTicketNotFound
-		}
-		return err
-	}
+// 	if err != nil {
+// 		// !! add specific error code for UUID if applicable
+// 		if errors.Is(err, pgx.ErrNoRows) {
+// 			return domain.ErrTicketNotFound
+// 		}
+// 		return err
+// 	}
 
-	return nil
-}
+// 	return nil
+// }
