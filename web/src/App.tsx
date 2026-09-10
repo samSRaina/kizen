@@ -1,38 +1,33 @@
-import { TicketsProvider } from './store/TicketsContext';
-import { useTickets } from './store/useTickets';
-import { Shell } from './components/layout/Shell';
-import { StatusRow } from './components/metrics/StatusRow';
-import { Toolbar } from './components/toolbar/Toolbar';
-import { Composer } from './components/composer/Composer';
-import { IssueList } from './components/board/IssueList';
-import { KanbanBoard } from './components/board/KanbanBoard';
+import { Toaster } from "@/components/ui/sonner";
+import { TooltipProvider } from "@/components/ui/tooltip";
+import NotFound from "@/pages/NotFound";
+import { Route, Switch } from "wouter";
+import ErrorBoundary from "./components/ErrorBoundary";
+import { ThemeProvider } from "./contexts/ThemeContext";
+import Home from "./pages/Home";
 
-function DashboardContent() {
-  const { viewMode } = useTickets();
-
+function Router() {
   return (
-    <div className="work-region">
-      {/* Header Band: Status metrics & Toolbar */}
-      <section className="header-band" data-brief-id="header-band">
-        <StatusRow />
-        <Toolbar />
-      </section>
-
-      {/* Main Work Surface */}
-      <main className="work-surface" data-app-region="work-surface">
-        <Composer />
-        {viewMode === 'list' ? <IssueList /> : <KanbanBoard />}
-      </main>
-    </div>
+    <Switch>
+      <Route path="/" component={Home} />
+      <Route path="/404" component={NotFound} />
+      {/* Final fallback route */}
+      <Route component={NotFound} />
+    </Switch>
   );
 }
 
-export default function App() {
+function App() {
   return (
-    <TicketsProvider>
-      <Shell>
-        <DashboardContent />
-      </Shell>
-    </TicketsProvider>
+    <ErrorBoundary>
+      <ThemeProvider defaultTheme="industrial" switchable={true}>
+        <TooltipProvider>
+          <Toaster />
+          <Router />
+        </TooltipProvider>
+      </ThemeProvider>
+    </ErrorBoundary>
   );
 }
+
+export default App;

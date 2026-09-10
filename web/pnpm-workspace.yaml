@@ -1,0 +1,5 @@
+allowBuilds:
+  '@tailwindcss/oxide': set this to true or false
+  esbuild: false
+minimumReleaseAgeExclude:
+  - '@redocly/openapi-core@1.34.20'
