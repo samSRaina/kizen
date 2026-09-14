@@ -23,11 +23,6 @@ func NewTicketRepository(pool *pgxpool.Pool) *TicketRepository {
 	}
 }
 
-// func (r *TicketRepository) CreateTicket(ctx context.Context, ticket *domain.Ticket) (*domain.Ticket, error) {
-// 	conn, err := pgx.Connect(ctx, "user")
-
-// }
-
 func (r *TicketRepository) Create(ctx context.Context, ticket *domain.Ticket) (*domain.Ticket, error) {
 	row, err := r.q.CreateTicket(ctx, database.CreateTicketParams{
 		ProjectID:   pgtype.UUID{Bytes: ticket.ProjectID, Valid: true},
@@ -70,7 +65,6 @@ func (r *TicketRepository) GetByID(ctx context.Context, projectID uuid.UUID, ide
 		Identifier: identifier,
 	})
 	if err != nil {
-		// !! add specific error code for UUID if applicable
 		if errors.Is(err, pgx.ErrNoRows) {
 			return nil, domain.ErrTicketNotFound
 		}
@@ -85,30 +79,11 @@ func (r *TicketRepository) GetByID(ctx context.Context, projectID uuid.UUID, ide
 		Description: row.Description,
 		Status:      domain.TicketStatus(row.Status),
 		Priority:    domain.TicketPriority(row.Priority),
-		// !! Havent added helpers for nullable postgresql values
-		// Assignee:    uuidPtr(row.Assignee),
-		// DueDate:     timePtr(row.DueDate),
-		CreatedAt: row.CreatedAt.Time,
-		UpdatedAt: row.UpdatedAt.Time,
+		CreatedAt:   row.CreatedAt.Time,
+		UpdatedAt:   row.UpdatedAt.Time,
 	}, nil
 }
 
-// func (r *TicketRepository) Delete(ctx context.Context, project_id uuid.UUID, identifier string) error {
-// 	err := r.q.Delete(ctx, database.DeleteParams{
-// 		ProjectID: pgtype.UUID{
-// 			Bytes: project_id,
-// 			Valid: true,
-// 		},
-// 		Identifier: identifier,
-// 	})
-
-// 	if err != nil {
-// 		// !! add specific error code for UUID if applicable
-// 		if errors.Is(err, pgx.ErrNoRows) {
-// 			return domain.ErrTicketNotFound
-// 		}
-// 		return err
-// 	}
-
-// 	return nil
-// }
+func (r *TicketRepository) Delete(ctx context.Context, project_id uuid.UUID, identifier string) error {
+	return errors.New("method Delete not fully implemented in database generator yet")
+}

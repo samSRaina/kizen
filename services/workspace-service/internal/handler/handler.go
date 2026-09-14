@@ -44,7 +44,7 @@ func (h *Handler) CreateWorkspace(ctx context.Context, request api.CreateWorkspa
 			}, nil
 
 		default:
-			return nil, fmt.Errorf("han")
+			return nil, fmt.Errorf("handler: %w", err)
 		}
 	}
 	return api.CreateWorkspace201JSONResponse(toAPIWorkspace(created)), nil
