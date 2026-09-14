@@ -1,11 +1,10 @@
 import React, { createContext, useContext, useEffect, useState } from "react";
 
-export type Theme = "industrial" | "slate";
+type Theme = "light" | "dark";
 
 interface ThemeContextType {
   theme: Theme;
-  setTheme: (theme: Theme) => void;
-  toggleTheme: () => void;
+  toggleTheme?: () => void;
   switchable: boolean;
 }
 
@@ -19,40 +18,38 @@ interface ThemeProviderProps {
 
 export function ThemeProvider({
   children,
-  defaultTheme = "industrial",
-  switchable = true,
+  defaultTheme = "light",
+  switchable = false,
 }: ThemeProviderProps) {
-  const [theme, setThemeState] = useState<Theme>(() => {
-    if (switchable && typeof window !== "undefined") {
-      const stored = localStorage.getItem("kizen_theme");
-      if (stored === "industrial" || stored === "slate") {
-        return stored;
-      }
+  const [theme, setTheme] = useState<Theme>(() => {
+    if (switchable) {
+      const stored = localStorage.getItem("theme");
+      return (stored as Theme) || defaultTheme;
     }
     return defaultTheme;
   });
 
   useEffect(() => {
     const root = document.documentElement;
-    root.classList.remove("theme-industrial", "theme-slate", "dark", "light");
-    root.classList.add(`theme-${theme}`, "dark");
-    root.setAttribute("data-theme", theme);
+    if (theme === "dark") {
+      root.classList.add("dark");
+    } else {
+      root.classList.remove("dark");
+    }
 
     if (switchable) {
-      localStorage.setItem("kizen_theme", theme);
+      localStorage.setItem("theme", theme);
     }
   }, [theme, switchable]);
 
-  const setTheme = (newTheme: Theme) => {
-    setThemeState(newTheme);
-  };
-
-  const toggleTheme = () => {
-    setThemeState((prev) => (prev === "industrial" ? "slate" : "industrial"));
-  };
+  const toggleTheme = switchable
+    ? () => {
+        setTheme(prev => (prev === "light" ? "dark" : "light"));
+      }
+    : undefined;
 
   return (
-    <ThemeContext.Provider value={{ theme, setTheme, toggleTheme, switchable }}>
+    <ThemeContext.Provider value={{ theme, toggleTheme, switchable }}>
       {children}
     </ThemeContext.Provider>
   );
