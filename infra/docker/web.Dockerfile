@@ -2,15 +2,18 @@ FROM node:22-alpine AS build
 
 WORKDIR /app
 
-COPY web/package*.json ./
+RUN corepack enable && corepack prepare pnpm@latest --activate
+
+COPY web/package.json web/pnpm-lock.yaml ./
+COPY web/patches ./patches
 
 #install dependencies
-RUN npm ci
+RUN pnpm install --frozen-lockfile
 
 #copy source code
 COPY web ./
 
-RUN npm run build
+RUN pnpm run build
 
 #serve static app
 FROM nginx:alpine

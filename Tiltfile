@@ -23,22 +23,13 @@ local_resource(
 docker_build(
   'kizen/ticket-service',
   '.',
-  # entrypoint=['/app/build/ticket-service'],
-
   dockerfile='./infra/docker/ticket-service.Dockerfile',
-
-  only=[
-    './build/ticket-service',
-    './shared',
-  ],
-
   live_update=[
     sync('./build', '/app/build'),
     #sync('./shared', '/app/shared'),
     restart_container()
   ],
 )
-
 
 # # # # # # # # # # # # # # # # # # # # ## # # # # # #
 # # # # # # # # INFRASTRUCTURE # # # # # # # # # # # #
