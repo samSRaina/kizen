@@ -8,23 +8,24 @@ package database
 import (
 	"context"
 
-	"github.com/jackc/pgx/v5/pgtype"
+	"github.com/google/uuid"
 )
 
 const createWorkspace = `-- name: CreateWorkspace :one
-INSERT INTO workspaces (name, default_hourly_rate)
-VALUES ($1, $2)
+INSERT INTO workspaces (name, default_hourly_rate, description)
+VALUES ($1, $2, $3)
 RETURNING id, name, default_hourly_rate, description, created_at, updated_at
 `
 
 type CreateWorkspaceParams struct {
-	Name              string `json:"name"`
-	DefaultHourlyRate int32  `json:"default_hourly_rate"`
+	Name              string  `json:"name"`
+	DefaultHourlyRate int32   `json:"default_hourly_rate"`
+	Description       *string `json:"description"`
 }
 
 // WORKSPACES --
 func (q *Queries) CreateWorkspace(ctx context.Context, arg CreateWorkspaceParams) (Workspace, error) {
-	row := q.db.QueryRow(ctx, createWorkspace, arg.Name, arg.DefaultHourlyRate)
+	row := q.db.QueryRow(ctx, createWorkspace, arg.Name, arg.DefaultHourlyRate, arg.Description)
 	var i Workspace
 	err := row.Scan(
 		&i.ID,
@@ -42,7 +43,7 @@ SELECT id, name, default_hourly_rate, description, created_at, updated_at FROM w
 WHERE id = $1
 `
 
-func (q *Queries) GetWorkspaceByID(ctx context.Context, id pgtype.UUID) (Workspace, error) {
+func (q *Queries) GetWorkspaceByID(ctx context.Context, id uuid.UUID) (Workspace, error) {
 	row := q.db.QueryRow(ctx, getWorkspaceByID, id)
 	var i Workspace
 	err := row.Scan(

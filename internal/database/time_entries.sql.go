@@ -8,6 +8,7 @@ package database
 import (
 	"context"
 
+	"github.com/google/uuid"
 	"github.com/jackc/pgx/v5/pgtype"
 )
 
@@ -18,8 +19,8 @@ WHERE id = ANY($1::UUID[])
 `
 
 type ClearPendingTimeEntriesParams struct {
-	Column1      []pgtype.UUID `json:"column_1"`
-	SettlementID pgtype.UUID   `json:"settlement_id"`
+	Column1      []uuid.UUID `json:"column_1"`
+	SettlementID pgtype.UUID `json:"settlement_id"`
 }
 
 func (q *Queries) ClearPendingTimeEntries(ctx context.Context, arg ClearPendingTimeEntriesParams) error {
@@ -34,9 +35,9 @@ RETURNING id, ticket_id, settlement_id, duration_minutes, is_billable, status, c
 `
 
 type CreateTimeEntryParams struct {
-	TicketID        pgtype.UUID `json:"ticket_id"`
-	DurationMinutes int32       `json:"duration_minutes"`
-	IsBillable      bool        `json:"is_billable"`
+	TicketID        uuid.UUID `json:"ticket_id"`
+	DurationMinutes int32     `json:"duration_minutes"`
+	IsBillable      bool      `json:"is_billable"`
 }
 
 // TIME-ENTRIES --
@@ -63,7 +64,7 @@ JOIN projects p ON t.project_id = p.id
 WHERE p.workspace_id = $1 AND te.status = 'PENDING'
 `
 
-func (q *Queries) ListPendingTimeEntriesByWorkspace(ctx context.Context, workspaceID pgtype.UUID) ([]TimeEntry, error) {
+func (q *Queries) ListPendingTimeEntriesByWorkspace(ctx context.Context, workspaceID uuid.UUID) ([]TimeEntry, error) {
 	rows, err := q.db.Query(ctx, listPendingTimeEntriesByWorkspace, workspaceID)
 	if err != nil {
 		return nil, err

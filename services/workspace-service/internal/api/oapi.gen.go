@@ -51,13 +51,14 @@ type ProblemDetail struct {
 
 // Workspace defines model for Workspace.
 type Workspace struct {
+	CreatedAt time.Time `json:"created_at"`
+
 	// DefaultHourlyRate baseline rate
 	DefaultHourlyRate int                `json:"default_hourly_rate"`
 	Description       *string            `json:"description,omitempty"`
 	Id                openapi_types.UUID `json:"id"`
 	Name              string             `json:"name"`
 	UpdatedAt         time.Time          `json:"updated_at"`
-	CreatedAt         time.Time          `json:"created_at"`
 }
 
 // BadRequest RFC 7807 Problem Details. The error shape for every non-2xx response

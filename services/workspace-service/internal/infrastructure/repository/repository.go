@@ -28,7 +28,7 @@ func (r *Repository) Create(ctx context.Context, in domain.CreateWorkspaceInput)
 		return nil, fmt.Errorf("create workspace: %w", err)
 	}
 	return &domain.Workspace{
-		ID:                row.ID.Bytes,
+		ID:                row.ID,
 		Name:              row.Name,
 		Description:       row.Description,
 		DefaultHourlyRate: int(row.DefaultHourlyRate),

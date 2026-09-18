@@ -8,7 +8,7 @@ package database
 import (
 	"context"
 
-	"github.com/jackc/pgx/v5/pgtype"
+	"github.com/google/uuid"
 )
 
 const createSettlement = `-- name: CreateSettlement :one
@@ -18,8 +18,8 @@ RETURNING id, workspace_id, total_amount, cleared_at
 `
 
 type CreateSettlementParams struct {
-	WorkspaceID pgtype.UUID `json:"workspace_id"`
-	TotalAmount int32       `json:"total_amount"`
+	WorkspaceID uuid.UUID `json:"workspace_id"`
+	TotalAmount int32     `json:"total_amount"`
 }
 
 // SETTLEMENTS --

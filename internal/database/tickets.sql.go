@@ -8,7 +8,7 @@ package database
 import (
 	"context"
 
-	"github.com/jackc/pgx/v5/pgtype"
+	"github.com/google/uuid"
 )
 
 const createTicket = `-- name: CreateTicket :one
@@ -21,7 +21,7 @@ RETURNING id, project_id, identifier, title, description, status, priority, tags
 `
 
 type CreateTicketParams struct {
-	ProjectID   pgtype.UUID  `json:"project_id"`
+	ProjectID   uuid.UUID    `json:"project_id"`
 	Identifier  string       `json:"identifier"`
 	Title       string       `json:"title"`
 	Description string       `json:"description"`
@@ -63,8 +63,8 @@ AND identifier = $2
 `
 
 type GetTicketParams struct {
-	ProjectID  pgtype.UUID `json:"project_id"`
-	Identifier string      `json:"identifier"`
+	ProjectID  uuid.UUID `json:"project_id"`
+	Identifier string    `json:"identifier"`
 }
 
 func (q *Queries) GetTicket(ctx context.Context, arg GetTicketParams) (Ticket, error) {
@@ -91,7 +91,7 @@ WHERE project_id = $1
 ORDER BY created_at DESC
 `
 
-func (q *Queries) ListTicketsByProject(ctx context.Context, projectID pgtype.UUID) ([]Ticket, error) {
+func (q *Queries) ListTicketsByProject(ctx context.Context, projectID uuid.UUID) ([]Ticket, error) {
 	rows, err := q.db.Query(ctx, listTicketsByProject, projectID)
 	if err != nil {
 		return nil, err

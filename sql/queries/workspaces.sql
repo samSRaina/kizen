@@ -1,7 +1,7 @@
 -- WORKSPACES --
 -- name: CreateWorkspace :one
-INSERT INTO workspaces (name, default_hourly_rate)
-VALUES ($1, $2)
+INSERT INTO workspaces (name, default_hourly_rate, description)
+VALUES ($1, $2, $3)
 RETURNING *;
 
 -- name: ListWorkspaces :many

@@ -8,6 +8,7 @@ import (
 	"database/sql/driver"
 	"fmt"
 
+	"github.com/google/uuid"
 	"github.com/jackc/pgx/v5/pgtype"
 )
 
@@ -142,8 +143,8 @@ func (ns NullTimeEntryStatus) Value() (driver.Value, error) {
 }
 
 type Project struct {
-	ID                 pgtype.UUID        `json:"id"`
-	WorkspaceID        pgtype.UUID        `json:"workspace_id"`
+	ID                 uuid.UUID          `json:"id"`
+	WorkspaceID        uuid.UUID          `json:"workspace_id"`
 	Name               string             `json:"name"`
 	Description        string             `json:"description"`
 	HourlyRateOverride *int32             `json:"hourly_rate_override"`
@@ -154,15 +155,15 @@ type Project struct {
 }
 
 type Settlement struct {
-	ID          pgtype.UUID        `json:"id"`
-	WorkspaceID pgtype.UUID        `json:"workspace_id"`
+	ID          uuid.UUID          `json:"id"`
+	WorkspaceID uuid.UUID          `json:"workspace_id"`
 	TotalAmount int32              `json:"total_amount"`
 	ClearedAt   pgtype.Timestamptz `json:"cleared_at"`
 }
 
 type Ticket struct {
-	ID          pgtype.UUID        `json:"id"`
-	ProjectID   pgtype.UUID        `json:"project_id"`
+	ID          uuid.UUID          `json:"id"`
+	ProjectID   uuid.UUID          `json:"project_id"`
 	Identifier  string             `json:"identifier"`
 	Title       string             `json:"title"`
 	Description string             `json:"description"`
@@ -174,8 +175,8 @@ type Ticket struct {
 }
 
 type TimeEntry struct {
-	ID              pgtype.UUID        `json:"id"`
-	TicketID        pgtype.UUID        `json:"ticket_id"`
+	ID              uuid.UUID          `json:"id"`
+	TicketID        uuid.UUID          `json:"ticket_id"`
 	SettlementID    pgtype.UUID        `json:"settlement_id"`
 	DurationMinutes int32              `json:"duration_minutes"`
 	IsBillable      bool               `json:"is_billable"`
@@ -185,7 +186,7 @@ type TimeEntry struct {
 }
 
 type Workspace struct {
-	ID                pgtype.UUID        `json:"id"`
+	ID                uuid.UUID          `json:"id"`
 	Name              string             `json:"name"`
 	DefaultHourlyRate int32              `json:"default_hourly_rate"`
 	Description       *string            `json:"description"`

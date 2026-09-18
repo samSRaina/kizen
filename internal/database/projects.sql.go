@@ -8,7 +8,7 @@ package database
 import (
 	"context"
 
-	"github.com/jackc/pgx/v5/pgtype"
+	"github.com/google/uuid"
 )
 
 const createProject = `-- name: CreateProject :one
@@ -18,9 +18,9 @@ RETURNING id, workspace_id, name, description, hourly_rate_override, archived, t
 `
 
 type CreateProjectParams struct {
-	WorkspaceID        pgtype.UUID `json:"workspace_id"`
-	Name               string      `json:"name"`
-	HourlyRateOverride *int32      `json:"hourly_rate_override"`
+	WorkspaceID        uuid.UUID `json:"workspace_id"`
+	Name               string    `json:"name"`
+	HourlyRateOverride *int32    `json:"hourly_rate_override"`
 }
 
 // PROJECTS --
@@ -47,7 +47,7 @@ WHERE workspace_id = $1
 ORDER BY created_at DESC
 `
 
-func (q *Queries) ListProjectsByWorkspace(ctx context.Context, workspaceID pgtype.UUID) ([]Project, error) {
+func (q *Queries) ListProjectsByWorkspace(ctx context.Context, workspaceID uuid.UUID) ([]Project, error) {
 	rows, err := q.db.Query(ctx, listProjectsByWorkspace, workspaceID)
 	if err != nil {
 		return nil, err
@@ -84,7 +84,7 @@ WHERE id = $1
 RETURNING ticket_counter
 `
 
-func (q *Queries) UpdateProjectCounter(ctx context.Context, id pgtype.UUID) (int32, error) {
+func (q *Queries) UpdateProjectCounter(ctx context.Context, id uuid.UUID) (int32, error) {
 	row := q.db.QueryRow(ctx, updateProjectCounter, id)
 	var ticket_counter int32
 	err := row.Scan(&ticket_counter)
