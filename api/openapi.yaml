@@ -6,8 +6,8 @@ info:
   contact:
     name: samRaina
 servers:
-  - url: http://kizen.dev/api/v1
-    description: Local self-hosted Kizen server
+  - url: http://localhost/api/v1
+    description: Localhost developement
 
 paths:
   /workspaces:

@@ -5,7 +5,7 @@ services:
       - "--api.insecure=true"
       - "--providers.docker=true"
       - "--providers.docker.exposedbydefault=false"
-      - "--providers.docker.network=kizen"
+      - "--providers.docker.network=kizen-internal"
       - "--entrypoints.web.address=:80"
     ports:
       - "80:80"
@@ -43,11 +43,11 @@ services:
       POSTGRES_DB: ${POSTGRES_DB}
     volumes:
       - postgres_data:/var/lib/postgresql
-      - ./sql/migrations/workspaces.sql:/docker-entrypoint-initdb.d/workspaces.sql:ro
-      - ./sql/migrations/projects.sql:/docker-entrypoint-initdb.d/projects.sql:ro
-      - ./sql/migrations/tickets.sql:/docker-entrypoint-initdb.d/tickets.sql:ro
-      - ./sql/migrations/settlements.sql:/docker-entrypoint-initdb.d/settlements.sql:ro
-      - ./sql/migrations/time_entries.sql:/docker-entrypoint-initdb.d/time_entries.sql:ro
+      - ./sql/migrations/workspaces.sql:/docker-entrypoint-initdb.d/01-workspaces.sql:ro
+      - ./sql/migrations/projects.sql:/docker-entrypoint-initdb.d/02-projects.sql:ro
+      - ./sql/migrations/tickets.sql:/docker-entrypoint-initdb.d/03-tickets.sql:ro
+      - ./sql/migrations/settlements.sql:/docker-entrypoint-initdb.d/04-settlements.sql:ro
+      - ./sql/migrations/time_entries.sql:/docker-entrypoint-initdb.d/05-time_entries.sql:ro
     healthcheck:
       test: ["CMD-SHELL", "pg_isready -U ${POSTGRES_USER} -d ${POSTGRES_DB}"]
       interval: 5s
@@ -76,27 +76,27 @@ services:
   #   networks:
   #     - kizen
 
-#   workspace-service:
-#     image: kizen/workspace-service
-#     build:
-#       context: .
-#       dockerfile: infra/docker/workspace-service.Dockerfile
-#     labels:
-#       - "traefik.enable=true"
-#       - "traefik.http.routers.workspace-service.entrypoints=web"
-#       - "traefik.http.routers.workspace-service.rule=PathPrefix(`/api/v1/workspaces`)"
-#       - "traefik.http.middlewares.workspace-strip.stripprefix.prefixes=/api/v1"
-#       - "traefik.http.routers.workspace-service.middlewares=workspace-strip"
-#       - "traefik.http.routers.workspace-service.priority=10"
-#       - "traefik.http.services.workspace-service.loadbalancer.server.port=${WORKSPACE_SERVICE_PORT}"
-#     environment:
-#       WORKSPACE_SERVICE_PORT: ${WORKSPACE_SERVICE_PORT}
-#       DATABASE_URL: postgres://${POSTGRES_USER}:${POSTGRES_PASSWORD}@database:5432/${POSTGRES_DB}?sslmode=disable
-#     depends_on:
-#       database:
-#         condition: service_healthy
-#     networks:
-#       - kizen
+  workspace-service:
+    image: kizen/workspace-service
+    build:
+      context: .
+      dockerfile: infra/developement/docker/workspace-service.Dockerfile
+    labels:
+      - "traefik.enable=true"
+      - "traefik.http.routers.workspace-service.entrypoints=web"
+      - "traefik.http.routers.workspace-service.rule=PathPrefix(`/api/v1/workspaces`)"
+      - "traefik.http.middlewares.workspace-strip.stripprefix.prefixes=/api/v1"
+      - "traefik.http.routers.workspace-service.middlewares=workspace-strip"
+      - "traefik.http.routers.workspace-service.priority=10"
+      - "traefik.http.services.workspace-service.loadbalancer.server.port=${WORKSPACE_SERVICE_PORT}"
+    environment:
+      WORKSPACE_SERVICE_PORT: ${WORKSPACE_SERVICE_PORT}
+      DATABASE_URL: postgres://${POSTGRES_USER}:${POSTGRES_PASSWORD}@database:5432/${POSTGRES_DB}?sslmode=disable
+    depends_on:
+      database:
+        condition: service_healthy
+    networks:
+      - kizen-internal
 
 volumes:
   postgres_data:

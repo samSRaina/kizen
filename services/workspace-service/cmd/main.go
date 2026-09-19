@@ -52,7 +52,21 @@ func run(logger *slog.Logger) error {
 	srv := service.NewService(repo)
 	h := handler.NewHandler(srv)
 
-	strictHandler := api.NewStrictHandler(h, nil)
+	strictHandler := api.NewStrictHandlerWithOptions(h, nil, api.StrictHTTPServerOptions{
+		ResponseErrorHandlerFunc: func(w http.ResponseWriter, r *http.Request, err error) {
+			// Log the REAL error securely into your own console/logs
+			logger.Error("Unhandled request error",
+				"error", err.Error(),
+				"path", r.URL.Path,
+				"method", r.Method,
+			)
+
+			// Return a safe, generic error to the actual client
+			w.Header().Set("Content-Type", "application/problem+json")
+			w.WriteHeader(http.StatusInternalServerError)
+			w.Write([]byte(`{"status": 500, "title": "Internal Server Error", "detail": "An unexpected server failure occurred."}`))
+		},
+	})
 
 	r := chi.NewRouter()
 	r.Use(middleware.RequestID)

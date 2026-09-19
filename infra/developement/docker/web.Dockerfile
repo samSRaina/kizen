@@ -5,7 +5,7 @@ WORKDIR /app
 RUN npm install -g corepack && corepack enable && corepack prepare pnpm@latest --activate
 
 # Copy manifest and patch layer prior to strictly locked installation
-COPY web/pnpm-lock.yaml web/package.json ./
+COPY web/pnpm-lock.yaml web/package.json web/pnpm-workspace.yaml ./
 COPY web/patches ./patches
 
 RUN pnpm install --frozen-lockfile
