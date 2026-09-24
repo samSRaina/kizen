@@ -9,6 +9,5 @@ build/
 
 # TESTS
 services/ticket-service/test_cases
-web.legacy/
 services/ticket-service/internal/service/service_test.legacy
 app.kizen/
