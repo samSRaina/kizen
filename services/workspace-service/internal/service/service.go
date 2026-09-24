@@ -5,6 +5,7 @@ import (
 	"fmt"
 	"strings"
 
+	"github.com/google/uuid"
 	"github.com/samSRaina/kizen/services/workspace-service/internal/domain"
 )
 
@@ -28,6 +29,15 @@ func (s *Service) Create(ctx context.Context, in domain.CreateWorkspaceInput) (*
 	}
 
 	return created, nil
+}
+
+func (s *Service) Delete(ctx context.Context, id uuid.UUID) error {
+	const op = "service.Delete"
+	err := s.r.Delete(ctx, id)
+	if err != nil {
+		return fmt.Errorf("%s: %w", op, err)
+	}
+	return nil
 }
 
 func validate(in domain.CreateWorkspaceInput) error {

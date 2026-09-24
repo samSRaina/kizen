@@ -32,47 +32,34 @@ paths:
                 $ref: '#/components/schemas/Workspace'
         '400':
           $ref: '#/components/responses/BadRequest'
+        '409':
+          $ref: '#/components/responses/Conflict'
         '500':
           $ref: '#/components/responses/InternalError'
-  #   get:
-  #     tags: [ Workspaces ]
-  #     summary: List workspaces
-  #     operationId: listWorkspaces
-  #     responses:
-  #       '200':
-  #         description: All workspaces, newest first.
-  #         content:
-  #           application/json:
-  #             schema:
-  #               type: array
-  #               items:
-  #                 $ref: '#/components/schemas/Workspace'
-  #       '500':
-  #         $ref: '#/components/responses/InternalError'
 
-  # /workspaces/{id}:
-  #   get:
-  #     tags: [ Workspaces ]
-  #     summary: Get a workspace by id
-  #     operationId: getWorkspace
-  #     parameters:
-  #       - name: id
-  #         in: path
-  #         required: true
-  #         schema:
-  #           type: string
-  #           format: uuid
-  #     responses:
-  #       '200':
-  #         description: The workspace.
-  #         content:
-  #           application/json:
-  #             schema:
-  #               $ref: '#/components/schemas/Workspace'
-  #       '404':
-  #         $ref: '#/components/responses/NotFound'
-  #       '500':
-  #         $ref: '#/components/responses/InternalError'
+  /workspaces/{id}:
+    delete:
+      tags: [ Workspaces ]
+      summary: Delete a workspace by id
+      operationId: deleteWorkspace
+      parameters:
+        - name: id
+          in: path
+          required: true
+          schema:
+            type: string
+            format: uuid
+      responses:
+        '204':
+          description: The workspace was successfully deleted.
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Workspace'
+        '404':
+          $ref: '#/components/responses/NotFound'
+        '500':
+          $ref: '#/components/responses/InternalError'
 
 components:
   schemas:
@@ -162,28 +149,21 @@ components:
         application/problem+json:
           schema:
             $ref: '#/components/schemas/ProblemDetail'
-    # Unauthorized:
-    #   description: Not authenticated. The session cookie is missing or invalid.
-    #   content:
-    #     application/problem+json:
-    #       schema:
-    #         $ref: '#/components/schemas/ProblemDetail'
-    # Forbidden:
-    #   description: |
-    #     Authenticated but not permitted.
-    #   content:
-    #     application/problem+json:
-    #       schema:
-    #         $ref: '#/components/schemas/ProblemDetail'
-    # NotFound:
-    #   description: |
-    #     The referenced resource does not exist — or exists but is invisible
-    #     to the caller (deliberately indistinguishable to avoid leaking
-    #     existence).
-    #   content:
-    #     application/problem+json:
-    #       schema:
-    #         $ref: '#/components/schemas/ProblemDetail'
+    Conflict:
+      description: |
+        Conflict. The request could not be completed due to a conflict with the current state of the target resource.
+        For example, creating a workspace with a name that already exists.
+      content:
+        application/problem+json:
+          schema:
+            $ref: '#/components/schemas/ProblemDetail'
+    NotFound:
+      description: |
+        The referenced resource does not exist.
+      content:
+        application/problem+json:
+          schema:
+            $ref: '#/components/schemas/ProblemDetail'
     InternalError:
       description: |
         Unexpected server failure. The response deliberately carries no

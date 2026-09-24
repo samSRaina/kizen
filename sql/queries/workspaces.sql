@@ -11,3 +11,7 @@ ORDER BY created_at DESC;
 -- name: GetWorkspaceByID :one
 SELECT * FROM workspaces
 WHERE id = $1;
+
+-- name: DeleteWorkspace :execrows
+DELETE FROM workspaces
+WHERE id = $1;
