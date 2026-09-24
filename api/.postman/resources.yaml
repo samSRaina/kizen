@@ -1,0 +1,7 @@
+resourceNameMappings:
+  specs:
+    - ../openapi.yaml: openapi.yaml
+
+localResources:
+  specs:
+    - ../openapi.yaml
