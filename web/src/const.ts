@@ -1,5 +1,4 @@
-export const COOKIE_NAME = "kizen_session_token";
-export const ONE_YEAR_MS = 365 * 24 * 60 * 60 * 1000;
+export { COOKIE_NAME, ONE_YEAR_MS } from "@shared/const";
 
 // Generate login URL at runtime so redirect URI reflects the current origin.
 export const getLoginUrl = () => {
