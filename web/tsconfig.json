@@ -1,5 +1,5 @@
 {
-  "include": ["**/*.ts", "**/*.tsx", "src/routes/_authenticated/workspaces/$workspaceIdtsx"],
+  "include": ["**/*.ts", "**/*.tsx"],
   "compilerOptions": {
     "target": "ES2022",
     "jsx": "react-jsx",
@@ -9,7 +9,7 @@
       "@/*": ["./src/*"]
     },
     "lib": ["ES2022", "DOM", "DOM.Iterable"],
-    "types": ["vite/client"],
+    "types": ["vite/client", "bun-types"],
 
     /* Bundler mode */
     "moduleResolution": "bundler",

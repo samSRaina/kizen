@@ -10,58 +10,53 @@
 
 import { Route as rootRouteImport } from './routes/__root'
 import { Route as IndexRouteImport } from './routes/index'
-import { Route as AuthenticatedHomeRouteImport } from './routes/_authenticated/home'
-import { Route as AuthenticatedWorkspacesWorkspaceIdRouteImport } from './routes/_authenticated/workspaces/$workspaceId'
+import { Route as LoginRouteImport } from './routes/login'
+import { Route as ApiAuthSplatRouteImport } from './routes/api/auth/$'
 
 const IndexRoute = IndexRouteImport.update({
   id: '/',
   path: '/',
   getParentRoute: () => rootRouteImport,
 } as any)
-const AuthenticatedHomeRoute = AuthenticatedHomeRouteImport.update({
-  id: '/_authenticated/home',
-  path: '/home',
+const LoginRoute = LoginRouteImport.update({
+  id: '/login',
+  path: '/login',
   getParentRoute: () => rootRouteImport,
 } as any)
-const AuthenticatedWorkspacesWorkspaceIdRoute =
-  AuthenticatedWorkspacesWorkspaceIdRouteImport.update({
-    id: '/_authenticated/workspaces/$workspaceId',
-    path: '/workspaces/$workspaceId',
-    getParentRoute: () => rootRouteImport,
-  } as any)
+const ApiAuthSplatRoute = ApiAuthSplatRouteImport.update({
+  id: '/api/auth/$',
+  path: '/api/auth/$',
+  getParentRoute: () => rootRouteImport,
+} as any)
 
 export interface FileRoutesByFullPath {
   '/': typeof IndexRoute
-  '/home': typeof AuthenticatedHomeRoute
-  '/workspaces/$workspaceId': typeof AuthenticatedWorkspacesWorkspaceIdRoute
+  '/login': typeof LoginRoute
+  '/api/auth/$': typeof ApiAuthSplatRoute
 }
 export interface FileRoutesByTo {
   '/': typeof IndexRoute
-  '/home': typeof AuthenticatedHomeRoute
-  '/workspaces/$workspaceId': typeof AuthenticatedWorkspacesWorkspaceIdRoute
+  '/login': typeof LoginRoute
+  '/api/auth/$': typeof ApiAuthSplatRoute
 }
 export interface FileRoutesById {
   __root__: typeof rootRouteImport
   '/': typeof IndexRoute
-  '/_authenticated/home': typeof AuthenticatedHomeRoute
-  '/_authenticated/workspaces/$workspaceId': typeof AuthenticatedWorkspacesWorkspaceIdRoute
+  '/login': typeof LoginRoute
+  '/api/auth/$': typeof ApiAuthSplatRoute
 }
 export interface FileRouteTypes {
   fileRoutesByFullPath: FileRoutesByFullPath
-  fullPaths: '/' | '/home' | '/workspaces/$workspaceId'
+  fullPaths: '/' | '/login' | '/api/auth/$'
   fileRoutesByTo: FileRoutesByTo
-  to: '/' | '/home' | '/workspaces/$workspaceId'
-  id:
-    | '__root__'
-    | '/'
-    | '/_authenticated/home'
-    | '/_authenticated/workspaces/$workspaceId'
+  to: '/' | '/login' | '/api/auth/$'
+  id: '__root__' | '/' | '/login' | '/api/auth/$'
   fileRoutesById: FileRoutesById
 }
 export interface RootRouteChildren {
   IndexRoute: typeof IndexRoute
-  AuthenticatedHomeRoute: typeof AuthenticatedHomeRoute
-  AuthenticatedWorkspacesWorkspaceIdRoute: typeof AuthenticatedWorkspacesWorkspaceIdRoute
+  LoginRoute: typeof LoginRoute
+  ApiAuthSplatRoute: typeof ApiAuthSplatRoute
 }
 
 declare module '@tanstack/react-router' {
@@ -73,18 +68,18 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof IndexRouteImport
       parentRoute: typeof rootRouteImport
     }
-    '/_authenticated/home': {
-      id: '/_authenticated/home'
-      path: '/home'
-      fullPath: '/home'
-      preLoaderRoute: typeof AuthenticatedHomeRouteImport
+    '/login': {
+      id: '/login'
+      path: '/login'
+      fullPath: '/login'
+      preLoaderRoute: typeof LoginRouteImport
       parentRoute: typeof rootRouteImport
     }
-    '/_authenticated/workspaces/$workspaceId': {
-      id: '/_authenticated/workspaces/$workspaceId'
-      path: '/workspaces/$workspaceId'
-      fullPath: '/workspaces/$workspaceId'
-      preLoaderRoute: typeof AuthenticatedWorkspacesWorkspaceIdRouteImport
+    '/api/auth/$': {
+      id: '/api/auth/$'
+      path: '/api/auth/$'
+      fullPath: '/api/auth/$'
+      preLoaderRoute: typeof ApiAuthSplatRouteImport
       parentRoute: typeof rootRouteImport
     }
   }
@@ -92,9 +87,8 @@ declare module '@tanstack/react-router' {
 
 const rootRouteChildren: RootRouteChildren = {
   IndexRoute: IndexRoute,
-  AuthenticatedHomeRoute: AuthenticatedHomeRoute,
-  AuthenticatedWorkspacesWorkspaceIdRoute:
-    AuthenticatedWorkspacesWorkspaceIdRoute,
+  LoginRoute: LoginRoute,
+  ApiAuthSplatRoute: ApiAuthSplatRoute,
 }
 export const routeTree = rootRouteImport
   ._addFileChildren(rootRouteChildren)

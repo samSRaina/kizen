@@ -1,22 +1,29 @@
-FROM node:26-alpine3.24 AS build
+FROM oven/bun:alpine AS build
 
 WORKDIR /app
 
-RUN npm install -g corepack && corepack enable && corepack prepare pnpm@latest --activate
+# Copy lockfile and package.json
+COPY web/bun.lock web/package.json ./
 
-# Copy manifest and patch layer prior to strictly locked installation
-COPY web/pnpm-lock.yaml web/package.json web/pnpm-workspace.yaml ./
-COPY web/patches ./patches
-
-RUN pnpm install --frozen-lockfile
+RUN bun i --frozen-lockfile
 
 COPY web ./
-RUN pnpm run build
 
-FROM nginx:alpine
-COPY infra/developement/docker/nginx.conf /etc/nginx/conf.d/default.conf
-COPY --from=build /app/dist /usr/share/nginx/html
+RUN bun run build
 
+FROM oven/bun:alpine
+
+WORKDIR /app
+
+# Copy only the compiled output and config files
+COPY --from=build /app/dist ./dist
+COPY --from=build /app/package.json ./
+COPY --from=build /app/bun.lock ./
+
+# Install ONLY production dependencies - cuts the image size down by ~40%
+RUN bun install --production --frozen-lockfile
+
+ENV PORT=80
 EXPOSE 80
 
-CMD ["nginx", "-g", "daemon off;"]
+CMD ["bun", "dist/server/server.js"]
