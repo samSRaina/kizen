@@ -1,11 +1,13 @@
 import {
 	ArrowDownTrayIcon,
+	ChevronDownIcon,
 	CodeBracketIcon,
+	CommandLineIcon,
 } from "@heroicons/react/24/outline";
 import { createFileRoute, Link } from "@tanstack/react-router";
 import { useState } from "react";
 
-export const Route = createFileRoute("/")({ component: Landing });
+export const Route = createFileRoute("/Landing")({ component: Landing });
 
 function Logo() {
 	return (
@@ -28,15 +30,30 @@ function Landing() {
 						<Logo />
 					</a>
 					<nav className={mobileOpen ? "nav-links open" : "nav-links"}>
+						<button type="button">
+							Product{" "}
+							<ChevronDownIcon className="w-3 h-3 inline-block ml-0.5" />
+						</button>
+						<button type="button">
+							Resources{" "}
+							<ChevronDownIcon className="w-3 h-3 inline-block ml-0.5" />
+						</button>
+						<a href="#extensions">Extensions</a>
 						<a href="#docs">Docs</a>
+						<a href="#pricing">Pricing</a>
+						<a href="#delta">Delta</a>
 					</nav>
 					<div className="nav-actions">
+						<button type="button" className="command">
+							<CommandLineIcon className="w-3.5 h-3.5" />{" "}
+							<span>Ctrl + Shift + P</span>
+						</button>
 						<Link to="/login" className="signup">
-							Sign in <kbd>S</kbd>
+							Sign up <kbd>S</kbd>
 						</Link>
-						<Link to="/signup" className="signup">
-							Sign up <kbd>U</kbd>
-						</Link>
+						<a className="download-top" href="#download">
+							Download <kbd>D</kbd>
+						</a>
 						<button
 							type="button"
 							className="menu-toggle"
@@ -49,7 +66,7 @@ function Landing() {
 				</div>
 				<a className="announcement" href="#delta">
 					<span>
-						Stay tuned: user environment for workings with agents [in
+						Stay tuned: multiplayer environment for workings with agents [in
 						developement]
 					</span>
 				</a>

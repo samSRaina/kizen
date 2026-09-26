@@ -12,7 +12,8 @@
     "preview": "vite preview",
     "format": "biome format",
     "lint": "biome lint",
-    "check": "biome check"
+    "check": "biome check",
+    "format:css": "prettier --write src/styles.css"
   },
   "dependencies": {
     "@heroicons/react": "^2.2.0",
@@ -53,6 +54,7 @@
     "@types/react-dom": "^19.2.0",
     "@vitejs/plugin-react": "^6.0.1",
     "bun-types": "^1.4.2",
+    "prettier": "^3.9.9",
     "typescript": "^6.0.2",
     "vite": "^8.0.0"
   },
