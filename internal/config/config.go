@@ -15,7 +15,7 @@ type Config struct {
 	DatabaseURL string
 }
 
-// The Load funciton takes service name as input paramter and
+// The Load function takes service name as input parameter and
 // returns service env config.
 func Load(service string) (*Config, error) {
 	const dbUrl = "DATABASE_URL"
@@ -28,7 +28,7 @@ func Load(service string) (*Config, error) {
 
 	var missing []string
 	if cfg.Port == "" {
-		missing = append(missing, service)
+		missing = append(missing, port)
 	}
 
 	if cfg.DatabaseURL == "" {

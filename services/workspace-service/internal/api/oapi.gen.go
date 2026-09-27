@@ -59,6 +59,7 @@ type Workspace struct {
 	Description       *string            `json:"description,omitempty"`
 	Id                openapi_types.UUID `json:"id"`
 	Name              string             `json:"name"`
+	OwnerId           string             `json:"owner_id"`
 	UpdatedAt         time.Time          `json:"updated_at"`
 }
 
@@ -81,6 +82,11 @@ type InternalError = ProblemDetail
 // in the API. `type` names the error class; `errors` (validation only)
 // maps field names to human-readable messages.
 type NotFound = ProblemDetail
+
+// Unauthorized RFC 7807 Problem Details. The error shape for every non-2xx response
+// in the API. `type` names the error class; `errors` (validation only)
+// maps field names to human-readable messages.
+type Unauthorized = ProblemDetail
 
 // CreateWorkspaceJSONRequestBody defines body for CreateWorkspace for application/json ContentType.
 type CreateWorkspaceJSONRequestBody = CreateWorkspaceRequest
@@ -211,6 +217,9 @@ func (a ProblemDetail) MarshalJSON() ([]byte, error) {
 
 // ServerInterface represents all server handlers.
 type ServerInterface interface {
+	// ListWorkspaces List all workspaces for the authenticated user
+	// (GET /workspaces)
+	ListWorkspaces(w http.ResponseWriter, r *http.Request)
 	// CreateWorkspace Create a new workspace
 	// (POST /workspaces)
 	CreateWorkspace(w http.ResponseWriter, r *http.Request)
@@ -222,6 +231,12 @@ type ServerInterface interface {
 // Unimplemented server implementation that returns http.StatusNotImplemented for each endpoint.
 
 type Unimplemented struct{}
+
+// ListWorkspaces List all workspaces for the authenticated user
+// (GET /workspaces)
+func (_ Unimplemented) ListWorkspaces(w http.ResponseWriter, r *http.Request) {
+	w.WriteHeader(http.StatusNotImplemented)
+}
 
 // CreateWorkspace Create a new workspace
 // (POST /workspaces)
@@ -243,6 +258,20 @@ type ServerInterfaceWrapper struct {
 }
 
 type MiddlewareFunc func(http.Handler) http.Handler
+
+// ListWorkspaces operation middleware
+func (siw *ServerInterfaceWrapper) ListWorkspaces(w http.ResponseWriter, r *http.Request) {
+
+	handler := http.Handler(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+		siw.Handler.ListWorkspaces(w, r)
+	}))
+
+	for _, middleware := range siw.HandlerMiddlewares {
+		handler = middleware(handler)
+	}
+
+	handler.ServeHTTP(w, r)
+}
 
 // CreateWorkspace operation middleware
 func (siw *ServerInterfaceWrapper) CreateWorkspace(w http.ResponseWriter, r *http.Request) {
@@ -398,6 +427,9 @@ func HandlerWithOptions(si ServerInterface, options ChiServerOptions) http.Handl
 	}
 
 	r.Group(func(r chi.Router) {
+		r.Get(options.BaseURL+"/workspaces", wrapper.ListWorkspaces)
+	})
+	r.Group(func(r chi.Router) {
 		r.Post(options.BaseURL+"/workspaces", wrapper.CreateWorkspace)
 	})
 	r.Group(func(r chi.Router) {
@@ -414,6 +446,61 @@ type ConflictApplicationProblemPlusJSONResponse ProblemDetail
 type InternalErrorApplicationProblemPlusJSONResponse ProblemDetail
 
 type NotFoundApplicationProblemPlusJSONResponse ProblemDetail
+
+type UnauthorizedApplicationProblemPlusJSONResponse ProblemDetail
+
+type ListWorkspacesRequestObject struct {
+}
+
+type ListWorkspacesResponseObject interface {
+	VisitListWorkspacesResponse(w http.ResponseWriter) error
+}
+
+type ListWorkspaces200JSONResponse []Workspace
+
+func (response ListWorkspaces200JSONResponse) VisitListWorkspacesResponse(w http.ResponseWriter) error {
+
+	var buf bytes.Buffer
+	if err := json.NewEncoder(&buf).Encode(response); err != nil {
+		return err
+	}
+	w.Header().Set("Content-Type", "application/json")
+	w.WriteHeader(200)
+	_, err := buf.WriteTo(w)
+	return err
+}
+
+type ListWorkspaces401ApplicationProblemPlusJSONResponse struct {
+	UnauthorizedApplicationProblemPlusJSONResponse
+}
+
+func (response ListWorkspaces401ApplicationProblemPlusJSONResponse) VisitListWorkspacesResponse(w http.ResponseWriter) error {
+
+	var buf bytes.Buffer
+	if err := json.NewEncoder(&buf).Encode(response); err != nil {
+		return err
+	}
+	w.Header().Set("Content-Type", "application/problem+json")
+	w.WriteHeader(401)
+	_, err := buf.WriteTo(w)
+	return err
+}
+
+type ListWorkspaces500ApplicationProblemPlusJSONResponse struct {
+	InternalErrorApplicationProblemPlusJSONResponse
+}
+
+func (response ListWorkspaces500ApplicationProblemPlusJSONResponse) VisitListWorkspacesResponse(w http.ResponseWriter) error {
+
+	var buf bytes.Buffer
+	if err := json.NewEncoder(&buf).Encode(response); err != nil {
+		return err
+	}
+	w.Header().Set("Content-Type", "application/problem+json")
+	w.WriteHeader(500)
+	_, err := buf.WriteTo(w)
+	return err
+}
 
 type CreateWorkspaceRequestObject struct {
 	Body *CreateWorkspaceJSONRequestBody
@@ -449,6 +536,22 @@ func (response CreateWorkspace400ApplicationProblemPlusJSONResponse) VisitCreate
 	}
 	w.Header().Set("Content-Type", "application/problem+json")
 	w.WriteHeader(400)
+	_, err := buf.WriteTo(w)
+	return err
+}
+
+type CreateWorkspace401ApplicationProblemPlusJSONResponse struct {
+	UnauthorizedApplicationProblemPlusJSONResponse
+}
+
+func (response CreateWorkspace401ApplicationProblemPlusJSONResponse) VisitCreateWorkspaceResponse(w http.ResponseWriter) error {
+
+	var buf bytes.Buffer
+	if err := json.NewEncoder(&buf).Encode(response); err != nil {
+		return err
+	}
+	w.Header().Set("Content-Type", "application/problem+json")
+	w.WriteHeader(401)
 	_, err := buf.WriteTo(w)
 	return err
 }
@@ -501,6 +604,22 @@ func (response DeleteWorkspace204Response) VisitDeleteWorkspaceResponse(w http.R
 	return nil
 }
 
+type DeleteWorkspace401ApplicationProblemPlusJSONResponse struct {
+	UnauthorizedApplicationProblemPlusJSONResponse
+}
+
+func (response DeleteWorkspace401ApplicationProblemPlusJSONResponse) VisitDeleteWorkspaceResponse(w http.ResponseWriter) error {
+
+	var buf bytes.Buffer
+	if err := json.NewEncoder(&buf).Encode(response); err != nil {
+		return err
+	}
+	w.Header().Set("Content-Type", "application/problem+json")
+	w.WriteHeader(401)
+	_, err := buf.WriteTo(w)
+	return err
+}
+
 type DeleteWorkspace404ApplicationProblemPlusJSONResponse struct {
 	NotFoundApplicationProblemPlusJSONResponse
 }
@@ -535,6 +654,9 @@ func (response DeleteWorkspace500ApplicationProblemPlusJSONResponse) VisitDelete
 
 // StrictServerInterface represents all server handlers.
 type StrictServerInterface interface {
+	// ListWorkspaces List all workspaces for the authenticated user
+	// (GET /workspaces)
+	ListWorkspaces(ctx context.Context, request ListWorkspacesRequestObject) (ListWorkspacesResponseObject, error)
 	// CreateWorkspace Create a new workspace
 	// (POST /workspaces)
 	CreateWorkspace(ctx context.Context, request CreateWorkspaceRequestObject) (CreateWorkspaceResponseObject, error)
@@ -580,6 +702,30 @@ type strictHandler struct {
 	ssi         StrictServerInterface
 	middlewares []StrictMiddlewareFunc
 	options     StrictHTTPServerOptions
+}
+
+// ListWorkspaces operation middleware
+func (sh *strictHandler) ListWorkspaces(w http.ResponseWriter, r *http.Request) {
+	var request ListWorkspacesRequestObject
+
+	handler := func(ctx context.Context, w http.ResponseWriter, r *http.Request, request interface{}) (interface{}, error) {
+		return sh.ssi.ListWorkspaces(ctx, request.(ListWorkspacesRequestObject))
+	}
+	for _, middleware := range sh.middlewares {
+		handler = middleware(handler, "ListWorkspaces")
+	}
+
+	response, err := handler(r.Context(), w, r, request)
+
+	if err != nil {
+		sh.options.ResponseErrorHandlerFunc(w, r, err)
+	} else if validResponse, ok := response.(ListWorkspacesResponseObject); ok {
+		if err := validResponse.VisitListWorkspacesResponse(w); err != nil {
+			sh.options.ResponseErrorHandlerFunc(w, r, err)
+		}
+	} else if response != nil {
+		sh.options.ResponseErrorHandlerFunc(w, r, fmt.Errorf("unexpected response type: %T", response))
+	}
 }
 
 // CreateWorkspace operation middleware
@@ -644,29 +790,32 @@ func (sh *strictHandler) DeleteWorkspace(w http.ResponseWriter, r *http.Request,
 // const string: with thousands of chunks the chained `+` fold is several
 // times slower for the Go compiler than parsing a slice literal.
 var swaggerSpec = []string{
-	"xFddc9u2Ev0rO7j3IZlLU3JuOmmZp8SpJ27T1OPYk4faE6+AlYgYBFgAlK169N87C0jUZ5ykk0nfJBL7",
-	"dfbswfJeSNe0zpKNQVT3wlNonQ2U/rxEdUZ/dhQi/5PORrLpJ7at0RKjdnbQejcy1PzvY3CW3wVZU4P8",
-	"67+exqIS/xmsQgzy2zA4zVavKKI2Yj6fF0JRkF637FRU4jc0Y+cbUuBzCuA8TNFolcLCGLXpPJWwOvjL",
-	"u9/fFtDZG+tu7aUdazIqFKBtMgOyXcMeOgoFjFDBxcXJq1AAWgW+MwRT7UxyHuARlZMS0F5aato4g9MX",
-	"50evHwMaA4bP18ShjznCgaEpGVCpEtAWrhe1leS98+G6vLRiXogjZ8dGy38BymXkEs5r6uGUrjMKrIsw",
-	"ImC3hiIpUB1BdIAgF1Zwq2MNsSaQnfdkI4SIkcCN08OIfkIRPAXXeUnlpT12HugO2WEB0hNGbSeAcOv8",
-	"TWhRUvaIYLEhiDVGQOMJ1QzoTocYFoCd2EjeovmZYfz+qF1YumtJMiaB/JT8inIZxjwooMjoEXmMZGYg",
-	"0XtNAay7tHqR/4Iaz0E678kwdlONCbxlL7Ri4izCGDdZQvDWxWPXWfX9q88ljsmTlWkGc3tBuVRdzK1K",
-	"ac6LRdCkGUfccHq/7PWafrTeteSjztqiaIydiR9q13kz+8D48eNGW910jaiGhYizlkQlGMcJebGd472w",
-	"nTE4MiSq6DvqDUL02k74PDNs4fUN2UmsRXW4c2xeCO6D9qRE9Ue2Kfbmd9XbutFHkpFDbCLJzVFKc4Jo",
-	"TtcKzgluYnx2fATPfhw+g4UPyE5CJlhSDwg1tgRjHqkp+RlYZw+e3N319GOaJSq9OD0p4ZrTu06DFdLT",
-	"7EQaDOE5XC8ECR6t6aizZvb40jbYBkiKubR2UHcN2gOeTAYZGgoBJ5S4Wex0c1n+Zokvtp3QXWvQ5tCh",
-	"JanHWnKsWOsATmaJkb26LNhdij3N1TZEtJL2Rb04O1nRN2uMVmSjHusFMn3wB4PyzYJRVKLzel8OLIVd",
-	"2M2AG/j6/PwU8gGQThFMyCadUDCapUDO68lq7rnJXwzD2lBEHc1eEELtfCy2OxC6pkE/23IN7HcvzPlB",
-	"P7CiEjhyXaxGBu2NKP4B9NshHwZ5azxztT3y+0ayF59d1UnXEakPmBSpD6ww0kHUafB3APiEUm3WPcJA",
-	"RluC9PpbaJdWGyl2nVbiAYnbedG16itL3UI6xXtADYt1NDfi7TZlnuZ17JYXGeY9KCcvAjZnqC3uwCTe",
-	"aTsxdBDJoo0w9kSGR54pxI6hQYsT8mmH46IOokd5Qz4xOc+F+FX/RZb1URRiSj5kz4flsBxyQNeSxVaL",
-	"Svy/PCyHLG0Y68SWQb+ypL+tyxcZEyop2Ini7WrzwhMZRArxpVOzBy7ur7uwP3GtzjebxlRKD9aW+CfD",
-	"w2+WxarKfWtmZsPWeqTzzC8XzNUWWMKJlaZTvBzGmi5tlsEDDEFPSK1Ew+cVne5atIq3sSRgmpZL0tPh",
-	"8FN590AM1j5lkslPnzfpF/Z5IX74khibC2vai7LW9uDw0ku3KwyYpTgJPG3vV1S7YtM17g3utZpnyWEI",
-	"dyn4Kj1fp2CLHhuK5Nn3vdDcH6b1cqKrPN2bzCnWWPAZ3Zlf7bDs6f5bcG3rxwChk5JCGHfGzCCXo8rc",
-	"kaefB7hfh79FRzJoG98loxnkYvf2hK0TRTOmm6W+cRJN7UIExZ+DrqWGp60QnTeiEnWMbTUYmOWpAbZ6",
-	"MD0U86v53wEAAP//",
+	"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",
+	"1HB+KNqb9n8BAAD//w==",
 }
 
 // decodeSpec returns the embedded OpenAPI spec as raw JSON bytes,

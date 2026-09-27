@@ -1,521 +1,590 @@
+import { createFileRoute, Link, useNavigate } from "@tanstack/react-router";
 import {
-	BellIcon,
-	ChartBarIcon,
-	CheckIcon,
-	ChevronDownIcon,
-	EllipsisHorizontalIcon,
-	FunnelIcon,
-	ListBulletIcon,
-	MagnifyingGlassIcon,
-	PlusIcon,
-	ViewColumnsIcon,
-} from "@heroicons/react/24/outline";
-import { createFileRoute } from "@tanstack/react-router";
-import { useEffect, useMemo, useRef, useState } from "react";
-import { Popout } from "@/components/app-shell/popout";
-import SidebarRight from "@/components/app-shell/sidebar-right";
+	ArrowUpRight,
+	BarChart3,
+	ChevronRight,
+	CircleDot,
+	DollarSign,
+	Grid2X2,
+	Loader2,
+	LogOut,
+	Plus,
+	Search,
+	Sparkles,
+	Trash2,
+} from "lucide-react";
+import { useCallback, useEffect, useMemo, useState } from "react";
 import {
-	DropdownMenu,
-	DropdownMenuContent,
-	DropdownMenuItem,
-	DropdownMenuTrigger,
-} from "@/components/ui/dropdown-menu";
-
-import { BoardView } from "@/components/workspaces/interactions/board-view";
-
-type Ticket = {
-	id: string;
-	title: string;
-	type: "feature" | "bug" | "task";
-	priority: "High" | "Medium" | "Low";
-	points: number;
-	assignee: string;
-	label?: string;
-};
-type Column = { key: string; title: string; tone: string };
-
-const columns: Column[] = [
-	{ key: "backlog", title: "Backlog", tone: "#9a9a94" },
-	{ key: "todo", title: "To do", tone: "#6d75ce" },
-	{ key: "progress", title: "In progress", tone: "#d7975c" },
-	{ key: "review", title: "In review", tone: "#9b7ec6" },
-	{ key: "done", title: "Done", tone: "#6da488" },
-];
-
-const seedTickets: Record<string, Ticket[]> = {
-	backlog: [
-		{
-			id: "ZED-241",
-			title: "Add keyboard shortcut map to command palette",
-			type: "feature",
-			priority: "Low",
-			points: 3,
-			assignee: "JD",
-		},
-		{
-			id: "ZED-238",
-			title: "Research shared project permissions",
-			type: "task",
-			priority: "Medium",
-			points: 5,
-			assignee: "MK",
-			label: "research",
-		},
-	],
-	todo: [
-		{
-			id: "ZED-232",
-			title: "Improve empty states for new workspaces",
-			type: "feature",
-			priority: "Medium",
-			points: 3,
-			assignee: "JD",
-		},
-		{
-			id: "ZED-229",
-			title: "Fix command palette focus on open",
-			type: "bug",
-			priority: "High",
-			points: 2,
-			assignee: "AL",
-		},
-		{
-			id: "ZED-224",
-			title: "Create release notes template",
-			type: "task",
-			priority: "Low",
-			points: 1,
-			assignee: "RM",
-		},
-	],
-	progress: [
-		{
-			id: "ZED-219",
-			title: "Build native sprint timeline view",
-			type: "feature",
-			priority: "High",
-			points: 8,
-			assignee: "JD",
-			label: "frontend",
-		},
-		{
-			id: "ZED-216",
-			title: "Sync ticket activity to team feed",
-			type: "feature",
-			priority: "Medium",
-			points: 5,
-			assignee: "MK",
-		},
-	],
-	review: [
-		{
-			id: "ZED-210",
-			title: "Add project members and roles",
-			type: "feature",
-			priority: "Medium",
-			points: 5,
-			assignee: "AL",
-		},
-		{
-			id: "ZED-207",
-			title: "Refine board density on smaller screens",
-			type: "bug",
-			priority: "Low",
-			points: 3,
-			assignee: "JD",
-			label: "polish",
-		},
-	],
-	done: [
-		{
-			id: "ZED-201",
-			title: "Set up Northwind Retail workspace",
-			type: "task",
-			priority: "Low",
-			points: 2,
-			assignee: "JD",
-		},
-		{
-			id: "ZED-198",
-			title: "Add drag and drop ticket states",
-			type: "feature",
-			priority: "High",
-			points: 5,
-			assignee: "RM",
-		},
-		{
-			id: "ZED-193",
-			title: "Create sprint planning shell",
-			type: "feature",
-			priority: "Medium",
-			points: 3,
-			assignee: "MK",
-		},
-	],
-};
-
-function Logo() {
-	return (
-		<div className="zed-mini-logo">
-			<span>Z</span>zed
-			<i />
-		</div>
-	);
-}
-function Avatar({
-	initials,
-	className = "",
-}: {
-	initials: string;
-	className?: string;
-}) {
-	return <span className={`avatar ${className}`}>{initials}</span>;
-}
+	createWorkspace,
+	deleteWorkspace,
+	listWorkspaces,
+	type Workspace,
+} from "@/lib/api";
+import { authClient, useSession } from "@/lib/auth-client";
 
 export const Route = createFileRoute("/_authenticated/dashboard")({
 	component: Dashboard,
 });
 
-function Dashboard() {
-	const [workspaces, setWorkspaces] = useState([
-		["Northwind Retail", "23", "#6257d8"],
-		["Halcyon Goods", "9", "#686bd9"],
-		["Fernhollow Labs", "14", "#7485ed"],
-		["Orso Studio", "5", "#8b9aff"],
-	]);
-	const [activeWorkspace, setActiveWorkspace] = useState("Northwind Retail");
-	const [isEditingWorkspace, setIsEditingWorkspace] = useState(false);
-	const [workspaceInputValue, setWorkspaceInputValue] = useState("");
+const PALETTE = [
+	"#2f5fe6",
+	"#6257d8",
+	"#686bd9",
+	"#7485ed",
+	"#8b9aff",
+	"#328f97",
+	"#2f6a4a",
+	"#d7975c",
+];
 
-	const inputRef = useRef<HTMLInputElement>(null);
-	useEffect(() => {
-		if (isEditingWorkspace && inputRef.current) {
-			setWorkspaceInputValue(activeWorkspace);
-			inputRef.current.focus();
-			inputRef.current.select();
-		}
-	}, [isEditingWorkspace, activeWorkspace]);
-	const [activeView, setActiveView] = useState<"board" | "list">("board");
-	const [activeFilter, setActiveFilter] = useState("All tickets");
+function getWorkspaceColor(name: string): string {
+	let hash = 0;
+	for (let i = 0; i < name.length; i++) {
+		hash = (hash << 5) - hash + name.charCodeAt(i);
+		hash |= 0;
+	}
+	return PALETTE[Math.abs(hash) % PALETTE.length];
+}
+
+function getInitials(name: string): string {
+	const parts = name.trim().split(/\s+/);
+	if (parts.length >= 2) {
+		return (parts[0][0] + parts[1][0]).toUpperCase();
+	}
+	return name.slice(0, 2).toUpperCase();
+}
+
+function formatRelativeTime(dateStr: string): string {
+	try {
+		const date = new Date(dateStr);
+		const diffMs = Date.now() - date.getTime();
+		const diffMins = Math.floor(diffMs / 60000);
+		if (diffMins < 1) return "Just now";
+		if (diffMins < 60) return `${diffMins}m ago`;
+		const diffHours = Math.floor(diffMins / 60);
+		if (diffHours < 24) return `${diffHours}h ago`;
+		const diffDays = Math.floor(diffHours / 24);
+		if (diffDays === 1) return "Yesterday";
+		if (diffDays < 7) return `${diffDays}d ago`;
+		return date.toLocaleDateString(undefined, {
+			month: "short",
+			day: "numeric",
+		});
+	} catch {
+		return "Recently";
+	}
+}
+
+function getTimeOfDayGreeting(): string {
+	const hour = new Date().getHours();
+	if (hour < 12) return "Good morning";
+	if (hour < 18) return "Good afternoon";
+	return "Good evening";
+}
+
+function Logo() {
+	return (
+		<div className="logo-mark">
+			<span className="logo-k">K</span>
+			<span>izen</span>
+			<i />
+		</div>
+	);
+}
+
+function Avatar({
+	initials,
+	image,
+}: {
+	initials: string;
+	image?: string | null;
+}) {
+	if (image) {
+		return (
+			<img
+				src={image}
+				alt={initials}
+				className="dashboard-avatar w-8 h-8 rounded-full object-cover border border-[#d9d9d2]"
+			/>
+		);
+	}
+	return <span className="dashboard-avatar">{initials}</span>;
+}
+
+export default function Dashboard() {
+	const navigate = useNavigate();
+	const { data: session } = useSession();
+
+	const [workspaces, setWorkspaces] = useState<Workspace[]>([]);
+	const [isLoading, setIsLoading] = useState(true);
+	const [fetchError, setFetchError] = useState<string | null>(null);
+
 	const [query, setQuery] = useState("");
 	const [showCreate, setShowCreate] = useState(false);
-	const [tickets, setIssues] = useState(seedTickets);
+	const [nameInput, setNameInput] = useState("");
+	const [rateInput, setRateInput] = useState("50");
+	const [descInput, setDescInput] = useState("");
+	const [isSubmitting, setIsSubmitting] = useState(false);
+	const [formError, setFormError] = useState<string | null>(null);
+
+	const [deletingId, setDeletingId] = useState<string | null>(null);
 	const [toast, setToast] = useState("");
-	const sprintProgress = 17;
 
-	const visibleTickets = useMemo(
-		() =>
-			Object.fromEntries(
-				Object.entries(tickets).map(([key, list]) => [
-					key,
-					list.filter(
-						(i) =>
-							!query ||
-							`${i.id} ${i.title}`.toLowerCase().includes(query.toLowerCase()),
-					),
-				]),
-			),
-		[tickets, query],
-	);
-	const onMoveTicket = (
-		sourceCol: string,
-		sourceIndex: number,
-		targetCol: string,
-		targetIndex?: number,
-	) => {
-		setIssues((prev) => {
-			const next = { ...prev };
-			const ticketToMove = next[sourceCol][sourceIndex];
-			next[sourceCol] = next[sourceCol].filter((_, i) => i !== sourceIndex);
+	const showToast = (message: string) => {
+		setToast(message);
+		setTimeout(() => setToast(""), 2500);
+	};
 
-			if (targetIndex !== undefined) {
-				next[targetCol] = [
-					...next[targetCol].slice(0, targetIndex),
-					ticketToMove,
-					...next[targetCol].slice(targetIndex),
-				];
-			} else {
-				next[targetCol] = [...next[targetCol], ticketToMove];
-			}
-			return next;
+	const fetchAllWorkspaces = useCallback(async () => {
+		try {
+			setIsLoading(true);
+			setFetchError(null);
+			const data = await listWorkspaces();
+			setWorkspaces(Array.isArray(data) ? data : []);
+		} catch (err: unknown) {
+			const message =
+				err instanceof Error ? err.message : "Failed to load workspaces";
+			setFetchError(message);
+		} finally {
+			setIsLoading(false);
+		}
+	}, []);
+
+	useEffect(() => {
+		fetchAllWorkspaces();
+	}, [fetchAllWorkspaces]);
+
+	const filtered = useMemo(() => {
+		if (!query.trim()) return workspaces;
+		const q = query.toLowerCase();
+		return workspaces.filter(
+			(w) =>
+				w.name.toLowerCase().includes(q) ||
+				w.description?.toLowerCase().includes(q),
+		);
+	}, [workspaces, query]);
+
+	const totalWorkspaces = workspaces.length;
+	const avgRate = useMemo(() => {
+		if (workspaces.length === 0) return 0;
+		const sum = workspaces.reduce(
+			(acc, curr) => acc + (curr.default_hourly_rate || 0),
+			0,
+		);
+		return Math.round(sum / workspaces.length);
+	}, [workspaces]);
+
+	const userName = session?.user?.name || "Developer";
+	const userFirstName = userName.split(" ")[0];
+	const userInitials = getInitials(userName);
+	const userImage = session?.user?.image;
+
+	const handleCreateWorkspace = async (e: React.FormEvent) => {
+		e.preventDefault();
+		if (!nameInput.trim()) {
+			setFormError("Workspace name is required");
+			return;
+		}
+
+		const parsedRate = Number.parseInt(rateInput, 10);
+		if (Number.isNaN(parsedRate) || parsedRate < 0) {
+			setFormError("Hourly rate must be a non-negative number");
+			return;
+		}
+
+		try {
+			setIsSubmitting(true);
+			setFormError(null);
+			const created = await createWorkspace({
+				name: nameInput.trim(),
+				default_hourly_rate: parsedRate,
+				description: descInput.trim() || null,
+			});
+
+			setWorkspaces((prev) => [created, ...prev]);
+			setShowCreate(false);
+			setNameInput("");
+			setDescInput("");
+			setRateInput("50");
+			showToast(`Created workspace "${created.name}"`);
+		} catch (err: unknown) {
+			const msg =
+				err instanceof Error ? err.message : "Failed to create workspace";
+			setFormError(msg);
+		} finally {
+			setIsSubmitting(false);
+		}
+	};
+
+	const handleDelete = async (id: string, name: string) => {
+		if (!confirm(`Are you sure you want to delete workspace "${name}"?`)) {
+			return;
+		}
+		try {
+			setDeletingId(id);
+			await deleteWorkspace(id);
+			setWorkspaces((prev) => prev.filter((w) => w.id !== id));
+			showToast(`Deleted workspace "${name}"`);
+		} catch (err: unknown) {
+			const msg =
+				err instanceof Error ? err.message : "Failed to delete workspace";
+			showToast(msg);
+		} finally {
+			setDeletingId(null);
+		}
+	};
+
+	const handleSignOut = async () => {
+		await authClient.signOut({
+			fetchOptions: {
+				onSuccess: () => {
+					navigate({ to: "/" });
+				},
+			},
 		});
-		setToast(`Ticket moved`);
-		setTimeout(() => setToast(""), 2000);
 	};
 
 	return (
-		<div className="app-shell">
-			<header className="app-topbar">
-				<div className="app-brand flex items-center gap-2">
+		<div className="dashboard-shell">
+			<header className="dashboard-topbar">
+				<Link to="/dashboard" className="dashboard-logo">
 					<Logo />
-					<span className="crumb text-muted-foreground">/</span>
-					{isEditingWorkspace ? (
+				</Link>
+				<div className="dashboard-top-actions">
+					<div className="dashboard-search">
+						<Search size={15} />
 						<input
-							ref={inputRef}
 							type="text"
-							value={workspaceInputValue}
-							onChange={(e) => setWorkspaceInputValue(e.target.value)}
-							className="workspace-editor crumb-current outline-none inline-block min-w-[3ch] cursor-text whitespace-nowrap bg-transparent"
-							onKeyDown={(e) => {
-								if (e.key === "Enter") {
-									e.preventDefault();
-									const name = workspaceInputValue.trim();
-									if (name && name !== activeWorkspace) {
-										setWorkspaces((prev) => [...prev, [name, "0", "#6257d8"]]);
-										setActiveWorkspace(name);
-										setToast(`Navigated to ${name} dashboard`);
-										setTimeout(() => setToast(""), 2000);
-									}
-									setIsEditingWorkspace(false);
-								} else if (e.key === "Escape") {
-									setIsEditingWorkspace(false);
-								}
-							}}
-							onBlur={() => setIsEditingWorkspace(false)}
+							value={query}
+							onChange={(e) => setQuery(e.target.value)}
+							placeholder="Search workspaces…"
+							className="bg-transparent border-none outline-none text-xs w-32 md:w-48"
 						/>
-					) : (
-						<>
-							<DropdownMenu>
-								<DropdownMenuTrigger asChild>
-									<button
-										type="button"
-										aria-label="Select workspace"
-										className="flex items-center gap-1.5 focus:outline-none crumb-current hover:text-black transition-colors"
-									>
-										{activeWorkspace}{" "}
-										<ChevronDownIcon className="w-3.5 h-3.5 opacity-50" />
-									</button>
-								</DropdownMenuTrigger>
-								<DropdownMenuContent
-									align="start"
-									className="w-[220px] bg-[#fafaf7] text-black shadow-xl border border-[#d3d3cd] rounded-md z-50 p-1"
-								>
-									{workspaces.map(([name, count, color]) => (
-										<DropdownMenuItem
-											key={name}
-											onClick={() => setActiveWorkspace(name)}
-											className="flex items-center gap-2 cursor-pointer p-2 hover:bg-[#efefe9] rounded-sm outline-none"
-										>
-											<i
-												style={{
-													width: 8,
-													height: 8,
-													borderRadius: "50%",
-													background: color,
-												}}
-											/>
-											<span className="flex-1">{name}</span>
-											<em className="text-xs opacity-50 not-italic">{count}</em>
-										</DropdownMenuItem>
-									))}
-								</DropdownMenuContent>
-							</DropdownMenu>
-							<button
-								type="button"
-								aria-label="Add new workspace"
-								className="opacity-40 hover:opacity-100 focus:opacity-100 transition-opacity ml-1"
-								onClick={() => setIsEditingWorkspace(true)}
-							>
-								<PlusIcon className="w-3.5 h-3.5" />
-							</button>
-						</>
-					)}
-				</div>
-				<div className="top-actions">
-					<button type="button" className="quick-search">
-						<MagnifyingGlassIcon className="w-4 h-4" />
-						<span>Search tickets</span>
 						<kbd>⌘ K</kbd>
+					</div>
+					<button
+						type="button"
+						onClick={handleSignOut}
+						title="Sign out"
+						className="dashboard-icon"
+						aria-label="Sign out"
+					>
+						<LogOut size={16} />
 					</button>
-					<button type="button" aria-label="Notifications">
-						<BellIcon className="w-4 h-4" />
-					</button>
-					<button type="button" className="top-avatar" aria-label="User menu">
-						<Avatar initials="JD" />
-					</button>
+					<Avatar initials={userInitials} image={userImage} />
 				</div>
 			</header>
-			<div className="app-content">
-				<div className="content-main">
-					<div className="page-title-row">
-						<div>
-							<h1>Sprint board</h1>
-							<p>
-								Tuesday, September 24 <span>·</span> Sprint 14
-							</p>
-						</div>
-						<div className="title-actions">
-							<button
-								type="button"
-								className="primary-button"
-								onClick={() => setShowCreate(true)}
-							>
-								<PlusIcon className="w-4 h-4" /> Create ticket
-							</button>
-						</div>
+
+			<main className="dashboard-content">
+				<div className="dashboard-intro">
+					<div>
+						<p className="dashboard-eyebrow">YOUR WORKSPACE HOME</p>
+						<h1>
+							{getTimeOfDayGreeting()}, {userFirstName}.
+						</h1>
+						<p className="dashboard-subtitle">
+							Pick up where you left off, or start something new.
+						</p>
 					</div>
-					<div className="sprint-summary">
-						<div>
-							<span className="summary-label">SPRINT 14</span>
-							<strong>Northwind momentum</strong>
-							<span className="summary-date">Sep 16 — Sep 27</span>
-						</div>
-						<div className="progress-area">
-							<div className="progress-copy">
-								<span>{sprintProgress} of 29 tickets complete</span>
-								<strong>59%</strong>
-							</div>
-							<div className="progress-track">
-								<i style={{ width: "59%" }} />
-							</div>
-						</div>
-						<div className="sprint-stat">
-							<span>Days left</span>
-							<strong>3</strong>
-						</div>
-					</div>
-					<div className="board-toolbar">
-						<div className="view-toggle">
-							<button
-								type="button"
-								className={activeView === "board" ? "active" : ""}
-								onClick={() => setActiveView("board")}
-							>
-								<ViewColumnsIcon className="w-4 h-4" /> Board
-							</button>
-							<button
-								type="button"
-								className={activeView === "list" ? "active" : ""}
-								onClick={() => setActiveView("list")}
-							>
-								<ListBulletIcon className="w-4 h-4" /> List
-							</button>
-						</div>
-						<div className="toolbar-right">
-							<div className="filter-select">
-								<FunnelIcon className="w-3.5 h-3.5" />
-								<select
-									value={activeFilter}
-									onChange={(e) => setActiveFilter(e.target.value)}
-								>
-									<option>All tickets</option>
-									<option>My tickets</option>
-									<option>High priority</option>
-								</select>
-							</div>
-							<div className="search-tickets">
-								<MagnifyingGlassIcon className="w-3.5 h-3.5" />
-								<input
-									value={query}
-									onChange={(e) => setQuery(e.target.value)}
-									placeholder="Filter by title…"
-								/>
-							</div>
-							<button
-								type="button"
-								className="icon-button"
-								aria-label="More options"
-							>
-								<EllipsisHorizontalIcon className="w-4 h-4" />
-							</button>
-						</div>
-					</div>
-					{activeView === "board" ? (
-						<BoardView
-							columns={columns}
-							visibleTickets={visibleTickets}
-							onMoveTicket={onMoveTicket}
-							onCreateTicket={() => setShowCreate(true)}
-						/>
-					) : (
-						<div className="list-view">
-							{columns
-								.flatMap((c) =>
-									visibleTickets[c.key].map((ticket) => ({
-										...ticket,
-										status: c.title,
-									})),
-								)
-								.map((ticket) => (
-									<div className="list-row" key={ticket.id}>
-										<span className="list-status">{ticket.status}</span>
-										<span className="list-type">{ticket.type}</span>
-										<strong>{ticket.id}</strong>
-										<span>{ticket.title}</span>
-										<span className="list-priority">{ticket.priority}</span>
-										<Avatar initials={ticket.assignee} />
-									</div>
-								))}
-						</div>
-					)}
+					<button
+						type="button"
+						className="dashboard-primary flex items-center gap-1.5"
+						onClick={() => setShowCreate(true)}
+					>
+						<Plus size={16} /> Create workspace
+					</button>
 				</div>
-			</div>
-			<SidebarRight />
-			<div className="status-bar">
+
+				<section className="dashboard-stats">
+					<div className="dashboard-stat primary-stat">
+						<div className="stat-icon">
+							<Grid2X2 size={18} />
+						</div>
+						<div>
+							<span>Total workspaces</span>
+							<strong>{totalWorkspaces}</strong>
+							<small>Across your account</small>
+						</div>
+					</div>
+					<div className="dashboard-stat">
+						<div className="stat-icon blue">
+							<DollarSign size={18} />
+						</div>
+						<div>
+							<span>Avg. hourly rate</span>
+							<strong>${avgRate}/hr</strong>
+							<small>Configured baseline</small>
+						</div>
+					</div>
+					<div className="dashboard-stat">
+						<div className="stat-icon green">
+							<BarChart3 size={18} />
+						</div>
+						<div>
+							<span>Status</span>
+							<strong>Active</strong>
+							<small>Workspace backend connected</small>
+						</div>
+					</div>
+				</section>
+
+				<div className="workspace-toolbar">
+					<div>
+						<h2>Your workspaces</h2>
+						<span>{filtered.length} spaces</span>
+					</div>
+					<div className="workspace-controls">
+						<div className="dashboard-filter">
+							<Search size={14} />
+							<input
+								value={query}
+								onChange={(e) => setQuery(e.target.value)}
+								placeholder="Filter workspaces..."
+							/>
+						</div>
+					</div>
+				</div>
+
+				{isLoading ? (
+					<div className="flex flex-col items-center justify-center p-16 text-[#74746e]">
+						<Loader2 className="w-6 h-6 animate-spin mb-2" />
+						<span className="text-sm">Loading your workspaces…</span>
+					</div>
+				) : fetchError ? (
+					<div className="border border-red-200 bg-red-50 text-red-700 p-6 rounded-md mb-6 flex flex-col items-start gap-2">
+						<strong>Could not load workspaces</strong>
+						<p className="text-sm">{fetchError}</p>
+						<button
+							type="button"
+							onClick={fetchAllWorkspaces}
+							className="text-xs bg-red-600 text-white px-3 py-1.5 rounded hover:bg-red-700"
+						>
+							Try again
+						</button>
+					</div>
+				) : (
+					<section className="workspace-grid">
+						{filtered.map((workspace) => {
+							const color = getWorkspaceColor(workspace.name);
+							const initials = getInitials(workspace.name);
+							return (
+								<div className="workspace-card" key={workspace.id}>
+									<div className="workspace-card-head">
+										<span
+											className="workspace-symbol"
+											style={{ background: color }}
+										>
+											{initials}
+										</span>
+										<button
+											type="button"
+											className="card-more hover:text-red-600 transition-colors"
+											title="Delete workspace"
+											onClick={(e) => {
+												e.preventDefault();
+												e.stopPropagation();
+												handleDelete(workspace.id, workspace.name);
+											}}
+											disabled={deletingId === workspace.id}
+										>
+											{deletingId === workspace.id ? (
+												<Loader2 size={15} className="animate-spin" />
+											) : (
+												<Trash2 size={15} />
+											)}
+										</button>
+									</div>
+									<div className="workspace-card-title">
+										<h3>{workspace.name}</h3>
+										<ArrowUpRight size={15} />
+									</div>
+									<p>
+										{workspace.description ||
+											"A dedicated workspace for your project management and tracking."}
+									</p>
+									<div className="workspace-card-meta">
+										<span>
+											<DollarSign size={13} className="inline-block" /> $
+											{workspace.default_hourly_rate}/hr
+										</span>
+									</div>
+									<div className="workspace-card-footer">
+										<div className="avatar-stack">
+											<Avatar initials={userInitials} image={userImage} />
+										</div>
+										<span className="workspace-updated">
+											Updated {formatRelativeTime(workspace.updated_at)}{" "}
+											<ChevronRight size={13} />
+										</span>
+									</div>
+								</div>
+							);
+						})}
+
+						<button
+							type="button"
+							className="new-workspace-card"
+							onClick={() => setShowCreate(true)}
+						>
+							<span>
+								<Plus size={20} />
+							</span>
+							<strong>Create a workspace</strong>
+							<small>Start organizing a new team or project</small>
+						</button>
+					</section>
+				)}
+
+				<section className="dashboard-lower">
+					<div className="activity-panel">
+						<div className="lower-heading">
+							<div>
+								<p className="dashboard-eyebrow">WORKSPACE SUMMARY</p>
+								<h2>Multi-tenant Encapsulation Active</h2>
+							</div>
+						</div>
+						<div className="activity-row">
+							<span className="activity-dot green" />
+							<div>
+								<strong>Owner Scoped Queries</strong>
+								<small>
+									All workspace operations strictly authenticated via JWT
+								</small>
+							</div>
+						</div>
+						<div className="activity-row">
+							<span className="activity-dot purple" />
+							<div>
+								<strong>Golang Workspace Microservice</strong>
+								<small>
+									PostgreSQL storage with connection pooling & transactions
+								</small>
+							</div>
+						</div>
+					</div>
+					<div className="tip-panel">
+						<Sparkles size={17} />
+						<p className="dashboard-eyebrow">A SMALL IDEA</p>
+						<h3>Make your work visible.</h3>
+						<p>
+							Organize your billable hours and team priorities across dedicated
+							workspaces.
+						</p>
+					</div>
+				</section>
+			</main>
+
+			<footer className="dashboard-footer">
 				<span>
-					<ChartBarIcon className="w-3.5 h-3.5" /> All systems operational
+					<Logo /> <em>Minimal project management for focused teams.</em>
 				</span>
-				<span>Last synced just now</span>
-			</div>
+				<span>All systems operational · 2026</span>
+			</footer>
+
 			{toast && (
-				<div className="toast">
-					<CheckIcon className="w-4 h-4" /> {toast}
+				<div className="dashboard-toast">
+					<CircleDot size={14} /> {toast}
 				</div>
 			)}
 
-			<Popout
-				isOpen={showCreate}
-				onClose={() => setShowCreate(false)}
-				eyebrow="NEW TICKET"
-				title="Create a ticket"
-			>
-				<label>
-					Ticket title
-					<input placeholder="What needs to be done?" />
-				</label>
-				<div className="form-grid">
-					<label>
-						Type
-						<select>
-							<option>Feature</option>
-							<option>Bug</option>
-							<option>Task</option>
-						</select>
-					</label>
-					<label>
-						Priority
-						<select>
-							<option>Medium</option>
-							<option>High</option>
-							<option>Low</option>
-						</select>
-					</label>
-				</div>
-				<label>
-					Description
-					<textarea placeholder="Add a little context…" />
-				</label>
-				<div className="modal-actions">
+			{showCreate && (
+				<div className="dashboard-modal-backdrop">
 					<button
 						type="button"
-						className="secondary-button"
-						onClick={() => setShowCreate(false)}
-					>
-						Cancel
-					</button>
-					<button
-						type="button"
-						className="primary-button"
-						onClick={() => {
-							setShowCreate(false);
-							setToast("Ticket created in Backlog");
-							setTimeout(() => setToast(""), 2000);
-						}}
-					>
-						Create ticket
-					</button>
+						aria-label="Close backdrop"
+						className="fixed inset-0 w-full h-full cursor-default bg-transparent border-none p-0 m-0 -z-10"
+						onClick={() => !isSubmitting && setShowCreate(false)}
+					/>
+					<div className="dashboard-modal" role="dialog" aria-modal="true">
+						<div className="dashboard-modal-head">
+							<div>
+								<p className="dashboard-eyebrow">NEW SPACE</p>
+								<h2>Create a workspace</h2>
+							</div>
+							<button
+								type="button"
+								onClick={() => setShowCreate(false)}
+								disabled={isSubmitting}
+								aria-label="Close modal"
+							>
+								×
+							</button>
+						</div>
+
+						{formError && (
+							<div className="bg-red-50 text-red-700 text-xs p-2.5 rounded border border-red-200 mb-2">
+								{formError}
+							</div>
+						)}
+
+						<form
+							onSubmit={handleCreateWorkspace}
+							className="flex flex-col gap-3"
+						>
+							<label>
+								Workspace name *
+								<input
+									type="text"
+									required
+									value={nameInput}
+									onChange={(e) => setNameInput(e.target.value)}
+									placeholder="e.g. Acme Studio"
+									disabled={isSubmitting}
+								/>
+							</label>
+
+							<label>
+								Default hourly rate ($/hr)
+								<input
+									type="number"
+									min="0"
+									value={rateInput}
+									onChange={(e) => setRateInput(e.target.value)}
+									placeholder="e.g. 75"
+									disabled={isSubmitting}
+								/>
+							</label>
+
+							<label>
+								Short description
+								<textarea
+									rows={3}
+									value={descInput}
+									onChange={(e) => setDescInput(e.target.value)}
+									placeholder="What will this workspace help organize?"
+									disabled={isSubmitting}
+								/>
+							</label>
+
+							<div className="dashboard-modal-actions mt-2">
+								<button
+									type="button"
+									className="dashboard-secondary"
+									onClick={() => setShowCreate(false)}
+									disabled={isSubmitting}
+								>
+									Cancel
+								</button>
+								<button
+									type="submit"
+									className="dashboard-primary flex items-center justify-center gap-1.5"
+									disabled={isSubmitting}
+								>
+									{isSubmitting ? (
+										<>
+											<Loader2 size={15} className="animate-spin" /> Creating…
+										</>
+									) : (
+										<>
+											<Plus size={15} /> Create workspace
+										</>
+									)}
+								</button>
+							</div>
+						</form>
+					</div>
 				</div>
-			</Popout>
+			)}
 		</div>
 	);
 }

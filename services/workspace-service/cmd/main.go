@@ -16,6 +16,7 @@ import (
 	"github.com/go-chi/chi/v5/middleware"
 	"github.com/jackc/pgx/v5/pgxpool"
 	"github.com/samSRaina/kizen/internal/config"
+	authMiddleware "github.com/samSRaina/kizen/internal/middleware"
 	"github.com/samSRaina/kizen/services/workspace-service/internal/api"
 	"github.com/samSRaina/kizen/services/workspace-service/internal/handler"
 	"github.com/samSRaina/kizen/services/workspace-service/internal/infrastructure/repository"
@@ -72,6 +73,7 @@ func run(logger *slog.Logger) error {
 	r.Use(middleware.RequestID)
 	r.Use(middleware.Logger)
 	r.Use(middleware.Recoverer)
+	r.Use(authMiddleware.RequireAuth)
 
 	api.HandlerFromMux(strictHandler, r)
 

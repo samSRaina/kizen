@@ -14,6 +14,7 @@ import (
 
 type Workspace struct {
 	ID                uuid.UUID
+	OwnerID           string
 	Name              string
 	DefaultHourlyRate int
 	Description       *string
@@ -22,6 +23,7 @@ type Workspace struct {
 }
 
 type CreateWorkspaceInput struct {
+	OwnerID           string
 	Name              string
 	DefaultHourlyRate int
 	Description       *string

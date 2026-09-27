@@ -12,12 +12,13 @@ import (
 )
 
 const createWorkspace = `-- name: CreateWorkspace :one
-INSERT INTO workspaces (name, default_hourly_rate, description)
-VALUES ($1, $2, $3)
-RETURNING id, name, default_hourly_rate, description, created_at, updated_at
+INSERT INTO workspaces (owner_id, name, default_hourly_rate, description)
+VALUES ($1, $2, $3, $4)
+RETURNING id, owner_id, name, default_hourly_rate, description, created_at, updated_at
 `
 
 type CreateWorkspaceParams struct {
+	OwnerID           string  `json:"owner_id"`
 	Name              string  `json:"name"`
 	DefaultHourlyRate int32   `json:"default_hourly_rate"`
 	Description       *string `json:"description"`
@@ -25,10 +26,16 @@ type CreateWorkspaceParams struct {
 
 // WORKSPACES --
 func (q *Queries) CreateWorkspace(ctx context.Context, arg CreateWorkspaceParams) (Workspace, error) {
-	row := q.db.QueryRow(ctx, createWorkspace, arg.Name, arg.DefaultHourlyRate, arg.Description)
+	row := q.db.QueryRow(ctx, createWorkspace,
+		arg.OwnerID,
+		arg.Name,
+		arg.DefaultHourlyRate,
+		arg.Description,
+	)
 	var i Workspace
 	err := row.Scan(
 		&i.ID,
+		&i.OwnerID,
 		&i.Name,
 		&i.DefaultHourlyRate,
 		&i.Description,
@@ -40,11 +47,16 @@ func (q *Queries) CreateWorkspace(ctx context.Context, arg CreateWorkspaceParams
 
 const deleteWorkspace = `-- name: DeleteWorkspace :execrows
 DELETE FROM workspaces
-WHERE id = $1
+WHERE id = $1 AND owner_id = $2
 `
 
-func (q *Queries) DeleteWorkspace(ctx context.Context, id uuid.UUID) (int64, error) {
-	result, err := q.db.Exec(ctx, deleteWorkspace, id)
+type DeleteWorkspaceParams struct {
+	ID      uuid.UUID `json:"id"`
+	OwnerID string    `json:"owner_id"`
+}
+
+func (q *Queries) DeleteWorkspace(ctx context.Context, arg DeleteWorkspaceParams) (int64, error) {
+	result, err := q.db.Exec(ctx, deleteWorkspace, arg.ID, arg.OwnerID)
 	if err != nil {
 		return 0, err
 	}
@@ -52,15 +64,21 @@ func (q *Queries) DeleteWorkspace(ctx context.Context, id uuid.UUID) (int64, err
 }
 
 const getWorkspaceByID = `-- name: GetWorkspaceByID :one
-SELECT id, name, default_hourly_rate, description, created_at, updated_at FROM workspaces
-WHERE id = $1
+SELECT id, owner_id, name, default_hourly_rate, description, created_at, updated_at FROM workspaces
+WHERE id = $1 AND owner_id = $2
 `
 
-func (q *Queries) GetWorkspaceByID(ctx context.Context, id uuid.UUID) (Workspace, error) {
-	row := q.db.QueryRow(ctx, getWorkspaceByID, id)
+type GetWorkspaceByIDParams struct {
+	ID      uuid.UUID `json:"id"`
+	OwnerID string    `json:"owner_id"`
+}
+
+func (q *Queries) GetWorkspaceByID(ctx context.Context, arg GetWorkspaceByIDParams) (Workspace, error) {
+	row := q.db.QueryRow(ctx, getWorkspaceByID, arg.ID, arg.OwnerID)
 	var i Workspace
 	err := row.Scan(
 		&i.ID,
+		&i.OwnerID,
 		&i.Name,
 		&i.DefaultHourlyRate,
 		&i.Description,
@@ -71,12 +89,13 @@ func (q *Queries) GetWorkspaceByID(ctx context.Context, id uuid.UUID) (Workspace
 }
 
 const listWorkspaces = `-- name: ListWorkspaces :many
-SELECT id, name, default_hourly_rate, description, created_at, updated_at FROM workspaces
+SELECT id, owner_id, name, default_hourly_rate, description, created_at, updated_at FROM workspaces
+WHERE owner_id = $1
 ORDER BY created_at DESC
 `
 
-func (q *Queries) ListWorkspaces(ctx context.Context) ([]Workspace, error) {
-	rows, err := q.db.Query(ctx, listWorkspaces)
+func (q *Queries) ListWorkspaces(ctx context.Context, ownerID string) ([]Workspace, error) {
+	rows, err := q.db.Query(ctx, listWorkspaces, ownerID)
 	if err != nil {
 		return nil, err
 	}
@@ -86,6 +105,7 @@ func (q *Queries) ListWorkspaces(ctx context.Context) ([]Workspace, error) {
 		var i Workspace
 		if err := rows.Scan(
 			&i.ID,
+			&i.OwnerID,
 			&i.Name,
 			&i.DefaultHourlyRate,
 			&i.Description,

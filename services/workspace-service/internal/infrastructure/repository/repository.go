@@ -22,10 +22,32 @@ func NewRepository(pool *pgxpool.Pool) *Repository {
 	}
 }
 
+func (r *Repository) List(ctx context.Context, ownerID string) ([]domain.Workspace, error) {
+	rows, err := r.q.ListWorkspaces(ctx, ownerID)
+	if err != nil {
+		return nil, fmt.Errorf("list workspaces: %w", err)
+	}
+	result := make([]domain.Workspace, len(rows))
+	for i, row := range rows {
+		result[i] = domain.Workspace{
+			ID:                row.ID,
+			OwnerID:           row.OwnerID,
+			Name:              row.Name,
+			Description:       row.Description,
+			DefaultHourlyRate: int(row.DefaultHourlyRate),
+			CreatedAt:         row.CreatedAt.Time,
+			UpdatedAt:         row.UpdatedAt.Time,
+		}
+	}
+	return result, nil
+}
+
 func (r *Repository) Create(ctx context.Context, in domain.CreateWorkspaceInput) (*domain.Workspace, error) {
 	row, err := r.q.CreateWorkspace(ctx, database.CreateWorkspaceParams{
+		OwnerID:           in.OwnerID,
 		Name:              in.Name,
 		DefaultHourlyRate: int32(in.DefaultHourlyRate),
+		Description:       in.Description,
 	})
 	if err != nil {
 		var pgErr *pgconn.PgError
@@ -36,6 +58,7 @@ func (r *Repository) Create(ctx context.Context, in domain.CreateWorkspaceInput)
 	}
 	return &domain.Workspace{
 		ID:                row.ID,
+		OwnerID:           row.OwnerID,
 		Name:              row.Name,
 		Description:       row.Description,
 		DefaultHourlyRate: int(row.DefaultHourlyRate),
@@ -44,8 +67,11 @@ func (r *Repository) Create(ctx context.Context, in domain.CreateWorkspaceInput)
 	}, nil
 }
 
-func (r *Repository) Delete(ctx context.Context, id uuid.UUID) error {
-	rows, err := r.q.DeleteWorkspace(ctx, id)
+func (r *Repository) Delete(ctx context.Context, id uuid.UUID, ownerID string) error {
+	rows, err := r.q.DeleteWorkspace(ctx, database.DeleteWorkspaceParams{
+		ID:      id,
+		OwnerID: ownerID,
+	})
 	if err != nil {
 		return fmt.Errorf("delete workspace: %w", err)
 	}

@@ -187,6 +187,7 @@ type TimeEntry struct {
 
 type Workspace struct {
 	ID                uuid.UUID          `json:"id"`
+	OwnerID           string             `json:"owner_id"`
 	Name              string             `json:"name"`
 	DefaultHourlyRate int32              `json:"default_hourly_rate"`
 	Description       *string            `json:"description"`

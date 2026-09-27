@@ -26,6 +26,17 @@ services:
       - "traefik.http.routers.web.rule=PathPrefix(`/`)"
       - "traefik.http.routers.web.priority=1"
       - "traefik.http.services.web.loadbalancer.server.port=80"
+    environment:
+      PORT: "80"
+      NODE_ENV: "production"
+      AUTH_DATABASE_PATH: "/app/data/auth.db"
+      BETTER_AUTH_SECRET: ${BETTER_AUTH_SECRET}
+      BETTER_AUTH_URL: ${BETTER_AUTH_URL:-http://localhost}
+      GITHUB_CLIENT_ID: ${GITHUB_CLIENT_ID:-}
+      GITHUB_CLIENT_SECRET: ${GITHUB_CLIENT_SECRET:-}
+      WORKSPACE_SERVICE_URL: "http://workspace-service:${WORKSPACE_SERVICE_PORT}"
+    volumes:
+      - web_auth_data:/app/data
     healthcheck:
       test: ["CMD", "wget", "--spider", "-q", "http://127.0.0.1:80/"]
       interval: 10s
@@ -74,7 +85,7 @@ services:
   #     database:
   #       condition: service_healthy
   #   networks:
-  #     - kizen
+  #     - kizen-internal
 
   workspace-service:
     image: kizen/workspace-service
@@ -92,6 +103,8 @@ services:
     environment:
       WORKSPACE_SERVICE_PORT: ${WORKSPACE_SERVICE_PORT}
       DATABASE_URL: postgres://${POSTGRES_USER}:${POSTGRES_PASSWORD}@database:5432/${POSTGRES_DB}?sslmode=disable
+      BETTER_AUTH_SECRET: ${BETTER_AUTH_SECRET}
+      BETTER_AUTH_JWKS_URL: http://web:80/api/auth/jwks
     depends_on:
       database:
         condition: service_healthy
@@ -100,6 +113,8 @@ services:
 
 volumes:
   postgres_data:
+  web_auth_data:
+
 networks:
   kizen-internal:
     driver: bridge
