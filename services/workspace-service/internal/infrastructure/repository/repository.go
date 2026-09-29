@@ -4,11 +4,13 @@ import (
 	"context"
 	"errors"
 	"fmt"
+	"strings"
 
 	"github.com/google/uuid"
 	"github.com/jackc/pgx/v5/pgconn"
 	"github.com/jackc/pgx/v5/pgxpool"
 	"github.com/samSRaina/kizen/internal/database"
+	"github.com/samSRaina/kizen/internal/middleware"
 	"github.com/samSRaina/kizen/services/workspace-service/internal/domain"
 )
 
@@ -22,7 +24,20 @@ func NewRepository(pool *pgxpool.Pool) *Repository {
 	}
 }
 
-func (r *Repository) List(ctx context.Context, ownerID string) ([]domain.Workspace, error) {
+func getOwnerID(ctx context.Context) (string, error) {
+	userID, ok := middleware.GetUserID(ctx)
+	if !ok || strings.TrimSpace(userID) == "" {
+		return "", fmt.Errorf("%w: missing user context", domain.ErrInvalidInput)
+	}
+	return userID, nil
+}
+
+func (r *Repository) List(ctx context.Context) ([]domain.Workspace, error) {
+	ownerID, err := getOwnerID(ctx)
+	if err != nil {
+		return nil, err
+	}
+
 	rows, err := r.q.ListWorkspaces(ctx, ownerID)
 	if err != nil {
 		return nil, fmt.Errorf("list workspaces: %w", err)
@@ -43,8 +58,13 @@ func (r *Repository) List(ctx context.Context, ownerID string) ([]domain.Workspa
 }
 
 func (r *Repository) Create(ctx context.Context, in domain.CreateWorkspaceInput) (*domain.Workspace, error) {
+	ownerID, err := getOwnerID(ctx)
+	if err != nil {
+		return nil, err
+	}
+
 	row, err := r.q.CreateWorkspace(ctx, database.CreateWorkspaceParams{
-		OwnerID:           in.OwnerID,
+		OwnerID:           ownerID,
 		Name:              in.Name,
 		DefaultHourlyRate: int32(in.DefaultHourlyRate),
 		Description:       in.Description,
@@ -67,7 +87,12 @@ func (r *Repository) Create(ctx context.Context, in domain.CreateWorkspaceInput)
 	}, nil
 }
 
-func (r *Repository) Delete(ctx context.Context, id uuid.UUID, ownerID string) error {
+func (r *Repository) Delete(ctx context.Context, id uuid.UUID) error {
+	ownerID, err := getOwnerID(ctx)
+	if err != nil {
+		return err
+	}
+
 	rows, err := r.q.DeleteWorkspace(ctx, database.DeleteWorkspaceParams{
 		ID:      id,
 		OwnerID: ownerID,

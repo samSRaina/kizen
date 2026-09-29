@@ -5,7 +5,6 @@ import (
 	"errors"
 	"fmt"
 	"net/http"
-	"strings"
 
 	"github.com/google/uuid"
 	"github.com/samSRaina/kizen/internal/middleware"
@@ -14,9 +13,9 @@ import (
 )
 
 type Service interface {
-	List(ctx context.Context, ownerID string) ([]domain.Workspace, error)
+	List(ctx context.Context) ([]domain.Workspace, error)
 	Create(ctx context.Context, in domain.CreateWorkspaceInput) (*domain.Workspace, error)
-	Delete(ctx context.Context, id uuid.UUID, ownerID string) error
+	Delete(ctx context.Context, id uuid.UUID) error
 }
 
 type Handler struct {
@@ -30,8 +29,11 @@ func NewHandler(s Service) *Handler {
 var _ api.StrictServerInterface = (*Handler)(nil)
 
 func (h *Handler) ListWorkspaces(ctx context.Context, request api.ListWorkspacesRequestObject) (api.ListWorkspacesResponseObject, error) {
-	userID, ok := middleware.GetUserID(ctx)
-	if !ok || strings.TrimSpace(userID) == "" {
+	// Let the context propagate directly down to the service & repository.
+	// The core business layer shouldn't crash if unauth (handled implicitly or through repository checks).
+	// However, we can keep this top level HTTP guard to send proper 401s if context metadata is missing!
+	_, ok := middleware.GetUserID(ctx)
+	if !ok {
 		detail := "unauthorized: missing or invalid authentication token"
 		return api.ListWorkspaces401ApplicationProblemPlusJSONResponse{
 			UnauthorizedApplicationProblemPlusJSONResponse: api.UnauthorizedApplicationProblemPlusJSONResponse{
@@ -42,7 +44,7 @@ func (h *Handler) ListWorkspaces(ctx context.Context, request api.ListWorkspaces
 		}, nil
 	}
 
-	workspaces, err := h.s.List(ctx, userID)
+	workspaces, err := h.s.List(ctx)
 	if err != nil {
 		return nil, fmt.Errorf("handler: %w", err)
 	}
@@ -55,8 +57,8 @@ func (h *Handler) ListWorkspaces(ctx context.Context, request api.ListWorkspaces
 }
 
 func (h *Handler) CreateWorkspace(ctx context.Context, request api.CreateWorkspaceRequestObject) (api.CreateWorkspaceResponseObject, error) {
-	userID, ok := middleware.GetUserID(ctx)
-	if !ok || strings.TrimSpace(userID) == "" {
+	_, ok := middleware.GetUserID(ctx)
+	if !ok {
 		detail := "unauthorized: missing or invalid authentication token"
 		return api.CreateWorkspace401ApplicationProblemPlusJSONResponse{
 			UnauthorizedApplicationProblemPlusJSONResponse: api.UnauthorizedApplicationProblemPlusJSONResponse{
@@ -79,11 +81,11 @@ func (h *Handler) CreateWorkspace(ctx context.Context, request api.CreateWorkspa
 	}
 
 	in := domain.CreateWorkspaceInput{
-		OwnerID:           userID,
 		Name:              request.Body.Name,
 		DefaultHourlyRate: request.Body.DefaultHourlyRate,
 		Description:       request.Body.Description,
 	}
+
 	created, err := h.s.Create(ctx, in)
 	if err != nil {
 		switch {
@@ -113,8 +115,8 @@ func (h *Handler) CreateWorkspace(ctx context.Context, request api.CreateWorkspa
 }
 
 func (h *Handler) DeleteWorkspace(ctx context.Context, request api.DeleteWorkspaceRequestObject) (api.DeleteWorkspaceResponseObject, error) {
-	userID, ok := middleware.GetUserID(ctx)
-	if !ok || strings.TrimSpace(userID) == "" {
+	_, ok := middleware.GetUserID(ctx)
+	if !ok {
 		detail := "unauthorized: missing or invalid authentication token"
 		return api.DeleteWorkspace401ApplicationProblemPlusJSONResponse{
 			UnauthorizedApplicationProblemPlusJSONResponse: api.UnauthorizedApplicationProblemPlusJSONResponse{
@@ -125,7 +127,7 @@ func (h *Handler) DeleteWorkspace(ctx context.Context, request api.DeleteWorkspa
 		}, nil
 	}
 
-	err := h.s.Delete(ctx, request.Id, userID)
+	err := h.s.Delete(ctx, request.Id)
 	if err != nil {
 		switch {
 		case errors.Is(err, domain.ErrNotFound):

@@ -17,12 +17,9 @@ func NewService(r domain.Repository) *Service {
 	return &Service{r: r}
 }
 
-func (s *Service) List(ctx context.Context, ownerID string) ([]domain.Workspace, error) {
+func (s *Service) List(ctx context.Context) ([]domain.Workspace, error) {
 	const op = "service.List"
-	if strings.TrimSpace(ownerID) == "" {
-		return nil, fmt.Errorf("%s: %w: owner ID is required", op, domain.ErrInvalidInput)
-	}
-	workspaces, err := s.r.List(ctx, ownerID)
+	workspaces, err := s.r.List(ctx)
 	if err != nil {
 		return nil, fmt.Errorf("%s: %w", op, err)
 	}
@@ -43,12 +40,9 @@ func (s *Service) Create(ctx context.Context, in domain.CreateWorkspaceInput) (*
 	return created, nil
 }
 
-func (s *Service) Delete(ctx context.Context, id uuid.UUID, ownerID string) error {
+func (s *Service) Delete(ctx context.Context, id uuid.UUID) error {
 	const op = "service.Delete"
-	if strings.TrimSpace(ownerID) == "" {
-		return fmt.Errorf("%s: %w: owner ID is required", op, domain.ErrInvalidInput)
-	}
-	err := s.r.Delete(ctx, id, ownerID)
+	err := s.r.Delete(ctx, id)
 	if err != nil {
 		return fmt.Errorf("%s: %w", op, err)
 	}
@@ -56,9 +50,6 @@ func (s *Service) Delete(ctx context.Context, id uuid.UUID, ownerID string) erro
 }
 
 func validate(in domain.CreateWorkspaceInput) error {
-	if strings.TrimSpace(in.OwnerID) == "" {
-		return fmt.Errorf("%w: owner ID is required", domain.ErrInvalidInput)
-	}
 	if strings.TrimSpace(in.Name) == "" {
 		return fmt.Errorf("%w: workspace name is required", domain.ErrInvalidInput)
 	}

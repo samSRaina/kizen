@@ -1,52 +1,7 @@
+import { ArrowRightIcon, SparklesIcon } from "@heroicons/react/24/outline";
 import { Link, useNavigate } from "@tanstack/react-router";
-import { type ReactElement, useEffect, useState } from "react";
+import { useEffect, useState } from "react";
 import { signInWithGithub, useSession } from "../lib/auth-client";
-
-type IconName = "arrow" | "spark";
-
-function HeroIcon({ name, size = 18 }: { name: IconName; size?: number }) {
-	const paths: Record<IconName, ReactElement> = {
-		arrow: (
-			<path
-				d="M4 12h16m0 0-6-6m6 6-6 6"
-				stroke="currentColor"
-				strokeWidth="1.7"
-				strokeLinecap="round"
-				strokeLinejoin="round"
-			/>
-		),
-		spark: (
-			<>
-				<path
-					d="m12 2 1.5 6.5L20 10l-6.5 1.5L12 18l-1.5-6.5L4 10l6.5-1.5L12 2Z"
-					stroke="currentColor"
-					strokeWidth="1.7"
-					strokeLinecap="round"
-					strokeLinejoin="round"
-				/>
-				<path
-					d="m19 16 .6 2.4L22 19l-2.4.6L19 22l-.6-2.4L16 19l2.4-.6L19 16Z"
-					stroke="currentColor"
-					strokeWidth="1.7"
-					strokeLinecap="round"
-					strokeLinejoin="round"
-				/>
-			</>
-		),
-	};
-	return (
-		<svg
-			className="hero-icon"
-			width={size}
-			height={size}
-			viewBox="0 0 24 24"
-			fill="none"
-			aria-hidden="true"
-		>
-			{paths[name]}
-		</svg>
-	);
-}
 
 function GithubIcon() {
 	return (
@@ -133,7 +88,8 @@ export function AuthForm({ initialMode }: AuthFormProps) {
 					<Logo />
 				</Link>
 				<Link to="/" className="minimal-back">
-					Back to dashboard <HeroIcon name="arrow" size={13} />
+					Back to dashboard{" "}
+					<ArrowRightIcon className="w-3.5 h-3.5 inline-block" />
 				</Link>
 			</header>
 
@@ -143,7 +99,7 @@ export function AuthForm({ initialMode }: AuthFormProps) {
 						<Logo />
 					</div>
 					<p className="minimal-auth-eyebrow">
-						<HeroIcon name="spark" size={12} /> KIZEN APP
+						<SparklesIcon className="w-3 h-3 inline-block" /> KIZEN APP
 					</p>
 					<h1>{isSignup ? "Welcome to Kizen" : "Welcome back"}</h1>
 					<p className="minimal-auth-subtitle">
@@ -159,7 +115,8 @@ export function AuthForm({ initialMode }: AuthFormProps) {
 							<strong>You're all set.</strong>
 							<span>GitHub authentication is connecting...</span>
 							<Link to="/dashboard">
-								Continue to dashboard <HeroIcon name="arrow" size={13} />
+								Continue to dashboard{" "}
+								<ArrowRightIcon className="w-3.5 h-3.5 inline-block" />
 							</Link>
 						</div>
 					) : (
@@ -185,7 +142,7 @@ export function AuthForm({ initialMode }: AuthFormProps) {
 							onClick={() => switchMode(isSignup ? "signin" : "signup")}
 						>
 							{isSignup ? "Sign in" : "Sign up"}{" "}
-							<HeroIcon name="arrow" size={12} />
+							<ArrowRightIcon className="w-3 h-3 inline-block" />
 						</button>
 					</div>
 				</div>

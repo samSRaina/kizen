@@ -23,7 +23,6 @@ type Workspace struct {
 }
 
 type CreateWorkspaceInput struct {
-	OwnerID           string
 	Name              string
 	DefaultHourlyRate int
 	Description       *string
