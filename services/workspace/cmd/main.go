@@ -17,10 +17,10 @@ import (
 	"github.com/jackc/pgx/v5/pgxpool"
 	"github.com/samSRaina/kizen/internal/config"
 	customMiddleware "github.com/samSRaina/kizen/internal/middleware"
-	"github.com/samSRaina/kizen/services/workspace-service/internal/api"
-	"github.com/samSRaina/kizen/services/workspace-service/internal/handler"
-	"github.com/samSRaina/kizen/services/workspace-service/internal/infrastructure/repository"
-	"github.com/samSRaina/kizen/services/workspace-service/internal/service"
+	"github.com/samSRaina/kizen/services/workspace/internal/api"
+	"github.com/samSRaina/kizen/services/workspace/internal/handler"
+	"github.com/samSRaina/kizen/services/workspace/internal/infrastructure/repository"
+	"github.com/samSRaina/kizen/services/workspace/internal/service"
 )
 
 func main() {
@@ -51,12 +51,14 @@ func run(logger *slog.Logger) error {
 
 	repo := repository.NewRepository(pool)
 	srv := service.NewService(repo)
-	h := handler.NewHandler(srv)
+	handler := handler.NewHandler(srv)
 
-	strictHandler := api.NewStrictHandlerWithOptions(h, nil, api.StrictHTTPServerOptions{
+	strictHandler := api.NewStrictHandlerWithOptions(handler, nil, api.StrictHTTPServerOptions{
 		ResponseErrorHandlerFunc: func(w http.ResponseWriter, r *http.Request, err error) {
+			reqLogger := customMiddleware.GetLogger(r.Context())
+
 			// Log the REAL error securely into your own console/logs
-			logger.Error("Unhandled request error",
+			reqLogger.Error("Unhandled request error",
 				"error", err.Error(),
 				"path", r.URL.Path,
 				"method", r.Method,
@@ -69,11 +71,13 @@ func run(logger *slog.Logger) error {
 		},
 	})
 
+	// the middleware injection is ordered and strict. Do not randomly change
 	r := chi.NewRouter()
 	r.Use(middleware.RequestID)
 	r.Use(middleware.Logger)
 	r.Use(middleware.Recoverer)
 	r.Use(customMiddleware.RequireAuth)
+	r.Use(customMiddleware.InjectLogger(logger))
 
 	api.HandlerFromMux(strictHandler, r)
 

@@ -7,8 +7,8 @@ import (
 	"time"
 
 	"github.com/google/uuid"
-	"github.com/samSRaina/kizen/services/workspace-service/internal/domain"
-	"github.com/samSRaina/kizen/services/workspace-service/internal/service"
+	"github.com/samSRaina/kizen/services/workspace/internal/domain"
+	"github.com/samSRaina/kizen/services/workspace/internal/service"
 )
 
 type mockRepository struct {

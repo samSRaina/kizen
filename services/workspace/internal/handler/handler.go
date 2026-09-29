@@ -3,13 +3,12 @@ package handler
 import (
 	"context"
 	"errors"
-	"fmt"
 	"net/http"
 
 	"github.com/google/uuid"
 	"github.com/samSRaina/kizen/internal/middleware"
-	"github.com/samSRaina/kizen/services/workspace-service/internal/api"
-	"github.com/samSRaina/kizen/services/workspace-service/internal/domain"
+	"github.com/samSRaina/kizen/services/workspace/internal/api"
+	"github.com/samSRaina/kizen/services/workspace/internal/domain"
 )
 
 type Service interface {
@@ -28,10 +27,51 @@ func NewHandler(s Service) *Handler {
 
 var _ api.StrictServerInterface = (*Handler)(nil)
 
+func statusCodeForError(err error) int {
+	switch {
+	case errors.Is(err, domain.ErrInvalidInput):
+		return http.StatusBadRequest
+	case errors.Is(err, domain.ErrNotFound):
+		return http.StatusNotFound
+	case errors.Is(err, domain.ErrConflict):
+		return http.StatusConflict
+	default:
+		return http.StatusInternalServerError
+	}
+}
+
+// Helpers to quickly map standard status codes back to OpenAPI generated interfaces
+func construct400(message string) api.CreateWorkspace400ApplicationProblemPlusJSONResponse {
+	return api.CreateWorkspace400ApplicationProblemPlusJSONResponse{
+		BadRequestApplicationProblemPlusJSONResponse: api.BadRequestApplicationProblemPlusJSONResponse{
+			Status: http.StatusBadRequest,
+			Title:  "Bad Request",
+			Detail: &message,
+		},
+	}
+}
+
+func construct404(message string) api.DeleteWorkspace404ApplicationProblemPlusJSONResponse {
+	return api.DeleteWorkspace404ApplicationProblemPlusJSONResponse{
+		NotFoundApplicationProblemPlusJSONResponse: api.NotFoundApplicationProblemPlusJSONResponse{
+			Status: http.StatusNotFound,
+			Title:  "Not Found",
+			Detail: &message,
+		},
+	}
+}
+
+func construct409(message string) api.CreateWorkspace409ApplicationProblemPlusJSONResponse {
+	return api.CreateWorkspace409ApplicationProblemPlusJSONResponse{
+		ConflictApplicationProblemPlusJSONResponse: api.ConflictApplicationProblemPlusJSONResponse{
+			Status: http.StatusConflict,
+			Title:  "Conflict",
+			Detail: &message,
+		},
+	}
+}
+
 func (h *Handler) ListWorkspaces(ctx context.Context, request api.ListWorkspacesRequestObject) (api.ListWorkspacesResponseObject, error) {
-	// Let the context propagate directly down to the service & repository.
-	// The core business layer shouldn't crash if unauth (handled implicitly or through repository checks).
-	// However, we can keep this top level HTTP guard to send proper 401s if context metadata is missing!
 	_, ok := middleware.GetUserID(ctx)
 	if !ok {
 		detail := "unauthorized: missing or invalid authentication token"
@@ -46,7 +86,9 @@ func (h *Handler) ListWorkspaces(ctx context.Context, request api.ListWorkspaces
 
 	workspaces, err := h.s.List(ctx)
 	if err != nil {
-		return nil, fmt.Errorf("handler: %w", err)
+		logger := middleware.GetLogger(ctx)
+		logger.Error("failed to list workspaces", "error", err)
+		return nil, err // Returning actual standard error triggers 500 handler boundary
 	}
 
 	response := make(api.ListWorkspaces200JSONResponse, len(workspaces))
@@ -70,14 +112,7 @@ func (h *Handler) CreateWorkspace(ctx context.Context, request api.CreateWorkspa
 	}
 
 	if request.Body == nil {
-		detail := "request body is required"
-		return api.CreateWorkspace400ApplicationProblemPlusJSONResponse{
-			BadRequestApplicationProblemPlusJSONResponse: api.BadRequestApplicationProblemPlusJSONResponse{
-				Status: http.StatusBadRequest,
-				Title:  "Bad Request",
-				Detail: &detail,
-			},
-		}, nil
+		return construct400("request body is required"), nil
 	}
 
 	in := domain.CreateWorkspaceInput{
@@ -88,27 +123,16 @@ func (h *Handler) CreateWorkspace(ctx context.Context, request api.CreateWorkspa
 
 	created, err := h.s.Create(ctx, in)
 	if err != nil {
-		switch {
-		case errors.Is(err, domain.ErrInvalidInput):
-			detail := err.Error()
-			return api.CreateWorkspace400ApplicationProblemPlusJSONResponse{
-				BadRequestApplicationProblemPlusJSONResponse: api.BadRequestApplicationProblemPlusJSONResponse{
-					Status: http.StatusBadRequest,
-					Title:  "Bad Request",
-					Detail: &detail,
-				},
-			}, nil
-		case errors.Is(err, domain.ErrConflict):
-			detail := err.Error()
-			return api.CreateWorkspace409ApplicationProblemPlusJSONResponse{
-				ConflictApplicationProblemPlusJSONResponse: api.ConflictApplicationProblemPlusJSONResponse{
-					Status: http.StatusConflict,
-					Title:  "Conflict",
-					Detail: &detail,
-				},
-			}, nil
+		switch statusCodeForError(err) {
+		case http.StatusBadRequest:
+			return construct400(err.Error()), nil
+		case http.StatusConflict:
+			return construct409(err.Error()), nil
 		default:
-			return nil, fmt.Errorf("handler: %w", err)
+			// Internal failure -> Log it and bubble to standard 500 router boundary
+			logger := middleware.GetLogger(ctx)
+			logger.Error("failed to create workspace", "error", err)
+			return nil, err
 		}
 	}
 	return api.CreateWorkspace201JSONResponse(toAPIWorkspace(created)), nil
@@ -129,18 +153,16 @@ func (h *Handler) DeleteWorkspace(ctx context.Context, request api.DeleteWorkspa
 
 	err := h.s.Delete(ctx, request.Id)
 	if err != nil {
-		switch {
-		case errors.Is(err, domain.ErrNotFound):
-			detail := err.Error()
-			return api.DeleteWorkspace404ApplicationProblemPlusJSONResponse{
-				NotFoundApplicationProblemPlusJSONResponse: api.NotFoundApplicationProblemPlusJSONResponse{
-					Status: http.StatusNotFound,
-					Title:  "Not Found",
-					Detail: &detail,
-				},
-			}, nil
+		switch statusCodeForError(err) {
+		case http.StatusNotFound:
+			return construct404(err.Error()), nil
 		default:
-			return nil, fmt.Errorf("handler: %w", err)
+			logger := middleware.GetLogger(ctx)
+			logger.Error("failed to delete workspace",
+				"error", err,
+				"workspace_id", request.Id.String(),
+			)
+			return nil, err
 		}
 	}
 	return api.DeleteWorkspace204Response{}, nil

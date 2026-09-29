@@ -6,7 +6,7 @@ import (
 	"strings"
 
 	"github.com/google/uuid"
-	"github.com/samSRaina/kizen/services/workspace-service/internal/domain"
+	"github.com/samSRaina/kizen/services/workspace/internal/domain"
 )
 
 type Service struct {

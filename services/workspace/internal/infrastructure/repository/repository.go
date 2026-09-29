@@ -5,13 +5,14 @@ import (
 	"errors"
 	"fmt"
 	"strings"
+	"time"
 
 	"github.com/google/uuid"
 	"github.com/jackc/pgx/v5/pgconn"
 	"github.com/jackc/pgx/v5/pgxpool"
 	"github.com/samSRaina/kizen/internal/database"
 	"github.com/samSRaina/kizen/internal/middleware"
-	"github.com/samSRaina/kizen/services/workspace-service/internal/domain"
+	"github.com/samSRaina/kizen/services/workspace/internal/domain"
 )
 
 type Repository struct {
@@ -38,7 +39,11 @@ func (r *Repository) List(ctx context.Context) ([]domain.Workspace, error) {
 		return nil, err
 	}
 
-	rows, err := r.q.ListWorkspaces(ctx, ownerID)
+	// 3-second strict database SLA limit
+	dbCtx, cancel := context.WithTimeout(ctx, 3*time.Second)
+	defer cancel()
+
+	rows, err := r.q.ListWorkspaces(dbCtx, ownerID)
 	if err != nil {
 		return nil, fmt.Errorf("list workspaces: %w", err)
 	}
@@ -63,7 +68,10 @@ func (r *Repository) Create(ctx context.Context, in domain.CreateWorkspaceInput)
 		return nil, err
 	}
 
-	row, err := r.q.CreateWorkspace(ctx, database.CreateWorkspaceParams{
+	dbCtx, cancel := context.WithTimeout(ctx, 3*time.Second)
+	defer cancel()
+
+	row, err := r.q.CreateWorkspace(dbCtx, database.CreateWorkspaceParams{
 		OwnerID:           ownerID,
 		Name:              in.Name,
 		DefaultHourlyRate: int32(in.DefaultHourlyRate),
@@ -93,7 +101,10 @@ func (r *Repository) Delete(ctx context.Context, id uuid.UUID) error {
 		return err
 	}
 
-	rows, err := r.q.DeleteWorkspace(ctx, database.DeleteWorkspaceParams{
+	dbCtx, cancel := context.WithTimeout(ctx, 3*time.Second)
+	defer cancel()
+
+	rows, err := r.q.DeleteWorkspace(dbCtx, database.DeleteWorkspaceParams{
 		ID:      id,
 		OwnerID: ownerID,
 	})

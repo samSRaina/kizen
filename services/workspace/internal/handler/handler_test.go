@@ -7,9 +7,9 @@ import (
 
 	"github.com/google/uuid"
 	"github.com/samSRaina/kizen/internal/middleware"
-	"github.com/samSRaina/kizen/services/workspace-service/internal/api"
-	"github.com/samSRaina/kizen/services/workspace-service/internal/domain"
-	"github.com/samSRaina/kizen/services/workspace-service/internal/handler"
+	"github.com/samSRaina/kizen/services/workspace/internal/api"
+	"github.com/samSRaina/kizen/services/workspace/internal/domain"
+	"github.com/samSRaina/kizen/services/workspace/internal/handler"
 )
 
 type mockService struct {

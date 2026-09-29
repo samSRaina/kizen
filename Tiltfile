@@ -1,5 +1,5 @@
 #   WORKSPACE-SERVICE   #
-workspace_service_compile_cmd = 'CGO_ENABLED=0 GOOS=linux GOARCH=amd64 go build -o build/workspace-service ./services/workspace-service/cmd'
+workspace_service_compile_cmd = 'CGO_ENABLED=0 GOOS=linux GOARCH=amd64 go build -o build/workspace-service ./services/workspace/cmd'
 
 if os.name == 'nt':
   workspace_service_compile_cmd = './infra/developement/docker/workspace-service-build.bat'
@@ -8,7 +8,7 @@ local_resource(
   'workspace-service-compile',
   cmd=workspace_service_compile_cmd,
   deps=[
-      './services/workspace-service',
+      './services/workspace',
       './shared',
       './go.mod',
       './go.sum',
