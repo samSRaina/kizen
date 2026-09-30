@@ -3,9 +3,10 @@ package service
 import (
 	"context"
 	"fmt"
+	"strings"
 
 	"github.com/google/uuid"
-	"github.com/samSRaina/kizen/services/ticket-service/internal/domain"
+	"github.com/samSRaina/kizen/services/ticket/internal/domain"
 )
 
 type service struct {
@@ -18,9 +19,8 @@ func NewService(repo domain.TicketRepository) *service {
 	}
 }
 
-// TODO: FUNCTION TO VALIDATE TICKET
 func validateTicket(ticket *domain.Ticket) error {
-	const op = "ticket.service.valdiateTicket"
+	const op = "ticket.service.validateTicket"
 
 	if ticket == nil {
 		return fmt.Errorf("%s: ticket is nil", op)
@@ -30,11 +30,11 @@ func validateTicket(ticket *domain.Ticket) error {
 		return fmt.Errorf("%s: project_id is required", op)
 	}
 
-	if ticket.Identifier == "" {
+	if strings.TrimSpace(ticket.Identifier) == "" {
 		return fmt.Errorf("%s: identifier is required", op)
 	}
 
-	if ticket.Title == "" {
+	if strings.TrimSpace(ticket.Title) == "" {
 		return fmt.Errorf("%s: title is required", op)
 	}
 
@@ -48,12 +48,9 @@ func validateTicket(ticket *domain.Ticket) error {
 		domain.PriorityMedium,
 		domain.PriorityLow:
 	default:
-		return fmt.Errorf(
-			"%s: invalid priority %q",
-			op,
-			ticket.Priority,
-		)
+		return fmt.Errorf("%s: invalid priority %q", op, ticket.Priority)
 	}
+
 	return nil
 }
 
@@ -72,10 +69,10 @@ func (s *service) Create(ctx context.Context, ticket *domain.Ticket) (*domain.Ti
 	return t, nil
 }
 
-func (s *service) GetByID(ctx context.Context, project_id uuid.UUID, identifier string) (*domain.Ticket, error) {
+func (s *service) GetByID(ctx context.Context, projectID uuid.UUID, identifier string) (*domain.Ticket, error) {
 	const op = "ticket.service.GetByID"
 
-	t, err := s.repo.GetByID(ctx, project_id, identifier)
+	t, err := s.repo.GetByID(ctx, projectID, identifier)
 	if err != nil {
 		return nil, fmt.Errorf("%s: %w", op, err)
 	}
@@ -90,4 +87,14 @@ func (s *service) Delete(ctx context.Context, projectID uuid.UUID, identifier st
 		return fmt.Errorf("%s: %w", op, err)
 	}
 	return nil
+}
+
+func (s *service) ListByProject(ctx context.Context, projectID uuid.UUID) ([]*domain.Ticket, error) {
+	const op = "ticket.service.ListByProject"
+
+	tickets, err := s.repo.ListByProject(ctx, projectID)
+	if err != nil {
+		return nil, fmt.Errorf("%s: %w", op, err)
+	}
+	return tickets, nil
 }

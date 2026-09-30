@@ -377,12 +377,24 @@ a {
   --white: #fbfbf9;
   --ink: #272724;
   --muted: #74746e;
+  --soft: #a7a7a0;
   --line: #d9d9d2;
   --blue: #2f5fe6;
   --blue-deep: #1b3db4;
   --mono: "DM Mono", monospace;
   --sans: "DM Sans", sans-serif;
   --serif: "Instrument Serif", Georgia, serif;
+}
+
+.dark {
+  --paper: #121214;
+  --white: #18181b;
+  --ink: #f4f4f5;
+  --muted: #a1a1aa;
+  --soft: #71717a;
+  --line: rgba(255, 255, 255, 0.1);
+  --blue: #4f79f6;
+  --blue-deep: #3b66e6;
 }
 * {
   box-sizing: border-box;
@@ -1314,6 +1326,19 @@ footer {
   --sans: "DM Sans", sans-serif;
   --mono: "DM Mono", monospace;
   --serif: "Instrument Serif", Georgia, serif;
+}
+
+.dark {
+  --paper: #0c0c0e;
+  --surface: #151517;
+  --card: #18181b;
+  --ink: #f4f4f5;
+  --muted: #a1a1aa;
+  --soft: #71717a;
+  --line: rgba(255, 255, 255, 0.1);
+  --blue: #4f79f6;
+  --blue-dark: #3b66e6;
+  --indigo: #a0b0ff;
 }
 * {
   box-sizing: border-box;
@@ -3137,36 +3162,78 @@ a:focus-visible {
   text-align: left;
 }
 
-.github-auth-button {
+.minimal-auth-form {
+  display: flex;
+  flex-direction: column;
+  gap: 14px;
+  text-align: left;
+}
+
+.minimal-auth-field {
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
+}
+
+.minimal-auth-label {
+  font-family: var(--mono);
+  font-size: 11px;
+  font-weight: 500;
+  text-transform: uppercase;
+  letter-spacing: 0.08em;
+  color: var(--muted);
+}
+
+.minimal-auth-input {
   width: 100%;
+  height: 40px;
+  padding: 0 12px;
+  background: var(--paper);
+  border: 1px solid var(--line);
+  border-radius: 3px;
+  font-family: var(--sans);
+  font-size: 13px;
+  color: var(--ink);
+  outline: none;
+  transition: border-color 0.15s ease, box-shadow 0.15s ease;
+}
+
+.minimal-auth-input:focus {
+  border-color: var(--blue);
+  box-shadow: 0 0 0 2px rgba(47, 95, 230, 0.15);
+  background: var(--white);
+}
+
+.minimal-auth-input::placeholder {
+  color: #a3a39e;
+}
+
+.minimal-auth-submit {
+  width: 100%;
+  height: 42px;
+  margin-top: 6px;
   display: inline-flex;
   align-items: center;
   justify-content: center;
-  gap: 10px;
-  height: 42px;
-  padding: 0 16px;
+  gap: 8px;
   background: var(--ink);
   color: var(--white);
+  font-family: var(--sans);
   font-size: 13px;
   font-weight: 500;
   border-radius: 3px;
-  transition:
-    background 0.15s ease,
-    transform 0.1s ease;
+  cursor: pointer;
+  transition: background 0.15s ease;
   box-shadow: 0 2px 5px rgba(0, 0, 0, 0.12);
 }
 
-.github-auth-button:hover:not(:disabled) {
+.minimal-auth-submit:hover:not(:disabled) {
   background: #141413;
 }
 
-.github-auth-button:disabled {
+.minimal-auth-submit:disabled {
   opacity: 0.65;
   cursor: not-allowed;
-}
-
-.github-mark {
-  fill: currentColor;
 }
 
 .minimal-auth-success {
@@ -3238,4 +3305,14 @@ a:focus-visible {
   font-family: var(--mono);
   font-size: 10px;
   color: var(--muted);
+}
+
+
+/* Prevent CSS transition desync across the entire page during theme view transition */
+html.theme-transitioning,
+html.theme-transitioning *,
+html.theme-transitioning *::before,
+html.theme-transitioning *::after {
+  transition: none !important;
+  animation-duration: 0s !important;
 }

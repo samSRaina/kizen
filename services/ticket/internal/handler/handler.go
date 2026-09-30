@@ -9,13 +9,14 @@ import (
 
 	"github.com/go-chi/chi/v5"
 	"github.com/google/uuid"
-	"github.com/samSRaina/kizen/services/ticket-service/internal/domain"
+	"github.com/samSRaina/kizen/services/ticket/internal/domain"
 )
 
 type TicketService interface {
 	Create(ctx context.Context, ticket *domain.Ticket) (*domain.Ticket, error)
-	GetByID(ctx context.Context, project_id uuid.UUID, identifier string) (*domain.Ticket, error)
+	GetByID(ctx context.Context, projectID uuid.UUID, identifier string) (*domain.Ticket, error)
 	Delete(ctx context.Context, projectID uuid.UUID, identifier string) error
+	ListByProject(ctx context.Context, projectID uuid.UUID) ([]*domain.Ticket, error)
 }
 
 type TicketHandler struct {
@@ -36,11 +37,10 @@ type createTicketRequest struct {
 	Title       string                `json:"title"`
 	Description string                `json:"description"`
 	Priority    domain.TicketPriority `json:"priority"`
-	CreatedBy   uuid.UUID             `json:"created_by"`
+	Tags        []string              `json:"tags,omitempty"`
 }
 
 func (h *TicketHandler) Create(w http.ResponseWriter, r *http.Request) {
-	const op = "ticket.handler.Create"
 	var ticket createTicketRequest
 
 	if err := json.NewDecoder(r.Body).Decode(&ticket); err != nil {
@@ -57,6 +57,7 @@ func (h *TicketHandler) Create(w http.ResponseWriter, r *http.Request) {
 			Description: ticket.Description,
 			Status:      domain.StatusBacklog,
 			Priority:    ticket.Priority,
+			Tags:        ticket.Tags,
 		},
 	)
 
@@ -79,30 +80,27 @@ func (h *TicketHandler) Create(w http.ResponseWriter, r *http.Request) {
 			h.logger.Error("failed to create ticket", "error", err)
 			writeJSONError(w, http.StatusInternalServerError, "internal server error")
 		}
-
 		return
 	}
 
 	w.Header().Set("Content-Type", "application/json")
 	w.WriteHeader(http.StatusCreated)
-
 	if err := json.NewEncoder(w).Encode(createdTicket); err != nil {
 		h.logger.Error("failed to encode ticket response", "error", err)
 	}
-
 }
 
 func (h *TicketHandler) Get(w http.ResponseWriter, r *http.Request) {
-	const op = "ticket.handler.Get"
-
 	pID, err := uuid.Parse(chi.URLParam(r, "project_id"))
 	if err != nil {
 		writeJSONError(w, http.StatusBadRequest, "invalid project id")
+		return
 	}
 
 	id := chi.URLParam(r, "identifier")
 	if id == "" {
 		writeJSONError(w, http.StatusBadRequest, "invalid ticket identifier")
+		return
 	}
 
 	t, err := h.service.GetByID(r.Context(), pID, id)
@@ -116,30 +114,27 @@ func (h *TicketHandler) Get(w http.ResponseWriter, r *http.Request) {
 			h.logger.Error("failed to get ticket", "error", err)
 			writeJSONError(w, http.StatusInternalServerError, "internal server error")
 		}
-
 		return
 	}
 
 	w.Header().Set("Content-Type", "application/json")
-	w.WriteHeader(http.StatusOK) //200 OK FOR A GET REQUEST INSTEAD OF StatusCreated.
-
+	w.WriteHeader(http.StatusOK)
 	if err := json.NewEncoder(w).Encode(t); err != nil {
 		h.logger.Error("failed to encode ticket response", "error", err)
 	}
-
 }
 
 func (h *TicketHandler) Delete(w http.ResponseWriter, r *http.Request) {
-	const op = "ticket.handler.Delete"
-
 	pID, err := uuid.Parse(chi.URLParam(r, "project_id"))
 	if err != nil {
 		writeJSONError(w, http.StatusBadRequest, "invalid project id")
+		return
 	}
 
 	id := chi.URLParam(r, "identifier")
 	if id == "" {
 		writeJSONError(w, http.StatusBadRequest, "invalid ticket identifier")
+		return
 	}
 
 	err = h.service.Delete(r.Context(), pID, id)
@@ -156,12 +151,26 @@ func (h *TicketHandler) Delete(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	//no need for writing header, because no body is being returned
-	//w.Header().Set("Content-Type", "application/json")
 	w.WriteHeader(http.StatusNoContent)
+}
 
-	// if err := json.NewEncoder(w).Encode(w); err != nil {
-	// 	h.logger.Error("failed to encode ticket response", "error", err)
-	// }
+func (h *TicketHandler) ListByProject(w http.ResponseWriter, r *http.Request) {
+	pID, err := uuid.Parse(chi.URLParam(r, "project_id"))
+	if err != nil {
+		writeJSONError(w, http.StatusBadRequest, "invalid project id")
+		return
+	}
 
+	tickets, err := h.service.ListByProject(r.Context(), pID)
+	if err != nil {
+		h.logger.Error("failed to list tickets", "error", err)
+		writeJSONError(w, http.StatusInternalServerError, "internal server error")
+		return
+	}
+
+	w.Header().Set("Content-Type", "application/json")
+	w.WriteHeader(http.StatusOK)
+	if err := json.NewEncoder(w).Encode(tickets); err != nil {
+		h.logger.Error("failed to encode tickets response", "error", err)
+	}
 }

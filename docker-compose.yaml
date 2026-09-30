@@ -29,14 +29,13 @@ services:
     environment:
       PORT: "80"
       NODE_ENV: "production"
-      AUTH_DATABASE_PATH: "/app/data/auth.db"
+      DATABASE_URL: "postgres://${POSTGRES_USER}:${POSTGRES_PASSWORD}@database:5432/${POSTGRES_DB}?sslmode=disable"
       BETTER_AUTH_SECRET: ${BETTER_AUTH_SECRET}
       BETTER_AUTH_URL: ${BETTER_AUTH_URL:-http://localhost}
-      GITHUB_CLIENT_ID: ${GITHUB_CLIENT_ID:-}
-      GITHUB_CLIENT_SECRET: ${GITHUB_CLIENT_SECRET:-}
       WORKSPACE_SERVICE_URL: "http://workspace-service:${WORKSPACE_SERVICE_PORT}"
-    volumes:
-      - web_auth_data:/app/data
+    depends_on:
+      database:
+        condition: service_healthy
     healthcheck:
       test: ["CMD", "wget", "--spider", "-q", "http://127.0.0.1:80/"]
       interval: 10s
@@ -54,6 +53,7 @@ services:
       POSTGRES_DB: ${POSTGRES_DB}
     volumes:
       - postgres_data:/var/lib/postgresql
+      - ./sql/migrations/users.sql:/docker-entrypoint-initdb.d/00-users.sql:ro
       - ./sql/migrations/workspaces.sql:/docker-entrypoint-initdb.d/01-workspaces.sql:ro
       - ./sql/migrations/projects.sql:/docker-entrypoint-initdb.d/02-projects.sql:ro
       - ./sql/migrations/tickets.sql:/docker-entrypoint-initdb.d/03-tickets.sql:ro
@@ -67,25 +67,27 @@ services:
     networks:
       - kizen-internal
 
-  # ticket-service:
-  #   image: kizen/ticket-service
-  #   build:
-  #     context: .
-  #     dockerfile: infra/docker/ticket-service.Dockerfile
-  #   labels:
-  #     - "traefik.enable=true"
-  #     - "traefik.http.routers.ticket-service.entrypoints=web"
-  #     - "traefik.http.routers.ticket-service.rule=PathPrefix(`/api/v1/tickets`)"
-  #     - "traefik.http.routers.ticket-service.priority=10"
-  #     - "traefik.http.services.ticket-service.loadbalancer.server.port=${TICKET_SERVICE_PORT}"
-  #   environment:
-  #     SERVER_PORT: ${TICKET_SERVICE_PORT}
-  #     DATABASE_URL: postgres://${POSTGRES_USER}:${POSTGRES_PASSWORD}@database:5432/${POSTGRES_DB}?sslmode=disable
-  #   depends_on:
-  #     database:
-  #       condition: service_healthy
-  #   networks:
-  #     - kizen-internal
+  ticket-service:
+    image: kizen/ticket-service
+    build:
+      context: .
+      dockerfile: infra/developement/docker/ticket-service.Dockerfile
+    labels:
+      - "traefik.enable=true"
+      - "traefik.http.routers.ticket-service.entrypoints=web"
+      - "traefik.http.routers.ticket-service.rule=PathPrefix(`/api/v1/tickets`) || PathPrefix(`/api/v1/projects`)"
+      - "traefik.http.routers.ticket-service.priority=10"
+      - "traefik.http.services.ticket-service.loadbalancer.server.port=${TICKET_SERVICE_PORT}"
+    environment:
+      TICKET_SERVICE_PORT: ${TICKET_SERVICE_PORT}
+      DATABASE_URL: postgres://${POSTGRES_USER}:${POSTGRES_PASSWORD}@database:5432/${POSTGRES_DB}?sslmode=disable
+      BETTER_AUTH_SECRET: ${BETTER_AUTH_SECRET}
+      BETTER_AUTH_JWKS_URL: http://web:80/api/auth/jwks
+    depends_on:
+      database:
+        condition: service_healthy
+    networks:
+      - kizen-internal
 
   workspace-service:
     image: kizen/workspace-service
@@ -113,7 +115,6 @@ services:
 
 volumes:
   postgres_data:
-  web_auth_data:
 
 networks:
   kizen-internal:

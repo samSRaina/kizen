@@ -142,6 +142,32 @@ func (ns NullTimeEntryStatus) Value() (driver.Value, error) {
 	return string(ns.TimeEntryStatus), nil
 }
 
+type Account struct {
+	ID                    string             `json:"id"`
+	AccountId             string             `json:"accountId"`
+	ProviderId            string             `json:"providerId"`
+	UserId                string             `json:"userId"`
+	AccessToken           *string            `json:"accessToken"`
+	RefreshToken          *string            `json:"refreshToken"`
+	IdToken               *string            `json:"idToken"`
+	AccessTokenExpiresAt  pgtype.Timestamptz `json:"accessTokenExpiresAt"`
+	RefreshTokenExpiresAt pgtype.Timestamptz `json:"refreshTokenExpiresAt"`
+	Scope                 *string            `json:"scope"`
+	Password              *string            `json:"password"`
+	CreatedAt             pgtype.Timestamptz `json:"createdAt"`
+	UpdatedAt             pgtype.Timestamptz `json:"updatedAt"`
+}
+
+type Jwk struct {
+	ID         string             `json:"id"`
+	PublicKey  string             `json:"publicKey"`
+	PrivateKey string             `json:"privateKey"`
+	CreatedAt  pgtype.Timestamptz `json:"createdAt"`
+	ExpiresAt  pgtype.Timestamptz `json:"expiresAt"`
+	Alg        *string            `json:"alg"`
+	Crv        *string            `json:"crv"`
+}
+
 type Project struct {
 	ID                 uuid.UUID          `json:"id"`
 	WorkspaceID        uuid.UUID          `json:"workspace_id"`
@@ -152,6 +178,17 @@ type Project struct {
 	TicketCounter      int32              `json:"ticket_counter"`
 	CreatedAt          pgtype.Timestamptz `json:"created_at"`
 	UpdatedAt          pgtype.Timestamptz `json:"updated_at"`
+}
+
+type Session struct {
+	ID        string             `json:"id"`
+	ExpiresAt pgtype.Timestamptz `json:"expiresAt"`
+	Token     string             `json:"token"`
+	CreatedAt pgtype.Timestamptz `json:"createdAt"`
+	UpdatedAt pgtype.Timestamptz `json:"updatedAt"`
+	IpAddress *string            `json:"ipAddress"`
+	UserAgent *string            `json:"userAgent"`
+	UserId    string             `json:"userId"`
 }
 
 type Settlement struct {
@@ -183,6 +220,27 @@ type TimeEntry struct {
 	Status          TimeEntryStatus    `json:"status"`
 	CreatedAt       pgtype.Timestamptz `json:"created_at"`
 	UpdatedAt       pgtype.Timestamptz `json:"updated_at"`
+}
+
+type User struct {
+	ID              string             `json:"id"`
+	Name            string             `json:"name"`
+	Email           string             `json:"email"`
+	EmailVerified   bool               `json:"emailVerified"`
+	Image           *string            `json:"image"`
+	CreatedAt       pgtype.Timestamptz `json:"createdAt"`
+	UpdatedAt       pgtype.Timestamptz `json:"updatedAt"`
+	Username        *string            `json:"username"`
+	DisplayUsername *string            `json:"displayUsername"`
+}
+
+type Verification struct {
+	ID         string             `json:"id"`
+	Identifier string             `json:"identifier"`
+	Value      string             `json:"value"`
+	ExpiresAt  pgtype.Timestamptz `json:"expiresAt"`
+	CreatedAt  pgtype.Timestamptz `json:"createdAt"`
+	UpdatedAt  pgtype.Timestamptz `json:"updatedAt"`
 }
 
 type Workspace struct {

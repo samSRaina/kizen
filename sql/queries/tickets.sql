@@ -15,3 +15,7 @@ AND identifier = $2;
 SELECT * FROM tickets
 WHERE project_id = $1
 ORDER BY created_at DESC;
+
+-- name: DeleteTicket :execrows
+DELETE FROM tickets
+WHERE project_id = $1 AND identifier = $2;

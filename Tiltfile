@@ -38,6 +38,47 @@ docker_build(
     restart_container()
   ],
 )
+
+#   TICKET-SERVICE   #
+ticket_service_compile_cmd = 'CGO_ENABLED=0 GOOS=linux GOARCH=amd64 go build -o build/ticket-service ./services/ticket/cmd'
+
+if os.name == 'nt':
+  ticket_service_compile_cmd = './infra/developement/docker/ticket-service-build.bat'
+
+local_resource(
+  'ticket-service-compile',
+  cmd=ticket_service_compile_cmd,
+  deps=[
+      './services/ticket',
+      './shared',
+      './go.mod',
+      './go.sum',
+      './internal/database',
+  ],
+  labels=['compiles']
+)
+
+docker_build(
+  'kizen/ticket-service',
+  '.',
+  # Fix 1: Point to the super fast dev Dockerfile
+  dockerfile='./infra/developement/docker/ticket-service.dev.Dockerfile',
+
+  # docker_build/custom_build.entrypoint not supported for Docker Compose resources // hence commented out
+  # # Fix 2: Overwrite the entrypoint to the correct build location
+  # entrypoint=['/app/build/workspace-service'],
+
+  # Tilt now only pushes exactly what is compiled locally
+  only=[
+    './build/ticket-service',
+  ],
+
+  # Fast hot-reloading!
+  live_update=[
+    sync('./build', '/app/build'),
+    restart_container()
+  ],
+)
 # # # # # # # # # # # # # # # # # # # # ## # # # # # #
 # # # # # # # # INFRASTRUCTURE # # # # # # # # # # # #
 # # # # # # # # # # # # # # # # # # # # ## # # # # # #

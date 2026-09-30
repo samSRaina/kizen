@@ -1,31 +1,27 @@
-import { Database } from "bun:sqlite";
+import { Pool } from "pg";
 import { betterAuth } from "better-auth";
 import { jwt } from "better-auth/plugins";
+import { username } from "better-auth/plugins/username";
 import { tanstackStartCookies } from "better-auth/tanstack-start";
 
-const dbPath = process.env.AUTH_DATABASE_PATH || "auth.db";
+const connectionString =
+	process.env.DATABASE_URL ||
+	`postgresql://${process.env.POSTGRES_USER || "postgres"}:${process.env.POSTGRES_PASSWORD || "postgres"}@${process.env.POSTGRES_HOST || "localhost"}:${process.env.POSTGRES_PORT || "5432"}/${process.env.POSTGRES_DB || "kizen"}`;
 
-const hasGithubOAuth = Boolean(
-	process.env.GITHUB_CLIENT_ID && process.env.GITHUB_CLIENT_SECRET,
-);
+const pool = new Pool({
+	connectionString,
+});
 
 export const auth = betterAuth({
-	database: new Database(dbPath),
-	socialProviders: {
-		...(hasGithubOAuth
-			? {
-					github: {
-						clientId: process.env.GITHUB_CLIENT_ID as string,
-						clientSecret: process.env.GITHUB_CLIENT_SECRET as string,
-					},
-				}
-			: {}),
+	database: pool,
+	emailAndPassword: {
+		enabled: true,
 	},
 	advanced: {
 		ipAddress: {
 			ipAddressHeaders: ["x-forwarded-for"],
 		},
 	},
-	// Cookie integration plugin "tanstack-start-cookies" must be placed last
-	plugins: [jwt(), tanstackStartCookies()],
+	// Plugins: username plugin adds username support, jwt provides microservice tokens, tanstackStartCookies manages SSR session cookies
+	plugins: [username(), jwt(), tanstackStartCookies()],
 });
