@@ -4,10 +4,7 @@ import { jwt } from "better-auth/plugins";
 import { username } from "better-auth/plugins/username";
 import { tanstackStartCookies } from "better-auth/tanstack-start";
 
-const connectionString =
-	process.env.DATABASE_URL ||
-	`postgresql://${process.env.POSTGRES_USER || "postgres"}:${process.env.POSTGRES_PASSWORD || "postgres"}@${process.env.POSTGRES_HOST || "localhost"}:${process.env.POSTGRES_PORT || "5432"}/${process.env.POSTGRES_DB || "kizen"}`;
-
+const connectionString = process.env.DATABASE_URL;
 const pool = new Pool({
 	connectionString,
 });
@@ -16,7 +13,6 @@ const isProd = process.env.NODE_ENV === "production";
 
 export const auth = betterAuth({
 	database: pool,
-	// Security: Rate limiting blocks brute-force authentication attacks
 	rateLimit: {
 		enabled: true,
 		window: 10,

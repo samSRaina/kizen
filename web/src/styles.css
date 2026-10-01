@@ -3316,3 +3316,12 @@ html.theme-transitioning *::after {
   transition: none !important;
   animation-duration: 0s !important;
 }
+
+/* Page Layout */
+.kizen-page {
+	@apply flex-1 min-w-0 flex flex-col h-full overflow-y-auto;
+}
+
+.kizen-container {
+	@apply w-full max-w-[1140px] mx-auto px-6 py-12 md:py-16 pb-24 flex-1 flex flex-col;
+}

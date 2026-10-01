@@ -299,7 +299,7 @@ export function Home() {
 				</div>
 			)}
 			
-			<div className="w-full max-w-[1140px] mx-auto px-6 py-12 md:py-16 pb-24 overflow-y-auto">
+			<div className="kizen-container">
 				<div className="mb-[40px]">
 					<h1 className="text-[40px] tracking-tight font-medium my-0 text-[var(--ink)] dark:text-[#f4f4f5]">
 						{getTimeOfDayGreeting()}, {userFirstName}.

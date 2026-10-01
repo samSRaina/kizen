@@ -1,3 +1,4 @@
+import { Brand } from "@/components/ui/brand";
 import {
 	ArrowDownTrayIcon,
 	CodeBracketIcon,
@@ -7,15 +8,7 @@ import { useState } from "react";
 
 export const Route = createFileRoute("/")({ component: Landing });
 
-function Logo() {
-	return (
-		<div className="logo-mark">
-			<span className="logo-k">K</span>
-			<span>izen</span>
-			<i />
-		</div>
-	);
-}
+// Logo moved to Brand component (src/components/ui/brand.tsx)
 
 function Landing() {
 	const [mobileOpen, setMobileOpen] = useState(false);
@@ -25,16 +18,16 @@ function Landing() {
 			<header className="site-header">
 				<div className="nav-inner">
 					<a href="#top">
-						<Logo />
+						<Brand />
 					</a>
 					<nav className={mobileOpen ? "nav-links open" : "nav-links"}>
 						<a href="#docs">Docs</a>
 					</nav>
 					<div className="nav-actions">
-						<Link to="/login" className="signup">
+						<Link to="/sign-in" className="signup">
 							Sign in <kbd>S</kbd>
 						</Link>
-						<Link to="/signup" className="signup">
+						<Link to="/sign-up" className="signup">
 							Sign up <kbd>U</kbd>
 						</Link>
 						<button
@@ -119,7 +112,7 @@ function Landing() {
 
 			<footer>
 				<div className="footer-brand">
-					<Logo />
+					<Brand />
 					<p>
 						Minimal task manager crafted for{" "}
 						<a href="https://github.com/samsraina">@samRaina</a>

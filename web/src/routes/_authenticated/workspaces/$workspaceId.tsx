@@ -42,6 +42,7 @@ export function WorkspaceKanban() {
   const [query, setQuery] = useState("");
   const [showCreate, setShowCreate] = useState(false);
   
+  // Real tickets state
   const [tickets, setTickets] = useState<Record<string, Ticket[]>>({
     backlog: [],
     todo: [],
@@ -67,13 +68,41 @@ export function WorkspaceKanban() {
     async function loadData() {
       setIsLoading(true);
       try {
-        const { data } = await apiClient.GET("/api/v1/workspaces");
-        if (data) {
-          setWorkspaces(data);
-          const current = data.find((w) => w.id === workspaceId);
+        // Load Workspaces for the switcher
+        const { data: wsData } = await apiClient.GET("/api/v1/workspaces");
+        if (wsData) {
+          setWorkspaces(wsData);
+          const current = wsData.find((w) => w.id === workspaceId);
           if (current) {
             setActiveWorkspace(current);
           }
+        }
+
+        // Load Tickets for Board
+        const { data: ticketsData } = await apiClient.GET("/api/v1/workspaces/{workspace_id}/tickets", {
+          params: { path: { workspace_id: workspaceId } }
+        });
+        
+        if (ticketsData) {
+          const grouped: Record<string, Ticket[]> = {
+            backlog: [], todo: [], progress: [], review: [], done: [],
+          };
+          for (const t of ticketsData) {
+              const col = t.status || "todo";
+              if (grouped[col]) {
+                  // Map API Ticket to Frontend Ticket interface mapping
+                  grouped[col].push({
+                      id: t.identifier, // API uses identifier as KIZ-123 which is user friendly
+                      title: t.title,
+                      type: t.type as any,
+                      priority: t.priority as any,
+                      points: t.points,
+                      assignee: t.assignee_id || "Unassigned",
+                      status: col,
+                  });
+              }
+          }
+          setTickets(grouped);
         }
       } catch (err) {
         console.error(err);
@@ -84,29 +113,93 @@ export function WorkspaceKanban() {
     loadData();
   }, [workspaceId]);
 
-  const onMoveTicket = (
+  const onMoveTicket = async (
     sourceCol: string,
     sourceIndex: number,
     targetCol: string,
     targetIndex?: number
   ) => {
+    const ticketToMove = tickets[sourceCol][sourceIndex];
+
+    // Optimistic UI update
     setTickets((prev) => {
       const next = { ...prev };
-      const ticketToMove = next[sourceCol][sourceIndex];
       next[sourceCol] = next[sourceCol].filter((_, i) => i !== sourceIndex);
 
       if (targetIndex !== undefined) {
         next[targetCol] = [
           ...next[targetCol].slice(0, targetIndex),
-          ticketToMove,
+          { ...ticketToMove, status: targetCol },
           ...next[targetCol].slice(targetIndex),
         ];
       } else {
-        next[targetCol] = [...next[targetCol], ticketToMove];
+        next[targetCol] = [...next[targetCol], { ...ticketToMove, status: targetCol }];
       }
       return next;
     });
-    showToast("Ticket moved");
+
+    // API Call to Update Ticket Status
+    try {
+        const res = await apiClient.PATCH("/api/v1/workspaces/{workspace_id}/tickets/{identifier}", {
+            params: {
+                path: {
+                    workspace_id: workspaceId,
+                    identifier: ticketToMove.id, 
+                }
+            },
+            body: {
+                status: targetCol as any
+            }
+        });
+        if (res.error) {
+            throw new Error("Failed to update status");
+        }
+        showToast("Ticket moved");
+    } catch (err) {
+        // Fallback / error handling (could revert state here)
+        showToast("Failed to move ticket. Please try again.");
+    }
+  };
+
+  const onCreateTicket = async () => {
+    try {
+        const { data, error } = await apiClient.POST("/api/v1/workspaces/{workspace_id}/tickets", {
+            params: { path: { workspace_id: workspaceId } },
+            body: {
+                title: "New Ticket Entry",
+                type: "task",
+                priority: "Medium",
+                status: "todo",
+                points: 0
+            }
+        });
+
+        if (error || !data) {
+           throw new Error("Creation failed");
+        }
+
+        // Add dynamically updated ticket to board
+        setTickets((prev) => {
+            const next = { ...prev };
+            const statusCol = data.status || "todo";
+            if (next[statusCol]) {
+                next[statusCol] = [{
+                    id: data.identifier,
+                    title: data.title,
+                    type: data.type as any,
+                    priority: data.priority as any,
+                    points: data.points,
+                    assignee: data.assignee_id || "Unassigned",
+                    status: statusCol,
+                }, ...next[statusCol]];
+            }
+            return next;
+        });
+
+        showToast("New ticket created");
+    } catch {
+        showToast("Error creating ticket");
+    }
   };
 
   const currentWorkspaceName = activeWorkspace?.name || "Loading Workspace...";
@@ -124,7 +217,7 @@ export function WorkspaceKanban() {
         </div>
       )}
 
-      <div className="w-full flex-1 flex flex-col mx-auto h-full max-w-full px-6 py-6 pb-24 overflow-y-auto">
+      <div className="kizen-container">
         <div className="flex flex-col sm:flex-row sm:items-end justify-between pb-4 mb-6 border-b border-[var(--line)] dark:border-white/10 gap-4 mt-6">
           <div className="flex flex-col gap-1">
             <h1 className="text-[28px] tracking-tight font-medium my-0 text-[var(--ink)] dark:text-[#f4f4f5]">
@@ -146,7 +239,7 @@ export function WorkspaceKanban() {
              <button 
                 type="button"
                 className="flex items-center gap-2 bg-[var(--ink)] text-[var(--paper)] dark:bg-white dark:text-black px-4 py-2 rounded-sm text-[13px] font-medium hover:opacity-90 transition-opacity whitespace-nowrap h-[40px]"
-                onClick={() => setShowCreate(true)}
+                onClick={() => onCreateTicket()}
              >
                <PlusIcon className="w-4 h-4" /> Create ticket
              </button>
@@ -157,7 +250,7 @@ export function WorkspaceKanban() {
           <div className="flex flex-col items-center justify-center py-20 text-[var(--muted)] dark:text-[#a1a1aa] flex-1">
             <ArrowPathIcon className="w-6 h-6 animate-spin mb-3" />
             <span className="text-[13px] font-mono">
-              Loading workspace...
+              Loading workspace tickets...
             </span>
           </div>
         ) : (
@@ -166,7 +259,7 @@ export function WorkspaceKanban() {
                columns={columns} 
                visibleTickets={visibleTickets} 
                onMoveTicket={onMoveTicket} 
-               onCreateTicket={() => setShowCreate(true)} 
+               onCreateTicket={() => onCreateTicket()} 
              />
            </div>
         )}

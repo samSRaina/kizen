@@ -1,3 +1,4 @@
+import { Brand } from "@/components/ui/brand";
 import {
 	ArrowRightStartOnRectangleIcon,
 	Bars3Icon,
@@ -24,16 +25,8 @@ import type { components } from "@/types/api.gen";
 
 type Workspace = components["schemas"]["Workspace"];
 
-export function Logo() {
-	return (
-		<div className="flex items-center gap-[3px] font-bold text-[17px] tracking-tight">
-			<span className="grid place-items-center w-[18px] h-[20px] border border-[var(--blue)] text-[var(--blue)] font-serif text-[17px]">
-				K
-			</span>
-			<span>izen</span>
-			<i className="w-[5px] h-[5px] border border-[var(--blue)] ml-[1px]" />
-		</div>
-	);
+export function Logo({ className }: { className?: string }) {
+	return <Brand className={className} />;
 }
 
 export function Avatar({
