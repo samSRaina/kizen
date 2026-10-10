@@ -12,57 +12,57 @@ import (
 	"github.com/jackc/pgx/v5/pgtype"
 )
 
-type Priority string
+type TicketPriority string
 
 const (
-	PriorityCritical Priority = "critical"
-	PriorityHigh     Priority = "high"
-	PriorityMedium   Priority = "medium"
-	PriorityLow      Priority = "low"
+	TicketPriorityHigh   TicketPriority = "High"
+	TicketPriorityMedium TicketPriority = "Medium"
+	TicketPriorityLow    TicketPriority = "Low"
 )
 
-func (e *Priority) Scan(src interface{}) error {
+func (e *TicketPriority) Scan(src interface{}) error {
 	switch s := src.(type) {
 	case []byte:
-		*e = Priority(s)
+		*e = TicketPriority(s)
 	case string:
-		*e = Priority(s)
+		*e = TicketPriority(s)
 	default:
-		return fmt.Errorf("unsupported scan type for Priority: %T", src)
+		return fmt.Errorf("unsupported scan type for TicketPriority: %T", src)
 	}
 	return nil
 }
 
-type NullPriority struct {
-	Priority Priority `json:"priority"`
-	Valid    bool     `json:"valid"` // Valid is true if Priority is not NULL
+type NullTicketPriority struct {
+	TicketPriority TicketPriority `json:"ticket_priority"`
+	Valid          bool           `json:"valid"` // Valid is true if TicketPriority is not NULL
 }
 
 // Scan implements the Scanner interface.
-func (ns *NullPriority) Scan(value interface{}) error {
+func (ns *NullTicketPriority) Scan(value interface{}) error {
 	if value == nil {
-		ns.Priority, ns.Valid = "", false
+		ns.TicketPriority, ns.Valid = "", false
 		return nil
 	}
 	ns.Valid = true
-	return ns.Priority.Scan(value)
+	return ns.TicketPriority.Scan(value)
 }
 
 // Value implements the driver Valuer interface.
-func (ns NullPriority) Value() (driver.Value, error) {
+func (ns NullTicketPriority) Value() (driver.Value, error) {
 	if !ns.Valid {
 		return nil, nil
 	}
-	return string(ns.Priority), nil
+	return string(ns.TicketPriority), nil
 }
 
 type TicketStatus string
 
 const (
-	TicketStatusBacklog    TicketStatus = "backlog"
-	TicketStatusInProgress TicketStatus = "in_progress"
-	TicketStatusInReview   TicketStatus = "in_review"
-	TicketStatusDone       TicketStatus = "done"
+	TicketStatusBacklog  TicketStatus = "backlog"
+	TicketStatusTodo     TicketStatus = "todo"
+	TicketStatusProgress TicketStatus = "progress"
+	TicketStatusReview   TicketStatus = "review"
+	TicketStatusDone     TicketStatus = "done"
 )
 
 func (e *TicketStatus) Scan(src interface{}) error {
@@ -98,6 +98,49 @@ func (ns NullTicketStatus) Value() (driver.Value, error) {
 		return nil, nil
 	}
 	return string(ns.TicketStatus), nil
+}
+
+type TicketType string
+
+const (
+	TicketTypeFeature TicketType = "feature"
+	TicketTypeBug     TicketType = "bug"
+	TicketTypeTask    TicketType = "task"
+)
+
+func (e *TicketType) Scan(src interface{}) error {
+	switch s := src.(type) {
+	case []byte:
+		*e = TicketType(s)
+	case string:
+		*e = TicketType(s)
+	default:
+		return fmt.Errorf("unsupported scan type for TicketType: %T", src)
+	}
+	return nil
+}
+
+type NullTicketType struct {
+	TicketType TicketType `json:"ticket_type"`
+	Valid      bool       `json:"valid"` // Valid is true if TicketType is not NULL
+}
+
+// Scan implements the Scanner interface.
+func (ns *NullTicketType) Scan(value interface{}) error {
+	if value == nil {
+		ns.TicketType, ns.Valid = "", false
+		return nil
+	}
+	ns.Valid = true
+	return ns.TicketType.Scan(value)
+}
+
+// Value implements the driver Valuer interface.
+func (ns NullTicketType) Value() (driver.Value, error) {
+	if !ns.Valid {
+		return nil, nil
+	}
+	return string(ns.TicketType), nil
 }
 
 type TimeEntryStatus string
@@ -200,12 +243,15 @@ type Settlement struct {
 
 type Ticket struct {
 	ID          uuid.UUID          `json:"id"`
-	ProjectID   uuid.UUID          `json:"project_id"`
+	WorkspaceID uuid.UUID          `json:"workspace_id"`
 	Identifier  string             `json:"identifier"`
 	Title       string             `json:"title"`
 	Description string             `json:"description"`
+	Type        TicketType         `json:"type"`
 	Status      TicketStatus       `json:"status"`
-	Priority    Priority           `json:"priority"`
+	Priority    TicketPriority     `json:"priority"`
+	Points      int32              `json:"points"`
+	AssigneeID  *string            `json:"assignee_id"`
 	Tags        []string           `json:"tags"`
 	CreatedAt   pgtype.Timestamptz `json:"created_at"`
 	UpdatedAt   pgtype.Timestamptz `json:"updated_at"`

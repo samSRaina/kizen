@@ -7,16 +7,23 @@ import (
 )
 
 type Ticket struct {
-	ID          uuid.UUID      `json:"id"`
-	ProjectID   uuid.UUID      `json:"project_id"`
-	Identifier  string         `json:"identifier"`
-	Title       string         `json:"title"`
-	Description string         `json:"description"`
-	Status      TicketStatus   `json:"status"`
-	Priority    TicketPriority `json:"priority"`
-	Tags        []string       `json:"tags"`
-	CreatedAt   time.Time      `json:"created_at"`
-	UpdatedAt   time.Time      `json:"updated_at"`
+	ID          uuid.UUID
+	WorkspaceID uuid.UUID
+
+	Number     int64
+	Identifier string
+
+	Title       string
+	Description string
+
+	Status   TicketStatus
+	Priority TicketPriority
+	Tags     []string
+
+	Position float64
+
+	CreatedAt time.Time
+	UpdatedAt time.Time
 }
 
 type TicketPriority string
@@ -38,10 +45,10 @@ const (
 )
 
 type CreateTicketInput struct {
-	ProjectID   uuid.UUID      `json:"project_id"`
-	Identifier  string         `json:"identifier"`
-	Title       string         `json:"title"`
-	Description string         `json:"description"`
-	Priority    TicketPriority `json:"priority"`
-	Tags        []string       `json:"tags,omitempty"`
+	WorkspaceId uuid.UUID
+	UserID      uuid.UUID
+	Title       string
+	Description string
+	Priority    TicketPriority
+	Tags        []string
 }

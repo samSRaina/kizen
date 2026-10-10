@@ -13,22 +13,20 @@ import (
 	"time"
 
 	"github.com/go-chi/chi/v5"
-	chiMiddleware "github.com/go-chi/chi/v5/middleware"
+	"github.com/go-chi/chi/v5/middleware"
 	"github.com/jackc/pgx/v5/pgxpool"
 	"github.com/samSRaina/kizen/internal/config"
 	customMiddleware "github.com/samSRaina/kizen/internal/middleware"
+	"github.com/samSRaina/kizen/services/ticket/internal/api"
 	"github.com/samSRaina/kizen/services/ticket/internal/handler"
 	"github.com/samSRaina/kizen/services/ticket/internal/infrastructure/repository"
 	"github.com/samSRaina/kizen/services/ticket/internal/service"
 )
 
 func main() {
-	logger := slog.New(
-		slog.NewJSONHandler(os.Stdout, &slog.HandlerOptions{
-			AddSource: true,
-			Level:     slog.LevelInfo,
-		}),
-	)
+	logger := slog.New(slog.NewJSONHandler(os.Stdout, &slog.HandlerOptions{
+		AddSource: true,
+	}))
 
 	if err := run(logger); err != nil {
 		logger.Error("application failed", "error", err)
@@ -39,7 +37,7 @@ func main() {
 func run(logger *slog.Logger) error {
 	cfg, err := config.Load("TICKET_SERVICE")
 	if err != nil {
-		return fmt.Errorf("load config: %w", err)
+		return fmt.Errorf("Load config: %w", err)
 	}
 
 	ctx, cancel := signal.NotifyContext(context.Background(), os.Interrupt, syscall.SIGTERM)
@@ -47,36 +45,40 @@ func run(logger *slog.Logger) error {
 
 	pool, err := pgxpool.New(ctx, cfg.DatabaseURL)
 	if err != nil {
-		return fmt.Errorf("create database pool: %w", err)
+		return fmt.Errorf("Create database pool: %w", err)
 	}
 	defer pool.Close()
 
-	if err := pool.Ping(ctx); err != nil {
-		return fmt.Errorf("ping database: %w", err)
-	}
-	logger.Info("database connection established")
+	repo := repository.NewRepository(pool)
+	srv := service.NewService(repo)
+	handler := handler.NewHandler(srv)
 
-	// Wiring
-	repo := repository.NewTicketRepository(pool)
-	ticketService := service.NewService(repo)
-	ticketHandler := handler.NewTicketHandler(ticketService, logger)
+	strictHandler := api.NewStrictHandlerWithOptions(handler, nil, api.StrictHTTPServerOptions{
+		ResponseErrorHandlerFunc: func(w http.ResponseWriter, r *http.Request, err error) {
+			reqLogger := customMiddleware.GetLogger(r.Context())
+			reqLogger.Error("Unhandled request error",
+				"error", err.Error(),
+				"path", r.URL.Path,
+				"method", r.Method,
+			)
+			w.Header().Set("Content-Type", "application/problem+json")
+			w.WriteHeader(http.StatusInternalServerError)
+			w.Write([]byte(`{"status": 500, "title": "Internal Server Error", "detail": "An unexpected server failure occurred."}`))
+		},
+	})
 
-	// Router with production-grade middleware
-	router := chi.NewRouter()
-	router.Use(chiMiddleware.RequestID)
-	router.Use(chiMiddleware.Logger)
-	router.Use(chiMiddleware.Recoverer)
-	router.Use(customMiddleware.RequireAuth)
-	router.Use(customMiddleware.InjectLogger(logger))
+	r := chi.NewRouter()
+	r.Use(middleware.RequestID)
+	r.Use(middleware.Logger)
+	r.Use(middleware.Recoverer)
+	r.Use(customMiddleware.RequireAuth)
+	r.Use(customMiddleware.InjectLogger(logger))
 
-	router.Post("/api/v1/tickets", ticketHandler.Create)
-	router.Get("/api/v1/projects/{project_id}/tickets/{identifier}", ticketHandler.Get)
-	router.Delete("/api/v1/projects/{project_id}/tickets/{identifier}", ticketHandler.Delete)
-	router.Get("/api/v1/projects/{project_id}/tickets", ticketHandler.ListByProject)
+	api.HandlerFromMux(strictHandler, r)
 
 	server := &http.Server{
 		Addr:              net.JoinHostPort("", cfg.Port),
-		Handler:           router,
+		Handler:           r,
 		ReadTimeout:       5 * time.Second,
 		ReadHeaderTimeout: 2 * time.Second,
 		WriteTimeout:      10 * time.Second,
@@ -85,25 +87,23 @@ func run(logger *slog.Logger) error {
 
 	serverErrors := make(chan error, 1)
 	go func() {
-		logger.Info("ticket service starting", "addr", server.Addr)
+		logger.Info("server starting", "addr", server.Addr)
 		if err := server.ListenAndServe(); err != nil && !errors.Is(err, http.ErrServerClosed) {
 			serverErrors <- err
 		}
 	}()
-
 	select {
 	case err := <-serverErrors:
 		return err
 	case <-ctx.Done():
 		logger.Info("shutdown signal received")
 	}
-
-	shutdownCtx, shutdownCancel := context.WithTimeout(context.Background(), 10*time.Second)
-	defer shutdownCancel()
+	shutdownCtx, cancel := context.WithTimeout(context.Background(), 15*time.Second)
+	defer cancel()
 
 	if err := server.Shutdown(shutdownCtx); err != nil {
 		return err
 	}
-	logger.Info("ticket service stopped")
+	logger.Info("server stopped")
 	return nil
 }

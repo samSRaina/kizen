@@ -79,10 +79,8 @@ docker_build(
     restart_container()
   ],
 )
-# # # # # # # # # # # # # # # # # # # # ## # # # # # #
-# # # # # # # # INFRASTRUCTURE # # # # # # # # # # # #
-# # # # # # # # # # # # # # # # # # # # ## # # # # # #
 
+##########################
 docker_compose('docker-compose.yaml')
 # dc_resource(
 #     'ticket-service',

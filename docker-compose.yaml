@@ -75,8 +75,10 @@ services:
     labels:
       - "traefik.enable=true"
       - "traefik.http.routers.ticket-service.entrypoints=web"
-      - "traefik.http.routers.ticket-service.rule=PathPrefix(`/api/v1/tickets`) || PathPrefix(`/api/v1/projects`)"
-      - "traefik.http.routers.ticket-service.priority=10"
+      - "traefik.http.routers.ticket-service.rule=PathPrefix(`/api/v1/workspaces`) && PathRegexp(`^/api/v1/workspaces/[0-9a-fA-F-]+/tickets.*`)"
+      - "traefik.http.middlewares.ticket-strip.stripprefix.prefixes=/api/v1"
+      - "traefik.http.routers.ticket-service.middlewares=ticket-strip"
+      - "traefik.http.routers.ticket-service.priority=20"
       - "traefik.http.services.ticket-service.loadbalancer.server.port=${TICKET_SERVICE_PORT}"
     environment:
       TICKET_SERVICE_PORT: ${TICKET_SERVICE_PORT}
