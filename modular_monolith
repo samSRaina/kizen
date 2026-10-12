@@ -1,0 +1,89 @@
+kizen/
+├── api/                                 # 📜 THE SOURCE OF TRUTH (Contracts)
+│   ├── openapi.yaml                     # REST HTTP schema (Web <-> Server)
+│   ├── proto/kizen/v1/                  # gRPC schema (Server <-> Agent)
+│   └── async/v1/                        # JSON schemas for Redis Background Jobs
+│
+├── internal/                            # 🛠️ SHARED MONOREPO LIBRARIES
+│   ├── config/                          # Viper/Envconfig: loads .env
+│   ├── cache/                           # Redis connection pool & helpers
+│   ├── database/                        # Pgx connection pool (NO queries here anymore)
+│   ├── pubsub/                          # Asynq/Redis task queue wrapper
+│   ├── observability/                   # 👈 FUTURE: OpenTelemetry (OTel) traces & metrics
+│   └── middleware/                      # HTTP/gRPC Interceptors
+│       ├── auth.go                      # Better-Auth validation
+│       └── actor.go                     # Context propagation (ActorID, RequestID)
+│
+├── services/                            # 🚀 RUNNABLE APPLICATIONS
+│   ├── api/                             # 🧠 CORE GO BACKEND (Modular Monolith)
+│   │   ├── cmd/
+│   │   │   └── server/
+│   │   │       └── main.go              # Wires DI, boots HTTP, starts Outbox relay & Health checks
+│   │   └── internal/
+│   │       ├── domain/                  # 🟢 LAYER 1: PURE BUSINESS LOGIC (No I/O dependencies)
+│   │       │   ├── common/              # Shared value objects (Actor, IDs, Pagination)
+│   │       │   ├── authz/               # KIZEN PERMISSIONS: "Can Actor X edit Ticket Y?"
+│   │       │   ├── workspace/           # Entities (Workspace, Member) and Domain Errors
+│   │       │   └── ticket/              # Entities (Ticket, Status) and Domain Errors
+│   │       │
+│   │       ├── application/             # 🟡 LAYER 2: USE CASE ORCHESTRATION
+│   │       │   ├── ports/               # Interfaces: Repository, EventPublisher, UnitOfWork
+│   │       │   ├── workspace/           # e.g., CreateWorkspaceCommand, AddMemberHandler
+│   │       │   └── ticket/              # e.g., AssignTicketCommand, UpdateTicketStatusHandler
+│   │       │
+│   │       ├── repository/              # 🔴 LAYER 3A: DATA ACCESS (Infrastructure)
+│   │       │   └── postgres/
+│   │       │       ├── gen/             # 🔒 AUTO-GENERATED: SQLC code ONLY (isolated)
+│   │       │       ├── tx.go            # Implements ports.UnitOfWork (Atomic DB + Outbox saves)
+│   │       │       ├── outbox_repo.go   # Handles writing to the transactional outbox table
+│   │       │       ├── workspace_repo.go# Handwritten adapter wrapping `gen` code
+│   │       │       └── ticket_repo.go   # Handwritten adapter wrapping `gen` code
+│   │       │
+│   │       ├── infrastructure/          # 🔴 LAYER 3B: EXTERNAL SERVICES & CROSS-CUTTING
+│   │       │   ├── messaging/
+│   │       │   │   ├── redis_pubsub.go  # Ephemeral events (Broadcasts to Node.js Realtime)
+│   │       │   │   └── redis_streams.go # Durable jobs (AI queue), implements idempotency/retries
+│   │       │   ├── outbox/              # Background worker: polls Outbox table -> publishes -> marks done
+│   │       │   ├── config/              # Secure environment loading (Viper)
+│   │       │   └── observability/       # Structured slog, OpenTelemetry setup, Graceful Shutdown
+│   │       │
+│   │       └── transport/               # 🔴 LAYER 4: INBOUND HTTP
+│   │           └── http/
+│   │               ├── handler/         # Parses HTTP requests -> Calls application/ Use Cases -> Formats JSON
+│   │               ├── middleware/      # Better-Auth validation (Identity), Rate Limiting, RequestID
+│   │               └── router.go        # Defines API routes
+│   │
+│   ├── realtime/                        # ⚡ NODE.JS REALTIME PUSHER (Isolated from Go)
+│   │   ├── package.json
+│   │   ├── src/
+│   │   │   ├── server.ts                # WebSocket / SSE server
+│   │   │   ├── auth.ts                  # Verifies Better-Auth identity (JWT/Session)
+│   │   │   ├── subscriber.ts            # Listens to Redis Pub/Sub -> Routes to users
+│   │   │   └── client_state.ts          # Tracks disconnects; triggers client to fetch fresh state from API
+│   │   └── Dockerfile
+│   │
+│   └── agent/                           # 🤖 AI SATELLITE SERVICE (Python or Go)
+│       ├── cmd/main.py
+│       ├── tools/                       # Auto-generated gRPC clients to query Server
+│       ├── memory/                      # Redis client for LLM Context Windows
+│       └── orchestrator/                # LLM execution loops (LangChain/LlamaIndex)
+│
+├── web/                                 # 🌐 FRONTEND SPA (React + Vite)
+│   ├── src/
+│   │   ├── api/gen/                     # Auto-generated TS types/React Query hooks
+│   │   ├── hooks/useSSE.ts              # Custom hook for real-time Agent updates
+│   │   ├── components/                  # Dumb UI components (Buttons, Modals)
+│   │   └── features/                    # Smart components grouped by feature (Tickets, Workspaces)
+│   └── Dockerfile
+│
+├── sql/                                 # 🗄️ DATABASE MANAGEMENT
+│   ├── migrations/                      # Up/Down schema changes (Goose or Golang-Migrate)
+│   └── queries/                         # Raw SQL files (Read by SQLC)
+│       ├── workspace.sql                # Outputs to server/internal/workspace/db/
+│       └── ticket.sql                   # Outputs to server/internal/ticket/db/
+│
+├── test/integration
+├── infra/developement/docker            # 🏗️ INFRASTRUCTURE AS CODE
+├── Makefile                             # 🪄 DX COMMANDS (generate, build, test, up)
+├── sqlc.yaml                            # 👈 Modified to route to vertical slices
+└── docker-compose.yaml                  #    Boots: Server, Agent, Postgres, Redis

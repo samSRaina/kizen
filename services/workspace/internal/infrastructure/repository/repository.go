@@ -15,14 +15,36 @@ import (
 	"github.com/samSRaina/kizen/services/workspace/internal/domain"
 )
 
+const (
+	defaultQueryTimeout  = 3 * time.Second
+	pgErrUniqueViolation = "23505"
+)
+
 type Repository struct {
-	q *database.Queries
+	pool    *pgxpool.Pool
+	q       *database.Queries
+	timeout time.Duration
 }
 
-func NewRepository(pool *pgxpool.Pool) *Repository {
-	return &Repository{
-		q: database.New(pool),
+type Option func(r *Repository)
+
+func WithTimeout(d time.Duration) Option {
+	return func(r *Repository) {
+		r.timeout = d
 	}
+}
+
+func NewRepository(pool *pgxpool.Pool, opts ...Option) *Repository {
+	r := &Repository{
+		pool:    pool,
+		q:       database.New(pool),
+		timeout: defaultQueryTimeout,
+	}
+
+	for _, opt := range opts {
+		opt(r)
+	}
+	return r
 }
 
 func getOwnerID(ctx context.Context) (string, error) {

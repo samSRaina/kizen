@@ -18,14 +18,17 @@ import (
 
 // Defines values for TicketPriority.
 const (
-	High   TicketPriority = "High"
-	Low    TicketPriority = "Low"
-	Medium TicketPriority = "Medium"
+	Critical TicketPriority = "Critical"
+	High     TicketPriority = "High"
+	Low      TicketPriority = "Low"
+	Medium   TicketPriority = "Medium"
 )
 
 // Valid indicates whether the value is a known member of the TicketPriority enum.
 func (e TicketPriority) Valid() bool {
 	switch e {
+	case Critical:
+		return true
 	case High:
 		return true
 	case Low:
@@ -39,11 +42,10 @@ func (e TicketPriority) Valid() bool {
 
 // Defines values for TicketStatus.
 const (
-	Backlog  TicketStatus = "backlog"
-	Done     TicketStatus = "done"
-	Progress TicketStatus = "progress"
-	Review   TicketStatus = "review"
-	Todo     TicketStatus = "todo"
+	Backlog    TicketStatus = "backlog"
+	Done       TicketStatus = "done"
+	InProgress TicketStatus = "in_progress"
+	InReview   TicketStatus = "in_review"
 )
 
 // Valid indicates whether the value is a known member of the TicketStatus enum.
@@ -53,32 +55,9 @@ func (e TicketStatus) Valid() bool {
 		return true
 	case Done:
 		return true
-	case Progress:
+	case InProgress:
 		return true
-	case Review:
-		return true
-	case Todo:
-		return true
-	default:
-		return false
-	}
-}
-
-// Defines values for TicketType.
-const (
-	Bug     TicketType = "bug"
-	Feature TicketType = "feature"
-	Task    TicketType = "task"
-)
-
-// Valid indicates whether the value is a known member of the TicketType enum.
-func (e TicketType) Valid() bool {
-	switch e {
-	case Bug:
-		return true
-	case Feature:
-		return true
-	case Task:
+	case InReview:
 		return true
 	default:
 		return false
@@ -87,14 +66,11 @@ func (e TicketType) Valid() bool {
 
 // CreateTicketRequest defines model for CreateTicketRequest.
 type CreateTicketRequest struct {
-	AssigneeId  *string        `json:"assignee_id,omitempty"`
 	Description *string        `json:"description,omitempty"`
-	Points      *int           `json:"points,omitempty"`
 	Priority    TicketPriority `json:"priority"`
 	Status      *TicketStatus  `json:"status,omitempty"`
 	Tags        *[]string      `json:"tags,omitempty"`
 	Title       string         `json:"title"`
-	Type        TicketType     `json:"type"`
 }
 
 // CreateWorkspaceRequest defines model for CreateWorkspaceRequest.
@@ -127,17 +103,16 @@ type ProblemDetail struct {
 
 // Ticket defines model for Ticket.
 type Ticket struct {
-	AssigneeId  *string            `json:"assignee_id,omitempty"`
 	CreatedAt   time.Time          `json:"created_at"`
 	Description *string            `json:"description,omitempty"`
 	Id          openapi_types.UUID `json:"id"`
 	Identifier  string             `json:"identifier"`
-	Points      int                `json:"points"`
+	Number      int                `json:"number"`
+	Position    float64            `json:"position"`
 	Priority    TicketPriority     `json:"priority"`
 	Status      TicketStatus       `json:"status"`
 	Tags        *[]string          `json:"tags,omitempty"`
 	Title       string             `json:"title"`
-	Type        TicketType         `json:"type"`
 	UpdatedAt   time.Time          `json:"updated_at"`
 	WorkspaceId openapi_types.UUID `json:"workspace_id"`
 }
@@ -148,19 +123,14 @@ type TicketPriority string
 // TicketStatus defines model for TicketStatus.
 type TicketStatus string
 
-// TicketType defines model for TicketType.
-type TicketType string
-
 // UpdateTicketRequest defines model for UpdateTicketRequest.
 type UpdateTicketRequest struct {
-	AssigneeId  *string         `json:"assignee_id,omitempty"`
 	Description *string         `json:"description,omitempty"`
-	Points      *int            `json:"points,omitempty"`
+	Position    *float64        `json:"position,omitempty"`
 	Priority    *TicketPriority `json:"priority,omitempty"`
 	Status      *TicketStatus   `json:"status,omitempty"`
 	Tags        *[]string       `json:"tags,omitempty"`
 	Title       *string         `json:"title,omitempty"`
-	Type        *TicketType     `json:"type,omitempty"`
 }
 
 // Workspace defines model for Workspace.

@@ -22,7 +22,7 @@ type Workspace struct {
 	UpdatedAt         time.Time
 }
 
-type CreateWorkspaceInput struct {
+type WorkspaceInput struct {
 	Name              string
 	DefaultHourlyRate int
 	Description       *string

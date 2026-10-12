@@ -7,7 +7,7 @@ import (
 )
 
 type Repository interface {
-	List(ctx context.Context) ([]Workspace, error)
-	Create(ctx context.Context, ws CreateWorkspaceInput) (*Workspace, error)
-	Delete(ctx context.Context, id uuid.UUID) error
+	List(ctx context.Context, userID string) ([]Workspace, error)
+	Create(ctx context.Context, ws WorkspaceInput) (*Workspace, error)
+	Delete(ctx context.Context, userID string, id uuid.UUID) error
 }
