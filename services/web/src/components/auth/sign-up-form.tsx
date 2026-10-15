@@ -24,7 +24,7 @@ export function SignUpForm({ onSuccess }: SignUpFormProps) {
 		if (errorMessage) setErrorMessage(null);
 	};
 
-	const handleSubmit = async (e: React.FormEvent) => {
+	const handleSubmit = async (e: React.SubmitEvent) => {
 		e.preventDefault();
 		if (!email || !secret) {
 			setErrorMessage("Email and master secret are required.");
