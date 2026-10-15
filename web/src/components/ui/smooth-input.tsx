@@ -1,360 +1,298 @@
-"use client";
-
-import { useDialKit } from "dialkit";
 import {
-  motion,
-  useMotionValue,
-  useReducedMotion,
-  useSpring,
+	motion,
+	useMotionValue,
+	useReducedMotion,
+	useSpring,
 } from "framer-motion";
-import React, {
-  type ComponentPropsWithoutRef,
-  useEffect,
-  useRef,
-  useState,
+import {
+	type ComponentPropsWithoutRef,
+	useEffect,
+	useRef,
+	useState,
 } from "react";
 
 import { cn } from "@/lib/utils";
 
-const INPUT_TYPE_OPTIONS = [
-  { value: "text", label: "Text" },
-  { value: "password", label: "Password" },
-];
+const PASSWORD_CHAR =
+	typeof navigator !== "undefined" &&
+	navigator.userAgent.match(/firefox|fxios/i)
+		? "\u25CF"
+		: "\u2022";
 
-const inputWrapperClassName = cn(
-  "bg-muted2 has-[:focus-visible]:outline-muted3 relative w-full max-w-[420px] rounded-2xl p-4",
-  "has-[:focus-visible]:outline has-[:focus-visible]:outline-2 has-[:focus-visible]:outline-offset-2",
-);
+export type SmoothInputType = "text" | "password" | "email";
 
-const inputClassName =
-  "w-full bg-transparent outline-none placeholder:text-foreground/40";
-
-type InputFieldProps = ComponentPropsWithoutRef<"input"> & {
-  wrapperClassName?: string;
+export type SmoothInputProps = Omit<
+	ComponentPropsWithoutRef<"input">,
+	"type"
+> & {
+	type?: SmoothInputType;
+	wrapperClassName?: string;
 };
 
-type SmoothInputType = "text" | "password";
-
-type SmoothInputProps = Omit<InputFieldProps, "type"> & {
-  type?: SmoothInputType;
-};
-
-const Input = ({ className, wrapperClassName, ...props }: InputFieldProps) => {
-  return (
-    <div className={cn(inputWrapperClassName, wrapperClassName)}>
-      <input className={cn(inputClassName, className)} {...props} />
-    </div>
-  );
-};
-
-const PASSWORD_CHAR = navigator.userAgent.match(/firefox|fxios/i)
-  ? "\u25CF"
-  : "\u2022";
-
-const SmoothInput = ({
-  className,
-  wrapperClassName,
-  value,
-  defaultValue,
-  onChange,
-  onBlur,
-  type = "text",
-  placeholder,
-  style,
-  ...props
+export const SmoothInput = ({
+	className,
+	wrapperClassName,
+	value,
+	defaultValue,
+	onChange,
+	onBlur,
+	onFocus,
+	type = "text",
+	placeholder,
+	style,
+	...props
 }: SmoothInputProps) => {
-  const [internalValue, setInternalValue] = useState(defaultValue ?? "");
-  const caretX = useMotionValue(0);
-  const caretOpacity = useMotionValue(0);
-  const containerRef = useRef<HTMLDivElement>(null);
-  const inputRef = useRef<HTMLInputElement>(null);
-  const measureRef = useRef<HTMLSpanElement>(null);
-  const prefersReducedMotion = useReducedMotion();
+	const [internalValue, setInternalValue] = useState(defaultValue ?? "");
+	const caretX = useMotionValue(0);
+	const caretOpacity = useMotionValue(0);
+	const containerRef = useRef<HTMLDivElement>(null);
+	const inputRef = useRef<HTMLInputElement>(null);
+	const measureRef = useRef<HTMLSpanElement>(null);
+	const prefersReducedMotion = useReducedMotion();
 
-  const isControlled = value !== undefined;
+	const isControlled = value !== undefined;
+	const inputValue = isControlled ? String(value) : internalValue;
 
-  const params = useDialKit(
-    "Smooth Input",
-    {
-      inputType: {
-        type: "select",
-        options: INPUT_TYPE_OPTIONS,
-        default: type,
-      },
-      placeholder: {
-        type: "text",
-        default: placeholder ?? "smooth input",
-        placeholder: "Empty state text…",
-      },
-      fontSize: [24, 12, 48, 2],
-      spring: {
-        type: "spring",
-        stiffness: 500,
-        damping: 30,
-        mass: 0.5,
-      },
-      clear: { type: "action", label: "Clear value" },
-    },
-    {
-      onAction: (path) => {
-        if (path !== "clear") return;
+	const springCaretX = useSpring(
+		caretX,
+		prefersReducedMotion
+			? { stiffness: 10000, damping: 100, mass: 0.1 }
+			: { stiffness: 500, damping: 30, mass: 0.5 },
+	);
 
-        if (!isControlled) {
-          setInternalValue("");
-        }
+	const syncMeasureSpan = () => {
+		const input = inputRef.current;
+		const measureSpan = measureRef.current;
+		if (!input || !measureSpan) return;
 
-        onChange?.({
-          target: { value: "" },
-          currentTarget: { value: "" },
-        } as React.ChangeEvent<HTMLInputElement>);
-        caretOpacity.set(0);
-      },
-    },
-  );
+		const styles = window.getComputedStyle(input);
+		const isPassword = type === "password";
 
-  const springCaretX = useSpring(
-    caretX,
-    prefersReducedMotion
-      ? { stiffness: 10000, damping: 100, mass: 0.1 }
-      : params.spring,
-  );
+		let fontSize = styles.fontSize;
+		if (
+			PASSWORD_CHAR === "\u2022" &&
+			isPassword &&
+			typeof navigator !== "undefined" &&
+			!navigator.userAgent.match(/chrome|chromium|crios/i)
+		) {
+			fontSize = `${Number.parseFloat(fontSize) + 6.25}px`;
+		}
 
-  const inputValue = isControlled ? String(value) : internalValue;
-  const activeType = params.inputType as SmoothInputType;
-  const displayPlaceholder = params.placeholder || placeholder || "smooth input";
+		measureSpan.style.font = `${styles.fontStyle} ${styles.fontWeight} ${fontSize} ${styles.fontFamily}`;
+		measureSpan.style.letterSpacing = styles.letterSpacing;
+		measureSpan.style.fontFeatureSettings = styles.fontFeatureSettings;
+		measureSpan.style.fontVariationSettings = styles.fontVariationSettings;
+	};
 
-  const syncMeasureSpan = () => {
-    const input = inputRef.current;
-    const measureSpan = measureRef.current;
-    if (!input || !measureSpan) return;
+	const measurePrefixWidth = (text: string) => {
+		const input = inputRef.current;
+		const measureSpan = measureRef.current;
+		if (!input || !measureSpan) return null;
 
-    const styles = window.getComputedStyle(input);
-    const isPassword = input.type === "password";
+		syncMeasureSpan();
+		measureSpan.textContent = text;
 
-    let fontSize = styles.fontSize;
-    if (
-      PASSWORD_CHAR === "\u2022" &&
-      isPassword &&
-      !navigator.userAgent.match(/chrome|chromium|crios/i)
-    ) {
-      fontSize = `${parseFloat(fontSize) + 6.25}px`;
-    }
+		const paddingLeft =
+			Number.parseFloat(window.getComputedStyle(input).paddingLeft) || 0;
 
-    measureSpan.style.font = `${styles.fontStyle} ${styles.fontWeight} ${fontSize} ${styles.fontFamily}`;
-    measureSpan.style.letterSpacing = styles.letterSpacing;
-    measureSpan.style.fontFeatureSettings = styles.fontFeatureSettings;
-    measureSpan.style.fontVariationSettings = styles.fontVariationSettings;
-  };
+		return text.length > 0
+			? measureSpan.offsetWidth + paddingLeft
+			: paddingLeft;
+	};
 
-  const measurePrefixWidth = (text: string) => {
-    const input = inputRef.current;
-    const measureSpan = measureRef.current;
-    if (!input || !measureSpan) return null;
+	const scrollCaretIntoView = (
+		target: HTMLInputElement,
+		absoluteWidth: number,
+	) => {
+		const styles = window.getComputedStyle(target);
+		const paddingLeft = Number.parseFloat(styles.paddingLeft) || 0;
+		const paddingRight = Number.parseFloat(styles.paddingRight) || 0;
+		const maxScroll = Math.max(0, target.scrollWidth - target.clientWidth);
+		const visibleRight = target.scrollLeft + target.clientWidth - paddingRight;
+		const visibleLeft = target.scrollLeft + paddingLeft;
 
-    syncMeasureSpan();
-    measureSpan.textContent = text;
+		if (absoluteWidth > visibleRight) {
+			target.scrollLeft = Math.min(
+				absoluteWidth - target.clientWidth + paddingRight,
+				maxScroll,
+			);
+			return;
+		}
 
-    const paddingLeft =
-      parseFloat(window.getComputedStyle(input).paddingLeft) || 0;
+		if (absoluteWidth < visibleLeft) {
+			target.scrollLeft = Math.max(0, absoluteWidth - paddingLeft);
+		}
+	};
 
-    return text.length > 0
-      ? measureSpan.offsetWidth + paddingLeft
-      : paddingLeft - 1;
-  };
+	const getCaretIndex = (target: HTMLInputElement) => {
+		try {
+			const selectionStart = target.selectionStart ?? 0;
+			const selectionEnd = target.selectionEnd ?? 0;
 
-  const scrollCaretIntoView = (
-    target: HTMLInputElement,
-    absoluteWidth: number,
-  ) => {
-    const styles = window.getComputedStyle(target);
-    const paddingLeft = parseFloat(styles.paddingLeft) || 0;
-    const paddingRight = parseFloat(styles.paddingRight) || 0;
-    const maxScroll = Math.max(0, target.scrollWidth - target.clientWidth);
-    const visibleRight = target.scrollLeft + target.clientWidth - paddingRight;
-    const visibleLeft = target.scrollLeft + paddingLeft;
+			if (selectionStart === selectionEnd) {
+				return selectionStart;
+			}
 
-    if (absoluteWidth > visibleRight) {
-      target.scrollLeft = Math.min(
-        absoluteWidth - target.clientWidth + paddingRight,
-        maxScroll,
-      );
-      return;
-    }
+			return target.selectionDirection === "backward"
+				? selectionStart
+				: selectionEnd;
+		} catch {
+			return target.value.length;
+		}
+	};
 
-    if (absoluteWidth < visibleLeft) {
-      target.scrollLeft = Math.max(0, absoluteWidth - paddingLeft);
-    }
-  };
+	const updateCaretFromInput = (target: HTMLInputElement) => {
+		try {
+			const caretIndex = getCaretIndex(target);
+			let hasSelection = false;
+			try {
+				hasSelection =
+					target.selectionStart !== null &&
+					target.selectionEnd !== null &&
+					target.selectionStart !== target.selectionEnd;
+			} catch {
+				hasSelection = false;
+			}
 
-  const getCaretIndex = (target: HTMLInputElement) => {
-    const selectionStart = target.selectionStart ?? 0;
-    const selectionEnd = target.selectionEnd ?? 0;
+			const isPassword = type === "password";
+			const textBeforeCaret = isPassword
+				? PASSWORD_CHAR.repeat(caretIndex)
+				: target.value.slice(0, caretIndex);
 
-    if (selectionStart === selectionEnd) {
-      return selectionStart;
-    }
+			const absoluteWidth = measurePrefixWidth(textBeforeCaret);
+			if (absoluteWidth === null) return;
 
-    return target.selectionDirection === "backward"
-      ? selectionStart
-      : selectionEnd;
-  };
+			scrollCaretIntoView(target, absoluteWidth);
 
-  const updateCaretFromInput = (target: HTMLInputElement) => {
-    const selectionStart = target.selectionStart ?? 0;
-    const selectionEnd = target.selectionEnd ?? 0;
-    const hasSelection = selectionStart !== selectionEnd;
-    const caretIndex = getCaretIndex(target);
-    const isPassword = target.type === "password";
-    const textBeforeCaret = isPassword
-      ? PASSWORD_CHAR.repeat(caretIndex)
-      : target.value.slice(0, caretIndex);
+			const styles = window.getComputedStyle(target);
+			const paddingLeft = Number.parseFloat(styles.paddingLeft) || 0;
+			const paddingRight = Number.parseFloat(styles.paddingRight) || 0;
+			const caretPosition = absoluteWidth - target.scrollLeft;
+			const minX = paddingLeft;
+			const maxX = target.clientWidth - paddingRight;
+			const isCaretVisible = caretPosition >= minX && caretPosition <= maxX + 1;
 
-    const absoluteWidth = measurePrefixWidth(textBeforeCaret);
-    if (absoluteWidth === null) return;
+			caretX.set(Math.min(caretPosition, maxX));
 
-    scrollCaretIntoView(target, absoluteWidth);
+			if (!isCaretVisible || hasSelection) {
+				caretOpacity.set(0);
+				return;
+			}
 
-    const styles = window.getComputedStyle(target);
-    const paddingLeft = parseFloat(styles.paddingLeft) || 0;
-    const paddingRight = parseFloat(styles.paddingRight) || 0;
-    const caretPosition = absoluteWidth - target.scrollLeft;
-    const minX = paddingLeft - 1;
-    const maxX = target.clientWidth - paddingRight;
-    const isCaretVisible =
-      caretPosition >= minX && caretPosition <= maxX + 1;
+			caretOpacity.set(1);
+		} catch {
+			caretOpacity.set(0);
+		}
+	};
 
-    caretX.set(Math.min(caretPosition, maxX));
+	const updateCaretRef = useRef(updateCaretFromInput);
+	updateCaretRef.current = updateCaretFromInput;
+	const caretOpacityRef = useRef(caretOpacity);
+	caretOpacityRef.current = caretOpacity;
 
-    if (!isCaretVisible || hasSelection) {
-      caretOpacity.set(0);
-      return;
-    }
+	useEffect(() => {
+		const input = inputRef.current;
+		if (input && document.activeElement === input) {
+			updateCaretRef.current(input);
+		}
+	});
 
-    caretOpacity.set(1);
-  };
+	useEffect(() => {
+		const input = inputRef.current;
+		const container = containerRef.current;
+		if (!input || !container) return;
 
-  const updateCaretRef = useRef(updateCaretFromInput);
-  updateCaretRef.current = updateCaretFromInput;
-  const caretOpacityRef = useRef(caretOpacity);
-  caretOpacityRef.current = caretOpacity;
+		const updateCaretIfFocused = () => {
+			if (document.activeElement === input) {
+				updateCaretRef.current(input);
+			}
+		};
 
-  useEffect(() => {
-    const input = inputRef.current;
-    if (input && document.activeElement === input) {
-      updateCaretRef.current(input);
-    }
-  }, [inputValue]);
+		const handleSelectionChange = () => {
+			if (document.activeElement !== input) return;
 
-  useEffect(() => {
-    const input = inputRef.current;
-    if (input && document.activeElement === input) {
-      updateCaretRef.current(input);
-    }
-  }, [activeType, params.fontSize]);
+			requestAnimationFrame(() => {
+				if (document.activeElement === input) {
+					updateCaretRef.current(input);
+				}
+			});
+		};
 
-  useEffect(() => {
-    const input = inputRef.current;
-    const container = containerRef.current;
-    if (!input || !container) return;
+		document.addEventListener("selectionchange", handleSelectionChange);
+		document.fonts.addEventListener("loadingdone", updateCaretIfFocused);
+		void document.fonts.ready.then(updateCaretIfFocused);
+		input.addEventListener("scroll", updateCaretIfFocused);
 
-    const updateCaretIfFocused = () => {
-      if (document.activeElement === input) {
-        updateCaretRef.current(input);
-      }
-    };
+		const resizeObserver = new ResizeObserver(updateCaretIfFocused);
+		resizeObserver.observe(container);
 
-    const handleSelectionChange = () => {
-      if (document.activeElement !== input) return;
+		updateCaretIfFocused();
 
-      requestAnimationFrame(() => {
-        if (document.activeElement === input) {
-          updateCaretRef.current(input);
-        }
-      });
-    };
+		return () => {
+			document.removeEventListener("selectionchange", handleSelectionChange);
+			document.fonts.removeEventListener("loadingdone", updateCaretIfFocused);
+			input.removeEventListener("scroll", updateCaretIfFocused);
+			resizeObserver.disconnect();
+		};
+	}, []);
 
-    document.addEventListener("selectionchange", handleSelectionChange);
-    document.fonts.addEventListener("loadingdone", updateCaretIfFocused);
-    void document.fonts.ready.then(updateCaretIfFocused);
-    input.addEventListener("scroll", updateCaretIfFocused);
-
-    const resizeObserver = new ResizeObserver(updateCaretIfFocused);
-    resizeObserver.observe(container);
-
-    updateCaretIfFocused();
-
-    return () => {
-      document.removeEventListener("selectionchange", handleSelectionChange);
-      document.fonts.removeEventListener("loadingdone", updateCaretIfFocused);
-      input.removeEventListener("scroll", updateCaretIfFocused);
-      resizeObserver.disconnect();
-    };
-  }, []);
-
-  return (
-    <div className={cn(inputWrapperClassName, wrapperClassName)}>
-      <div
-        ref={containerRef}
-        className="relative grid grid-cols-1 p-0"
-        style={{ caretColor: "transparent", fontSize: params.fontSize }}
-      >
-        <input
-          {...props}
-          ref={inputRef}
-          type={activeType}
-          placeholder={displayPlaceholder}
-          className={cn(
-            inputClassName,
-            "col-start-1 col-end-2 row-start-1 row-end-2 text-inherit",
-            className,
-          )}
-          style={style}
-          value={inputValue}
-          onChange={(e) => {
-            if (!isControlled) setInternalValue(e.target.value);
-            onChange?.(e);
-            requestAnimationFrame(() => {
-              updateCaretRef.current(e.target);
-            });
-          }}
-          onBlur={(e) => {
-            caretOpacityRef.current.set(0);
-            onBlur?.(e);
-          }}
-        />
-        <span
-          ref={measureRef}
-          aria-hidden
-          className="pointer-events-none invisible absolute top-0 left-0 whitespace-pre"
-        />
-        <motion.div
-          className="bg-primary pointer-events-none col-start-1 col-end-2 row-start-1 row-end-2 h-[0.9em] w-0.5 self-center"
-          style={{ x: springCaretX, opacity: caretOpacity }}
-        />
-      </div>
-    </div>
-  );
+	return (
+		<div
+			className={cn(
+				"relative w-full border-b border-border-default transition-colors duration-150 focus-within:border-text-primary bg-surface-elevated/40 hover:bg-surface-elevated/60 px-3 py-2.5",
+				wrapperClassName,
+			)}
+		>
+			<div
+				ref={containerRef}
+				className="relative grid grid-cols-1 p-0 font-mono text-sm"
+				style={{ caretColor: "transparent" }}
+			>
+				<input
+					{...props}
+					ref={inputRef}
+					type={type === "email" ? "text" : type}
+					inputMode={type === "email" ? "email" : props.inputMode}
+					autoCapitalize={type === "email" ? "none" : props.autoCapitalize}
+					autoCorrect={type === "email" ? "off" : props.autoCorrect}
+					spellCheck={type === "email" ? false : props.spellCheck}
+					placeholder={placeholder}
+					className={cn(
+						"col-start-1 col-end-2 row-start-1 row-end-2 w-full bg-transparent border-0 outline-none text-text-primary placeholder:text-text-muted/40 font-mono text-sm p-0 m-0",
+						className,
+					)}
+					style={style}
+					value={inputValue}
+					onFocus={(e) => {
+						onFocus?.(e);
+						requestAnimationFrame(() => {
+							updateCaretRef.current(e.target);
+						});
+					}}
+					onChange={(e) => {
+						if (!isControlled) setInternalValue(e.target.value);
+						onChange?.(e);
+						requestAnimationFrame(() => {
+							updateCaretRef.current(e.target);
+						});
+					}}
+					onBlur={(e) => {
+						caretOpacityRef.current.set(0);
+						onBlur?.(e);
+					}}
+				/>
+				<span
+					ref={measureRef}
+					aria-hidden
+					className="pointer-events-none invisible absolute top-0 left-0 whitespace-pre"
+				/>
+				<motion.div
+					className="bg-text-primary pointer-events-none col-start-1 col-end-2 row-start-1 row-end-2 h-[1.15em] w-0.5 self-center shadow-[0_0_8px_var(--color-border-strong)]"
+					style={{ x: springCaretX, opacity: caretOpacity }}
+				/>
+			</div>
+		</div>
+	);
 };
 
-const Skiper106 = () => {
-  return (
-    <div className="bg-muted text-foreground flex h-full w-full flex-col items-center justify-center">
-      <div className="-mt-10 mb-20 grid content-start justify-items-center gap-6 text-center">
-        <span className="after:bg-linear-to-b after:to-foreground relative max-w-[12ch] text-xs uppercase leading-tight opacity-40 after:absolute after:left-1/2 after:top-full after:h-16 after:w-px after:from-transparent after:content-['']">
-          Try typing below
-        </span>
-      </div>
-      <div className="flex w-full flex-col items-center space-y-4">
-        <SmoothInput aria-label="Smooth caret input" />
-        <Input
-          placeholder="normal input"
-          className="caret-primary text-2xl"
-          wrapperClassName="max-w-[420px] p-4"
-          aria-label="Normal input"
-        />
-      </div>
-    </div>
-  );
-};
-
-export { Input, Skiper106, SmoothInput };
+export default SmoothInput;

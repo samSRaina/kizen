@@ -1,350 +1,227 @@
+import { createFileRoute, useNavigate } from "@tanstack/react-router";
 import {
-	ArrowPathIcon,
-	CheckCircleIcon,
-	ChevronDownIcon,
-	ChevronRightIcon,
-	FolderIcon,
-	FolderOpenIcon,
-	TrashIcon,
-} from "@heroicons/react/24/outline";
-import { createFileRoute } from "@tanstack/react-router";
-import { useCallback, useEffect, useState } from "react";
-import { AppLayout } from "@/components/app-shell/layout";
-import { AnimatedLink } from "@/components/ui/animated-link";
-import { apiClient } from "@/lib/api-client";
-import { useSession } from "@/lib/auth-client";
-import { cn } from "@/lib/utils";
-import type { components } from "@/types/api.gen";
-
-type Workspace = components["schemas"]["Workspace"];
+	CheckCircle2,
+	Code2,
+	Cpu,
+	Layers,
+	LogOut,
+	ShieldCheck,
+	Terminal,
+	User,
+} from "lucide-react";
+import { Logo } from "@/components/ui/logo";
+import { ThemeToggleButton } from "@/components/ui/theme-toggle";
+import { authClient } from "@/lib/auth-client";
 
 export const Route = createFileRoute("/_authenticated/home")({
-	component: Home,
+	component: AuthenticatedHomeComponent,
 });
 
-function getTimeOfDayGreeting(): string {
-	const hour = new Date().getHours();
-	if (hour < 12) return "Good morning";
-	if (hour < 18) return "Good afternoon";
-	return "Good evening";
-}
+export function AuthenticatedHomeComponent() {
+	const navigate = useNavigate();
+	const { session: initialSession } = Route.useRouteContext();
+	const { data: liveSession } = authClient.useSession();
 
-function WorkspaceTree({
-	workspaces,
-	onDelete,
-	deletingId,
-	variant = "main",
-}: {
-	workspaces: Workspace[];
-	onDelete?: (id: string, name: string) => void;
-	deletingId?: string | null;
-	variant?: "main" | "sidebar";
-}) {
-	const [expanded, setExpanded] = useState<Record<string, boolean>>(() => {
-		const init: Record<string, boolean> = {};
-		workspaces.forEach((w) => {
-			init[w.id] = true;
-		});
-		return init;
-	});
+	const user = liveSession?.user ?? initialSession?.user;
 
-	if (workspaces.length === 0) {
-		if (variant === "sidebar") return null;
-		return (
-			<div className="p-8 border border-dashed border-[var(--line)] dark:border-white/10 text-center my-6">
-				<p className="font-mono text-[12px] text-[var(--muted)] dark:text-[#a1a1aa]">
-					No workspaces found.
-				</p>
-				<p className="font-mono text-[11px] text-[var(--soft)] dark:text-[#71717a] mt-1">
-					Shortcut keys for creation not implemented yet.
-				</p>
-			</div>
-		);
-	}
-
-	const toggleExpand = (id: string) => {
-		setExpanded((prev) => ({ ...prev, [id]: !prev[id] }));
+	const handleSignOut = async () => {
+		await authClient.signOut();
+		await navigate({ to: "/authenticate" });
 	};
 
 	return (
-		<div
-			className={cn(
-				"font-mono select-none",
-				variant === "main" ? "max-w-3xl text-[13px] my-4" : "text-[12px]",
-			)}
-		>
-			<div className="flex items-center gap-2 py-1 text-[var(--muted)] dark:text-[#a1a1aa] font-semibold tracking-wider">
-				<FolderOpenIcon className="w-4 h-4 text-[var(--blue)] flex-none" />
-				<span>WORKSPACES</span>
-				<span className="text-[10px] font-normal text-[var(--soft)] dark:text-[#71717a] px-1.5 py-0.5 bg-black/5 dark:bg-white/10">
-					{workspaces.length}
-				</span>
-			</div>
+		<div className="min-h-screen w-full bg-canvas text-text-primary font-sans selection:bg-accent-primary selection:text-accent-primary-fg flex flex-col justify-between">
+			{/* Top Bar */}
+			<header className="w-full bg-surface-elevated text-text-primary border-b border-border-default px-4 md:px-8 py-2.5 flex items-center justify-between z-30">
+				<div className="flex items-center space-x-6">
+					<Logo />
 
-			<div className="pl-4 border-l border-dashed border-[var(--line)] dark:border-white/15 ml-2 mt-1 flex flex-col gap-2">
-				{workspaces.map((workspace, index) => {
-					const isLast = index === workspaces.length - 1;
-					const isExpanded = !!expanded[workspace.id];
+					<div className="hidden lg:flex items-center space-x-1 pl-4 border-l border-border-default text-xs font-mono font-medium tracking-wide text-text-muted">
+						<span className="w-2 h-2 bg-emerald-500 inline-block animate-pulse-subtle" />
+						<span className="text-text-primary font-bold">NODE_ONLINE</span>
+					</div>
+				</div>
 
-					return (
-						<div key={workspace.id} className="relative">
-							<div className="flex items-center gap-2 group/node">
-								<span className="text-[var(--soft)] dark:text-[#71717a] text-[11px]">
-									{isLast ? "└──" : "├──"}
-								</span>
-								<button
-									type="button"
-									onClick={() => toggleExpand(workspace.id)}
-									className="text-[var(--soft)] dark:text-[#71717a] hover:text-[var(--ink)] dark:hover:text-[#f4f4f5] cursor-pointer outline-none"
-									title={isExpanded ? "Collapse" : "Expand"}
-								>
-									{isExpanded ? (
-										<ChevronDownIcon className="w-3.5 h-3.5" />
-									) : (
-										<ChevronRightIcon className="w-3.5 h-3.5" />
-									)}
-								</button>
-								<FolderIcon className="w-3.5 h-3.5 text-[var(--blue)] flex-none" />
-								<AnimatedLink
-									href={`/workspaces/${workspace.id}`}
-									className="font-medium text-[var(--ink)] dark:text-[#f4f4f5] py-0.5"
-								>
-									{workspace.name}
-								</AnimatedLink>
+				<div className="flex items-center space-x-4">
+					<div className="hidden sm:flex items-center space-x-2 font-mono text-xs text-text-secondary border-r border-border-default pr-4">
+						<User className="w-3.5 h-3.5 text-text-muted" />
+						<span>{user?.name || user?.email || "OPERATOR"}</span>
+					</div>
 
-								{onDelete && (
-									<button
-										type="button"
-										onClick={(e) => {
-											e.preventDefault();
-											e.stopPropagation();
-											onDelete(workspace.id, workspace.name);
-										}}
-										disabled={deletingId === workspace.id}
-										className="ml-auto opacity-0 group-hover/node:opacity-100 p-1 text-[var(--soft)] dark:text-[#71717a] hover:text-red-600 dark:hover:text-red-400 transition-opacity cursor-pointer"
-										title="Delete workspace"
-									>
-										{deletingId === workspace.id ? (
-											<ArrowPathIcon className="w-3.5 h-3.5 animate-spin" />
-										) : (
-											<TrashIcon className="w-3.5 h-3.5" />
-										)}
-									</button>
-								)}
-							</div>
+					<ThemeToggleButton
+						variant="rectangle"
+						blur={true}
+						start="right-left"
+					/>
 
-							{isExpanded && (
-								<div className="pl-6 border-l border-dashed border-[var(--line)] dark:border-white/10 ml-2 mt-1 mb-2 pt-1 pb-1">
-									<div
-										className={cn(
-											"gap-4",
-											variant === "main"
-												? "grid grid-cols-1 md:grid-cols-2"
-												: "flex flex-col gap-3",
-										)}
-									>
-										<div className="flex flex-col gap-1">
-											<div className="flex items-center gap-1.5 text-[11px] font-semibold text-[var(--muted)] dark:text-[#a1a1aa] tracking-wider uppercase">
-												<span className="text-[var(--soft)] dark:text-[#71717a] text-[10px]">
-													├──
-												</span>
-												<span>DESCRIPTION</span>
-											</div>
-											<div className="flex items-start gap-1.5 pl-3">
-												<span className="text-[var(--soft)] dark:text-[#71717a] text-[10px] mt-0.5">
-													└──
-												</span>
-												<span className="text-[12px] text-[var(--ink)]/80 dark:text-[#d4d4d8] font-normal leading-relaxed break-words">
-													{workspace.description || (
-														<span className="text-[var(--soft)] dark:text-[#71717a] italic">
-															None
-														</span>
-													)}
-												</span>
-											</div>
-										</div>
+					<button
+						type="button"
+						onClick={handleSignOut}
+						className="flex items-center space-x-1.5 px-3 py-1.5 text-xs font-mono font-bold uppercase tracking-wider bg-surface-base hover:bg-surface-hover border border-border-default hover:border-border-strong text-text-primary transition-colors cursor-pointer"
+					>
+						<LogOut className="w-3.5 h-3.5" />
+						<span className="hidden sm:inline">SIGN OUT</span>
+					</button>
+				</div>
+			</header>
 
-										<div className="flex flex-col gap-1">
-											<div className="flex items-center gap-1.5 text-[12px]">
-												<span className="text-[var(--soft)] dark:text-[#71717a] text-[10px]">
-													├──
-												</span>
-												<span className="text-[11px] font-semibold text-[var(--muted)] dark:text-[#a1a1aa] tracking-wider uppercase">
-													HOURLY RATE:
-												</span>
-												<span className="text-[var(--ink)] dark:text-[#f4f4f5] font-normal">
-													{workspace.default_hourly_rate ?? 0}{" "}
-													<span className="text-[10px] text-[var(--soft)] dark:text-[#71717a]">
-														units/hr
-													</span>
-												</span>
-											</div>
-											<div className="flex items-center gap-1.5 text-[12px]">
-												<span className="text-[var(--soft)] dark:text-[#71717a] text-[10px]">
-													└──
-												</span>
-												<span className="text-[11px] font-semibold text-[var(--muted)] dark:text-[#a1a1aa] tracking-wider uppercase">
-													UPDATED AT:
-												</span>
-												<span className="text-[var(--ink)] dark:text-[#f4f4f5] font-normal">
-													{workspace.updated_at
-														? new Date(workspace.updated_at).toLocaleDateString(
-																undefined,
-																{
-																	year: "numeric",
-																	month: "short",
-																	day: "numeric",
-																},
-												  )
-													: "N/A"}
-												</span>
-											</div>
-										</div>
+			{/* Main Content */}
+			<main className="flex-1 w-full max-w-350 mx-auto px-4 sm:px-6 lg:px-8 py-8 lg:py-12">
+				<div className="border border-border-default bg-surface-base">
+					{/* Status Bar */}
+					<div className="border-b border-border-default px-6 py-4 flex flex-col sm:flex-row sm:items-center sm:justify-between gap-3 bg-surface-elevated/40">
+						<div className="flex items-center space-x-3">
+							<Terminal className="w-4 h-4 text-text-primary" />
+							<span className="font-mono text-xs font-bold uppercase tracking-wider text-text-primary">
+								SYSTEM://WORKSPACE_STATUS
+							</span>
+						</div>
+						<div className="flex items-center space-x-4 font-mono text-xs text-text-muted">
+							<span className="flex items-center space-x-1.5">
+								<span className="w-1.5 h-1.5 rounded-full bg-emerald-500" />
+								<span>SESSION_VALIDATED</span>
+							</span>
+							<span>CLUSTER: AP-SOUTH-1</span>
+						</div>
+					</div>
+
+					{/* Workspace Welcome Grid */}
+					<div className="grid grid-cols-1 lg:grid-cols-12 divide-y lg:divide-y-0 lg:divide-x divide-border-default">
+						{/* Operator Identity Panel */}
+						<div className="lg:col-span-5 p-6 sm:p-8 flex flex-col justify-between">
+							<div>
+								<div className="font-mono text-[11px] text-text-muted mb-4">
+									OPERATOR_TELEMETRY
+								</div>
+
+								<h1 className="text-2xl sm:text-3xl font-black font-sans uppercase tracking-tight text-text-primary">
+									Welcome back,{" "}
+									<span className="underline decoration-border-strong decoration-2 underline-offset-4">
+										{user?.name || user?.email || "Operator"}
+									</span>
+								</h1>
+
+								<p className="mt-3 text-sm text-text-secondary leading-relaxed font-sans">
+									Your identity token is verified. Hardware-accelerated runtime
+									and cryptographic RPC endpoints are active.
+								</p>
+
+								<div className="mt-8 space-y-3 font-mono text-xs">
+									<div className="p-3 bg-surface-sunken border border-border-default flex items-center justify-between">
+										<span className="text-text-muted">IDENTIFIER</span>
+										<span className="font-bold text-text-primary truncate max-w-[200px]">
+											{user?.email || "loading..."}
+										</span>
+									</div>
+									<div className="p-3 bg-surface-sunken border border-border-default flex items-center justify-between">
+										<span className="text-text-muted">AUTH_SCHEME</span>
+										<span className="font-bold text-text-primary">
+											BEARER (SET-AUTH-TOKEN)
+										</span>
+									</div>
+									<div className="p-3 bg-surface-sunken border border-border-default flex items-center justify-between">
+										<span className="text-text-muted">CLIENT_CORE</span>
+										<span className="font-bold text-text-primary">
+											HEY-API FETCH & TANSTACK QUERY
+										</span>
 									</div>
 								</div>
-							)}
+							</div>
+
+							<div className="mt-8 pt-4 border-t border-border-subtle flex items-center justify-between font-mono text-xs text-text-muted">
+								<span>STATUS: READY</span>
+								<span className="text-emerald-500 font-bold flex items-center space-x-1">
+									<CheckCircle2 className="w-3.5 h-3.5" />
+									<span>SYNCHRONIZED</span>
+								</span>
+							</div>
 						</div>
-					);
-				})}
-			</div>
+
+						{/* Quick Action Bento Grid */}
+						<div className="lg:col-span-7 grid grid-cols-1 sm:grid-cols-2 divide-y sm:divide-y-0 sm:divide-x divide-border-default">
+							<div className="p-6 sm:p-8 flex flex-col justify-between hover:bg-surface-hover/50 transition-colors">
+								<div>
+									<div className="w-8 h-8 bg-surface-elevated border border-border-default flex items-center justify-center text-text-primary mb-4">
+										<ShieldCheck className="w-4 h-4" />
+									</div>
+									<h2 className="font-bold text-base text-text-primary font-sans uppercase">
+										Better-Auth Security
+									</h2>
+									<p className="mt-1 text-xs text-text-secondary leading-relaxed font-sans">
+										Dual authentication mechanism supporting both email and
+										handle, protected by encrypted bearer headers.
+									</p>
+								</div>
+								<div className="mt-6 pt-3 border-t border-border-subtle font-mono text-xs text-text-muted">
+									MODULE: AUTH_CORE_V1
+								</div>
+							</div>
+
+							<div className="p-6 sm:p-8 flex flex-col justify-between hover:bg-surface-hover/50 transition-colors">
+								<div>
+									<div className="w-8 h-8 bg-surface-elevated border border-border-default flex items-center justify-center text-text-primary mb-4">
+										<Code2 className="w-4 h-4" />
+									</div>
+									<h2 className="font-bold text-base text-text-primary font-sans uppercase">
+										Type-Safe OpenAPI
+									</h2>
+									<p className="mt-1 text-xs text-text-secondary leading-relaxed font-sans">
+										Zero-boilerplate RPC client with TanStack Query hooks
+										generated directly from OpenAPI spec.
+									</p>
+								</div>
+								<div className="mt-6 pt-3 border-t border-border-subtle font-mono text-xs text-text-muted">
+									MODULE: TANSTACK_QUERY_RPC
+								</div>
+							</div>
+
+							<div className="p-6 sm:p-8 flex flex-col justify-between hover:bg-surface-hover/50 transition-colors border-t border-border-default">
+								<div>
+									<div className="w-8 h-8 bg-surface-elevated border border-border-default flex items-center justify-center text-text-primary mb-4">
+										<Cpu className="w-4 h-4" />
+									</div>
+									<h2 className="font-bold text-base text-text-primary font-sans uppercase">
+										Smooth Inputs
+									</h2>
+									<p className="mt-1 text-xs text-text-secondary leading-relaxed font-sans">
+										Physics-based spring caret with precise canvas text
+										measurement and dynamic glyph metrics.
+									</p>
+								</div>
+								<div className="mt-6 pt-3 border-t border-border-subtle font-mono text-xs text-text-muted">
+									MODULE: FRAMER_SPRING
+								</div>
+							</div>
+
+							<div className="p-6 sm:p-8 flex flex-col justify-between hover:bg-surface-hover/50 transition-colors border-t border-border-default">
+								<div>
+									<div className="w-8 h-8 bg-surface-elevated border border-border-default flex items-center justify-center text-text-primary mb-4">
+										<Layers className="w-4 h-4" />
+									</div>
+									<h2 className="font-bold text-base text-text-primary font-sans uppercase">
+										Monochrome Theme
+									</h2>
+									<p className="mt-1 text-xs text-text-secondary leading-relaxed font-sans">
+										High-contrast architectural design system with preserved
+										yellow tokens for quick accent toggling.
+									</p>
+								</div>
+								<div className="mt-6 pt-3 border-t border-border-subtle font-mono text-xs text-text-muted">
+									MODULE: THEME_PALETTE
+								</div>
+							</div>
+						</div>
+					</div>
+				</div>
+			</main>
+
+			{/* Footer */}
+			<footer className="w-full border-t border-border-default bg-surface-elevated/40 px-4 md:px-8 py-3 text-center sm:text-left text-xs font-mono text-text-muted flex flex-col sm:flex-row items-center justify-between">
+				<span>{"KIZEN SYSTEM NODE // SECURE SESSION ACTIVE"}</span>
+				<span className="mt-1 sm:mt-0">VERSION: 1.0.0-PROD</span>
+			</footer>
 		</div>
 	);
 }
 
-export function Home() {
-	const { data: session } = useSession();
-
-	const [workspaces, setWorkspaces] = useState<Workspace[]>([]);
-	const [isLoading, setIsLoading] = useState(true);
-	const [fetchError, setFetchError] = useState<string | null>(null);
-	const [deletingId, setDeletingId] = useState<string | null>(null);
-	const [toast, setToast] = useState<string | null>(null);
-
-	const showToast = (message: string) => {
-		setToast(message);
-		setTimeout(() => setToast(null), 3000);
-	};
-
-	const fetchAllWorkspaces = useCallback(async () => {
-		try {
-			setIsLoading(true);
-			setFetchError(null);
-			const { data, error } = await apiClient.GET("/api/v1/workspaces");
-			if (error) {
-				setFetchError(
-					error.detail || error.title || "Failed to load workspaces",
-				);
-			} else if (data) {
-				setWorkspaces(data);
-			}
-		} catch (err: unknown) {
-			setFetchError(
-				err instanceof Error ? err.message : "Failed to load workspaces",
-			);
-		} finally {
-			setIsLoading(false);
-		}
-	}, []);
-
-	useEffect(() => {
-		fetchAllWorkspaces();
-	}, [fetchAllWorkspaces]);
-
-	const handleDelete = async (id: string, name: string) => {
-		if (
-			!window.confirm(
-				`Are you sure you want to delete "${name}"? This action cannot be undone.`,
-			)
-		) {
-			return;
-		}
-
-		try {
-			setDeletingId(id);
-			const { error } = await apiClient.DELETE("/api/v1/workspaces/{id}", {
-				params: {
-					path: { id },
-				},
-			});
-
-			if (error) {
-				showToast(
-					error.detail || error.title || `Failed to delete workspace "${name}"`,
-				);
-			} else {
-				setWorkspaces((prev) => prev.filter((w) => w.id !== id));
-				showToast(`Workspace "${name}" deleted`);
-			}
-		} catch (err: unknown) {
-			showToast(
-				err instanceof Error ? err.message : "An unexpected error occurred",
-			);
-		} finally {
-			setDeletingId(null);
-		}
-	};
-
-	const userName =
-		(session?.user as { username?: string; name?: string })?.username ||
-		session?.user?.name ||
-		"User";
-	const userFirstName = userName.split(" ")[0];
-
-	return (
-		<AppLayout>
-			{toast && (
-				<div className="fixed bottom-6 right-6 z-50 flex items-center gap-2 bg-[#272724] dark:bg-[#18181b] text-white dark:text-[#f4f4f5] px-4 py-3 shadow-lg border border-black/10 dark:border-white/10 text-[13px] animate-fade-in font-mono">
-					<CheckCircleIcon className="w-4 h-4 text-emerald-400" />
-					<span>{toast}</span>
-				</div>
-			)}
-			
-			<div className="kizen-container">
-				<div className="mb-[40px]">
-					<h1 className="text-[40px] tracking-tight font-medium my-0 text-[var(--ink)] dark:text-[#f4f4f5]">
-						{getTimeOfDayGreeting()}, {userFirstName}.
-					</h1>
-				</div>
-
-				<div className="flex flex-col sm:flex-row sm:items-center justify-between pb-4 mb-6 border-b border-[var(--line)] dark:border-white/10 gap-4">
-					<div className="flex items-center gap-3">
-						<h2 className="text-[17px] font-medium m-0 tracking-tight text-[var(--ink)] dark:text-[#f4f4f5]">
-							Workspaces
-						</h2>
-						<span className="text-[var(--muted)] dark:text-[#a1a1aa] text-[13px] font-mono">
-							{workspaces.length} active
-						</span>
-					</div>
-				</div>
-
-				{isLoading ? (
-					<div className="flex flex-col items-center justify-center py-20 text-[var(--muted)] dark:text-[#a1a1aa]">
-						<ArrowPathIcon className="w-6 h-6 animate-spin mb-3" />
-						<span className="text-[13px] font-mono">
-							Loading your workspaces…
-						</span>
-					</div>
-				) : fetchError ? (
-					<div className="border border-red-200 bg-red-50 text-red-700 dark:bg-red-950/40 dark:border-red-900 dark:text-red-300 p-6 flex flex-col items-start gap-2 mb-8">
-						<strong>Could not load workspaces</strong>
-						<p className="text-[13px] m-0">{fetchError}</p>
-						<button
-							type="button"
-							onClick={fetchAllWorkspaces}
-							className="mt-2 text-[11px] bg-red-600 text-white px-3 py-1.5 hover:bg-red-700 font-medium font-mono"
-						>
-							Try again
-						</button>
-					</div>
-				) : (
-					<WorkspaceTree
-						workspaces={workspaces}
-						onDelete={handleDelete}
-						deletingId={deletingId}
-						variant="main"
-					/>
-				)}
-			</div>
-		</AppLayout>
-	);
-}
+export default AuthenticatedHomeComponent;

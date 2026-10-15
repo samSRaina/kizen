@@ -15,7 +15,7 @@
   "framework": "react",
   "chosenAddOns": [
     "biome",
-    "better-auth",
-    "shadcn"
+    "shadcn",
+    "better-auth"
   ]
 }

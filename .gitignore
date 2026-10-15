@@ -7,7 +7,5 @@
 # COMPILED GO APPLICATIONS
 build/
 
-# TESTS
-services/ticket-service/test_cases
-web.legacy/
-services/ticket-service/internal/service/service_test.legacy
+# DO NOT MAKE CHANGES BEYOND THIS POINT, THESE HAVE BEEN AUTOMATICALLY CREATED
+internal/domain/auth/dev_authenticator.go

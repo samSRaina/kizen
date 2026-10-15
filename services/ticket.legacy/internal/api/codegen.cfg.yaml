@@ -1,7 +1,0 @@
-# oapi-codegen config for the ticket module.
-package: api
-output: oapi.gen.go
-generate:
-  chi-server: true
-  strict-server: true
-  models: true

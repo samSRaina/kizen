@@ -42,6 +42,15 @@ bun --bun run check
 ```
 
 
+## Shadcn
+
+Add components using the latest version of [Shadcn](https://ui.shadcn.com/).
+
+```bash
+pnpm dlx shadcn@latest add button
+```
+
+
 ## Setting up Better Auth
 
 1. Generate and set the `BETTER_AUTH_SECRET` environment variable in your `.env.local`:
@@ -73,15 +82,6 @@ Then run migrations:
 
 ```bash
 bunx --bun @better-auth/cli migrate
-```
-
-
-## Shadcn
-
-Add components using the latest version of [Shadcn](https://ui.shadcn.com/).
-
-```bash
-pnpm dlx shadcn@latest add button
 ```
 
 

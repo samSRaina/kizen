@@ -1,24 +1,26 @@
-import { authClient } from "#/lib/auth-client";
+import { authClient } from "@/lib/auth-client";
 
-export default function BetterAuthHeader() {
+export function HeaderUser() {
 	const { data: session, isPending } = authClient.useSession();
 
 	if (isPending) {
 		return (
-			<div className="h-8 w-8 bg-neutral-100 dark:bg-neutral-800 animate-pulse" />
+			<div className="h-9 w-24 animate-pulse bg-neutral-200 dark:bg-neutral-800" />
 		);
 	}
 
 	if (session?.user) {
 		return (
-			<div className="flex items-center gap-2">
+			<div className="flex items-center gap-3">
 				{session.user.image ? (
-					<img src={session.user.image} alt="" className="h-8 w-8" />
+					<img
+						src={session.user.image}
+						alt={session.user.name || "User avatar"}
+						className="h-8 w-8 rounded-full object-cover"
+					/>
 				) : (
-					<div className="h-8 w-8 bg-neutral-100 dark:bg-neutral-800 flex items-center justify-center">
-						<span className="text-xs font-medium text-neutral-600 dark:text-neutral-400">
-							{session.user.name?.charAt(0).toUpperCase() || "U"}
-						</span>
+					<div className="flex h-8 w-8 items-center justify-center rounded-full bg-neutral-200 text-sm font-medium text-neutral-700 dark:bg-neutral-800 dark:text-neutral-300">
+						<span>{session.user.name?.charAt(0).toUpperCase() || "U"}</span>
 					</div>
 				)}
 				<button

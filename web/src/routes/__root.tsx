@@ -1,12 +1,9 @@
 import { TanStackDevtools } from "@tanstack/react-devtools";
-import {
-	createRootRoute,
-	HeadContent,
-	Link,
-	Scripts,
-} from "@tanstack/react-router";
+import { QueryClient, QueryClientProvider } from "@tanstack/react-query";
+import { createRootRoute, HeadContent, Scripts } from "@tanstack/react-router";
 import { TanStackRouterDevtoolsPanel } from "@tanstack/react-router-devtools";
 import { ThemeProvider } from "next-themes";
+import { useState } from "react";
 
 import appCss from "../styles.css?url";
 
@@ -21,55 +18,47 @@ export const Route = createRootRoute({
 				content: "width=device-width, initial-scale=1",
 			},
 			{
-				title: "Kizen",
+				title: "Kizen Systems",
 			},
 		],
 		links: [
-			{
-				rel: "preconnect",
-				href: "https://fonts.googleapis.com",
-			},
-			{
-				rel: "preconnect",
-				href: "https://fonts.gstatic.com",
-				crossOrigin: "anonymous",
-			},
-			{
-				rel: "stylesheet",
-				href: "https://fonts.googleapis.com/css2?family=DM+Mono:wght@400;500&family=DM+Sans:wght@400;500;600;700&family=Instrument+Serif:ital@0;1&display=swap",
-			},
 			{
 				rel: "stylesheet",
 				href: appCss,
 			},
 		],
 	}),
-	notFoundComponent: RootNotFound,
 	shellComponent: RootDocument,
 });
 
-function RootNotFound() {
-	return (
-		<div className="flex min-h-screen flex-col items-center justify-center bg-[#f5f5f2] p-4 text-[#272724]">
-			<h1 className="text-4xl font-bold tracking-tight mb-2">404</h1>
-			<p className="text-sm text-[#74746e] mb-6">Page not found</p>
-			<Link to="/" className="button-primary text-xs">
-				Return home
-			</Link>
-		</div>
-	);
-}
-
 function RootDocument({ children }: { children: React.ReactNode }) {
+	const [queryClient] = useState(
+		() =>
+			new QueryClient({
+				defaultOptions: {
+					queries: {
+						staleTime: 1000 * 60 * 5,
+						refetchOnWindowFocus: false,
+					},
+				},
+			}),
+	);
+
 	return (
 		<html lang="en" suppressHydrationWarning>
 			<head>
 				<HeadContent />
 			</head>
 			<body>
-				<ThemeProvider attribute="class" defaultTheme="system" enableSystem disableTransitionOnChange>
-					{children}
-				</ThemeProvider>
+				<QueryClientProvider client={queryClient}>
+					<ThemeProvider
+						attribute="class"
+						defaultTheme="dark"
+						enableSystem={false}
+					>
+						{children}
+					</ThemeProvider>
+				</QueryClientProvider>
 				<TanStackDevtools
 					config={{
 						position: "bottom-right",
