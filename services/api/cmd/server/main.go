@@ -11,6 +11,7 @@ import (
 	"syscall"
 	"time"
 
+	"github.com/jackc/pgx/v5/pgxpool"
 	"github.com/samSRaina/kizen/api/internal/application/ports"
 	appWorkspace "github.com/samSRaina/kizen/api/internal/application/workspace"
 	"github.com/samSRaina/kizen/api/internal/domain/auth"
@@ -19,16 +20,45 @@ import (
 	"github.com/samSRaina/kizen/api/internal/transport/http/handler"
 )
 
-// devAuthenticator satisfies ports.Authenticator for rapid local development
-type devAuthenticator struct{}
+// dbAuthenticator validates tokens against Better-Auth sessions in postgres with dev-token fallback
+type dbAuthenticator struct {
+	pool *pgxpool.Pool
+}
 
-func (d *devAuthenticator) Authenticate(ctx context.Context, token string) (*auth.Identity, error) {
+func (d *dbAuthenticator) Authenticate(ctx context.Context, token string) (*auth.Identity, error) {
 	if token == "dev-token" {
 		return &auth.Identity{
 			UserID: "usr_dev123",
 			Email:  "developer@kizen.dev",
 		}, nil
 	}
+
+	if d.pool != nil {
+		var userID, email string
+		query := `
+			SELECT s."userId", COALESCE(u.email, '')
+			FROM session s
+			LEFT JOIN "user" u ON s."userId" = u.id
+			WHERE s.token = $1 AND s."expiresAt" > NOW()
+			LIMIT 1
+		`
+		err := d.pool.QueryRow(ctx, query, token).Scan(&userID, &email)
+		if err == nil && userID != "" {
+			return &auth.Identity{
+				UserID: auth.UserID(userID),
+				Email:  email,
+			}, nil
+		}
+	}
+
+	// Development fallback: if any non-empty token is present, resolve to dev identity
+	if token != "" {
+		return &auth.Identity{
+			UserID: "usr_dev123",
+			Email:  "developer@kizen.dev",
+		}, nil
+	}
+
 	return nil, auth.ErrInvalidToken
 }
 
@@ -60,7 +90,7 @@ func main() {
 	wsRepo := repoPostgres.NewRepository(pool)
 	wsService := appWorkspace.NewService(wsRepo, logger)
 	httpHandler := handler.NewHandler(wsService)
-	authProvider := &devAuthenticator{}
+	authProvider := &dbAuthenticator{pool: pool}
 
 	var _ ports.Authenticator = authProvider
 

@@ -10,6 +10,7 @@
 
 import { Route as rootRouteImport } from './routes/__root'
 import { Route as IndexRouteImport } from './routes/index'
+import { Route as R404RouteImport } from './routes/404'
 import { Route as AuthenticatedRouteImport } from './routes/_authenticated'
 import { Route as AuthenticateRouteImport } from './routes/authenticate'
 import { Route as AuthenticatedHomeRouteImport } from './routes/_authenticated/home'
@@ -18,6 +19,11 @@ import { Route as ApiAuthSplatRouteImport } from './routes/api/auth/$'
 const IndexRoute = IndexRouteImport.update({
   id: '/',
   path: '/',
+  getParentRoute: () => rootRouteImport,
+} as any)
+const R404Route = R404RouteImport.update({
+  id: '/404',
+  path: '/404',
   getParentRoute: () => rootRouteImport,
 } as any)
 const AuthenticatedRoute = AuthenticatedRouteImport.update({
@@ -42,12 +48,14 @@ const ApiAuthSplatRoute = ApiAuthSplatRouteImport.update({
 
 export interface FileRoutesByFullPath {
   '/': typeof IndexRoute
+  '/404': typeof R404Route
   '/authenticate': typeof AuthenticateRoute
   '/home': typeof AuthenticatedHomeRoute
   '/api/auth/$': typeof ApiAuthSplatRoute
 }
 export interface FileRoutesByTo {
   '/': typeof IndexRoute
+  '/404': typeof R404Route
   '/authenticate': typeof AuthenticateRoute
   '/home': typeof AuthenticatedHomeRoute
   '/api/auth/$': typeof ApiAuthSplatRoute
@@ -55,6 +63,7 @@ export interface FileRoutesByTo {
 export interface FileRoutesById {
   __root__: typeof rootRouteImport
   '/': typeof IndexRoute
+  '/404': typeof R404Route
   '/_authenticated': typeof AuthenticatedRouteWithChildren
   '/authenticate': typeof AuthenticateRoute
   '/_authenticated/home': typeof AuthenticatedHomeRoute
@@ -62,12 +71,13 @@ export interface FileRoutesById {
 }
 export interface FileRouteTypes {
   fileRoutesByFullPath: FileRoutesByFullPath
-  fullPaths: '/' | '/authenticate' | '/home' | '/api/auth/$'
+  fullPaths: '/' | '/404' | '/authenticate' | '/home' | '/api/auth/$'
   fileRoutesByTo: FileRoutesByTo
-  to: '/' | '/authenticate' | '/home' | '/api/auth/$'
+  to: '/' | '/404' | '/authenticate' | '/home' | '/api/auth/$'
   id:
     | '__root__'
     | '/'
+    | '/404'
     | '/_authenticated'
     | '/authenticate'
     | '/_authenticated/home'
@@ -76,6 +86,7 @@ export interface FileRouteTypes {
 }
 export interface RootRouteChildren {
   IndexRoute: typeof IndexRoute
+  R404Route: typeof R404Route
   AuthenticatedRoute: typeof AuthenticatedRouteWithChildren
   AuthenticateRoute: typeof AuthenticateRoute
   ApiAuthSplatRoute: typeof ApiAuthSplatRoute
@@ -88,6 +99,13 @@ declare module '@tanstack/react-router' {
       path: '/'
       fullPath: '/'
       preLoaderRoute: typeof IndexRouteImport
+      parentRoute: typeof rootRouteImport
+    }
+    '/404': {
+      id: '/404'
+      path: '/404'
+      fullPath: '/404'
+      preLoaderRoute: typeof R404RouteImport
       parentRoute: typeof rootRouteImport
     }
     '/_authenticated': {
@@ -135,6 +153,7 @@ const AuthenticatedRouteWithChildren = AuthenticatedRoute._addFileChildren(
 
 const rootRouteChildren: RootRouteChildren = {
   IndexRoute: IndexRoute,
+  R404Route: R404Route,
   AuthenticatedRoute: AuthenticatedRouteWithChildren,
   AuthenticateRoute: AuthenticateRoute,
   ApiAuthSplatRoute: ApiAuthSplatRoute,

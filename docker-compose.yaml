@@ -64,9 +64,7 @@ services:
         condition: service_healthy
     labels:
       - "traefik.enable=true"
-      # - "traefik.http.routers.api.rule=PathPrefix(`/api`)"
-      #  Only capture the Go backend endpoints and not the Web's /api/auth
-      - "traefik.http.routers.api.rule=PathPrefix(`/api/v1`) || PathPrefix('/api/health')"
+      - "traefik.http.routers.api.rule=PathPrefix(`/api/v1`) || PathPrefix(`/api/health`)"
       - "traefik.http.routers.api.entrypoints=web"
       - "traefik.http.routers.api.priority=100"
       - "traefik.http.services.api.loadbalancer.server.port=8080"
