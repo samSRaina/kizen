@@ -35,9 +35,10 @@ func NewRouter(cfg RouterConfig) *chi.Mux {
 	// 4. Wrap the Strict Handler
 	strictHandler := gen.NewStrictHandler(cfg.Handler, nil)
 
-	// 5. Mount all routes generated from OpenAPI under /api/v1
+	// 5. Mount all routes generated from OpenAPI under /api/v1 onto base router r
 	gen.HandlerWithOptions(strictHandler, gen.ChiServerOptions{
-		BaseURL: "/api/v1",
+		BaseURL:    "/api/v1",
+		BaseRouter: r,
 		Middlewares: []gen.MiddlewareFunc{
 			middleware.RequireAuth(),
 		},

@@ -53,20 +53,23 @@ export type ProblemDetail = {
     [key: string]: unknown;
 };
 
-export type TicketStatus = 'backlog' | 'in_progress' | 'in_review' | 'done';
+export type TicketStatus = 'backlog' | 'todo' | 'progress' | 'review' | 'done';
 
-export type TicketPriority = 'Critical' | 'High' | 'Medium' | 'Low';
+export type TicketPriority = 'High' | 'Medium' | 'Low';
+
+export type TicketType = 'feature' | 'bug' | 'task';
 
 export type Ticket = {
     id: string;
     workspace_id: string;
-    number: number;
     identifier: string;
     title: string;
     description?: string;
+    type: TicketType;
     status: TicketStatus;
     priority: TicketPriority;
-    position: number;
+    points: number;
+    assignee_id?: string;
     tags?: Array<string>;
     created_at: string;
     updated_at: string;
@@ -75,17 +78,22 @@ export type Ticket = {
 export type CreateTicketRequest = {
     title: string;
     description?: string;
+    type: TicketType;
     status?: TicketStatus;
     priority: TicketPriority;
+    points?: number;
+    assignee_id?: string;
     tags?: Array<string>;
 };
 
 export type UpdateTicketRequest = {
     title?: string;
     description?: string;
+    type?: TicketType;
     status?: TicketStatus;
     priority?: TicketPriority;
-    position?: number;
+    points?: number;
+    assignee_id?: string;
     tags?: Array<string>;
 };
 
