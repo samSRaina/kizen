@@ -29,45 +29,24 @@ services:
 
   database:
     image: postgres:18-alpine
-    container_name: kizen-postgres-v3
+    container_name: kizen-postgres
     restart: unless-stopped
     # shm_size: 128mb
     environment:
       POSTGRES_USER: ${POSTGRES_USER:-postgres}
       POSTGRES_PASSWORD: ${POSTGRES_PASSWORD:-postgres}
-      POSTGRES_DB: ${POSTGRES_DB:-kizen}
+      POSTGRES_DB: ${POSTGRES_DB:-kizen_app}
     ports:
-      - "5433:5432"   # Host 5433 -> Container 5432 (Postgres default)
+      - "5432:5432" # host 5432 -> container 5432 postgres default
     volumes:
       - postgres_data:/var/lib/postgresql
-      - ./services/database/migrations:/docker-entrypoint-initdb.d:ro
+      - ./services/database/init/01-init.sh:/docker-entrypoint-initdb.d/01-init.sh:ro
+      - ./services/database/migrations:/docker-entrypoint-initdb.d/migrations:ro
     healthcheck:
-      test: ["CMD-SHELL", "pg_isready -U ${POSTGRES_USER:-postgres} -d ${POSTGRES_DB:-kizen}"]
+      test: ["CMD-SHELL", "pg_isready -U ${POSTGRES_USER:-postgres} -d ${POSTGRES_DB:-kizen_app}"]
       interval: 5s
       timeout: 5s
       retries: 5
-    networks:
-      - kizen-internal
-
-  api:
-    build:
-      context: ./services/api
-      dockerfile: Dockerfile
-    container_name: kizen-api
-    restart: unless-stopped
-    environment:
-      DATABASE_URL: postgres://${POSTGRES_USER:-postgres}:${POSTGRES_PASSWORD:-postgres}@database:5432/${POSTGRES_DB:-kizen}?sslmode=disable
-      PORT: "8080"
-      ENVIRONMENT: ${ENVIRONMENT:-development}
-    depends_on:
-      database:
-        condition: service_healthy
-    labels:
-      - "traefik.enable=true"
-      - "traefik.http.routers.api.rule=PathPrefix(`/api/v1`) || PathPrefix(`/api/health`)"
-      - "traefik.http.routers.api.entrypoints=web"
-      - "traefik.http.routers.api.priority=100"
-      - "traefik.http.services.api.loadbalancer.server.port=8080"
     networks:
       - kizen-internal
 
@@ -78,19 +57,42 @@ services:
     container_name: kizen-web
     restart: unless-stopped
     environment:
-      DATABASE_URL: postgres://${POSTGRES_USER:-postgres}:${POSTGRES_PASSWORD:-postgres}@database:5432/${POSTGRES_DB:-kizen}?sslmode=disable
+      DATABASE_URL: postgres://${POSTGRES_USER:-postgres}:${POSTGRES_PASSWORD:-postgres}@database:5432/kizen_auth?sslmode=disable
       BETTER_AUTH_SECRET: ${BETTER_AUTH_SECRET:-76350fdbff8fd255efae69225d9c3e44e75fe8085411b841d5454f2c1f2c8071}
       BETTER_AUTH_URL: http://localhost
     depends_on:
       database:
         condition: service_healthy
-      api:
-        condition: service_started
     labels:
       - "traefik.enable=true"
       - "traefik.http.routers.web.rule=PathPrefix(`/`)"
       - "traefik.http.routers.web.entrypoints=web"
       - "traefik.http.routers.web.priority=1"
       - "traefik.http.services.web.loadbalancer.server.port=3000"
+    networks:
+      - kizen-internal
+
+  api:
+    build:
+      context: ./services/api
+      dockerfile: Dockerfile
+    container_name: kizen-api
+    restart: unless-stopped
+    environment:
+      DATABASE_URL: postgres://${POSTGRES_USER:-postgres}:${POSTGRES_PASSWORD:-postgres}@database:5432/kizen_app?sslmode=disable
+      AUTH_JWKS_URL: http://web:3000/api/auth/jwks
+      PORT: "8080"
+      ENVIRONMENT: ${ENVIRONMENT:-development}
+    depends_on:
+      database:
+        condition: service_healthy
+      web:
+        condition: service_started
+    labels:
+      - "traefik.enable=true"
+      - "traefik.http.routers.api.rule=PathPrefix(`/api/v1`) || PathPrefix(`/api/health`)"
+      - "traefik.http.routers.api.entrypoints=web"
+      - "traefik.http.routers.api.priority=100"
+      - "traefik.http.services.api.loadbalancer.server.port=8080"
     networks:
       - kizen-internal

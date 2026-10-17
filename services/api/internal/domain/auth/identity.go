@@ -10,4 +10,6 @@ func (u UserID) String() string {
 type Identity struct {
 	UserID UserID
 	Email  string
+	Name string
+	Username string
 }
