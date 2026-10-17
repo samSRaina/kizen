@@ -15,6 +15,7 @@ import (
 	"github.com/samSRaina/kizen/api/internal/application/ports"
 	appWorkspace "github.com/samSRaina/kizen/api/internal/application/workspace"
 	"github.com/samSRaina/kizen/api/internal/domain/auth"
+	"github.com/samSRaina/kizen/api/internal/infrastructure/auth/jwt"
 	repoPostgres "github.com/samSRaina/kizen/api/internal/repository/postgres"
 	transportHTTP "github.com/samSRaina/kizen/api/internal/transport/http"
 	"github.com/samSRaina/kizen/api/internal/transport/http/handler"
@@ -90,7 +91,10 @@ func main() {
 	wsRepo := repoPostgres.NewRepository(pool)
 	wsService := appWorkspace.NewService(wsRepo, logger)
 	httpHandler := handler.NewHandler(wsService)
-	authProvider := &dbAuthenticator{pool: pool}
+	// authProvider := &dbAuthenticator{pool: pool}
+
+	jwksURL := os.Getenv("AUTH_JKWS_URL")
+	authProvider, err := jwt.NewAuthenticator(ctx, jwksURL)
 
 	var _ ports.Authenticator = authProvider
 
