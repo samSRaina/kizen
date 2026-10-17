@@ -1,4 +1,5 @@
 {
+  "bundler": "vite",
   "projectName": "web",
   "mode": "file-router",
   "typescript": true,
@@ -6,16 +7,16 @@
   "includeExamples": false,
   "tailwind": true,
   "projectPreset": "default",
+  "routerOnly": false,
   "addOnOptions": {},
   "git": false,
   "install": true,
   "intent": true,
-  "routerOnly": false,
   "version": 1,
   "framework": "react",
   "chosenAddOns": [
     "biome",
-    "shadcn",
-    "better-auth"
+    "better-auth",
+    "tanstack-query"
   ]
 }
