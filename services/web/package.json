@@ -6,8 +6,10 @@
     "#/*": "./src/*"
   },
   "scripts": {
-    "migrate": "bunx --bun auth@latest migrate -y",
-    "dev": "bun run migrate && vite dev --host --port 3000",
+    "generate-api": "openapi-typescript ../../contracts/openapi.yaml -o ./src/lib/api-types.gen.ts",
+    "migrate-db": "bunx --bun auth@latest migrate -y",
+    "dev": "vite dev --host --port 3000",
+    "prod": "bun run migrate-db && vite dev --host --port 3000",
     "generate-routes": "tsr generate",
     "build": "vite build",
     "preview": "vite preview",
@@ -25,6 +27,7 @@
     "@tanstack/react-router-ssr-query": "1.167.3",
     "@tanstack/react-start": "1.169.3",
     "better-auth": "^1.5.3",
+    "openapi-fetch": "^0.17.0",
     "pg": "^8.23.1",
     "react": "^19.2.0",
     "react-dom": "^19.2.0",
@@ -40,6 +43,7 @@
     "@types/react": "^19.2.0",
     "@types/react-dom": "^19.2.0",
     "@vitejs/plugin-react": "^6.0.1",
+    "openapi-typescript": "^7.13.0",
     "typescript": "^6.0.2",
     "vite": "^8.0.0"
   },

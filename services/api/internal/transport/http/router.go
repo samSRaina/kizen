@@ -21,6 +21,7 @@ func NewRouter(cfg RouterConfig) *chi.Mux {
 	r := chi.NewRouter()
 
 	// 1. Standard Middlewares
+	r.Use(middleware.CorsMiddleware)
 	r.Use(chiMiddleware.RequestID)
 	r.Use(chiMiddleware.Recoverer)
 

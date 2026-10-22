@@ -1,22 +1,27 @@
-import { authQueries } from '#/lib/queries/auth'
-import type { QueryClient } from '@tanstack/react-query'
+import createClient, { type Middleware } from 'openapi-fetch'
+import type { paths } from '#/lib/api-types.gen'
+import { authClient } from '#/lib/auth-client'
 
-export async function fetchWithAuth(
-  queryClient: QueryClient,
-  url: string,
-  options: RequestInit = {}
-) {
-  // Retrieve valid cached token (or fetch fresh if missing/stale)
-  const token = await queryClient.query(authQueries.token())
+const API_BASE_URL = import.meta.env.VITE_API_BASE_URL
 
-  const headers = new Headers(options.headers)
-  if (token) {
-    headers.set("Content-Type", "application/json")
-    headers.set('Authorization', `Bearer ${token}`)
-  }
-
-  return fetch(url, {
-    ...options,
-    headers,
-  })
+// Middleware to inject Better-Auth JWT into every Go API request
+const authMiddleware: Middleware = {
+  async onRequest({ request }) {
+    try {
+      const { data } = await authClient.token()
+      if (data?.token) {
+        request.headers.set('Authorization', `Bearer ${data.token}`)
+      }
+    } catch {
+      // Unauthenticated or guest request; proceed without token
+    }
+    return request
+  },
 }
+
+// Export the typed client
+export const api = createClient<paths>({
+  baseUrl: API_BASE_URL,
+})
+
+api.use(authMiddleware)

@@ -31,9 +31,6 @@ func main() {
 
 	// 2. Database Connection Pool with Functional Options
 	dbURL := os.Getenv("DATABASE_URL")
-	if dbURL == "" {
-		dbURL = "postgres://postgres:postgres@localhost:5432/kizen_app?sslmode=disable"
-	}
 
 	pool, err := repoPostgres.NewPool(ctx, dbURL)
 	if err != nil {
@@ -50,10 +47,8 @@ func main() {
 
 	jwksURL := os.Getenv("AUTH_JWKS_URL")
 	if jwksURL == "" {
-		jwksURL = os.Getenv("AUTH_JKWS_URL")
-	}
-	if jwksURL == "" {
-		jwksURL = "http://web:3000/api/auth/jwks"
+		logger.Error("missing environment variable")
+		os.Exit(1)
 	}
 
 	authProvider, err := jwt.NewAuthenticator(ctx, jwksURL)
