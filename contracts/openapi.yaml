@@ -348,6 +348,7 @@ components:
     TicketPriority:
       type: string
       enum:
+      - Critical
       - High
       - Medium
       - Low
@@ -391,9 +392,6 @@ components:
           $ref: '#/components/schemas/TicketPriority'
         points:
           type: integer
-        assignee_id:
-          type: string
-          nullable: true
         tags:
           type: array
           items:

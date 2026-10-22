@@ -10,6 +10,22 @@ import (
 	"github.com/google/uuid"
 )
 
+type Ticket struct {
+	ID          uuid.UUID `json:"id"`
+	WorkspaceID uuid.UUID `json:"workspace_id"`
+	TicketNum   int64     `json:"ticket_num"`
+	Identifier  string    `json:"identifier"`
+	Title       string    `json:"title"`
+	Description *string   `json:"description"`
+	Type        string    `json:"type"`
+	Status      string    `json:"status"`
+	Priority    string    `json:"priority"`
+	Points      int32     `json:"points"`
+	Tags        []string  `json:"tags"`
+	CreatedAt   time.Time `json:"created_at"`
+	UpdatedAt   time.Time `json:"updated_at"`
+}
+
 type Workspace struct {
 	ID                uuid.UUID `json:"id"`
 	OwnerID           string    `json:"owner_id"`

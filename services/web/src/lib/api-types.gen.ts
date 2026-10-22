@@ -142,7 +142,6 @@ export interface components {
             status: components["schemas"]["TicketStatus"];
             priority: components["schemas"]["TicketPriority"];
             points: number;
-            assignee_id?: string | null;
             tags?: string[];
             /** Format: date-time */
             created_at: string;

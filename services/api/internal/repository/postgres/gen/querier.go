@@ -9,10 +9,15 @@ import (
 )
 
 type Querier interface {
+	CreateTicket(ctx context.Context, arg CreateTicketParams) (Ticket, error)
 	CreateWorkspace(ctx context.Context, arg CreateWorkspaceParams) (Workspace, error)
+	DeleteTicket(ctx context.Context, arg DeleteTicketParams) (int64, error)
 	DeleteWorkspace(ctx context.Context, arg DeleteWorkspaceParams) (int64, error)
+	GetTicketByIdentifier(ctx context.Context, arg GetTicketByIdentifierParams) (Ticket, error)
 	GetWorkspaceByID(ctx context.Context, arg GetWorkspaceByIDParams) (Workspace, error)
+	ListTicketsByWorkspace(ctx context.Context, arg ListTicketsByWorkspaceParams) ([]Ticket, error)
 	ListWorkspaces(ctx context.Context, ownerID string) ([]Workspace, error)
+	UpdateTicket(ctx context.Context, arg UpdateTicketParams) (Ticket, error)
 }
 
 var _ Querier = (*Queries)(nil)
