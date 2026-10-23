@@ -12,6 +12,7 @@ import (
 	"time"
 
 	"github.com/samSRaina/kizen/api/internal/application/ports"
+	appTicket "github.com/samSRaina/kizen/api/internal/application/ticket"
 	appWorkspace "github.com/samSRaina/kizen/api/internal/application/workspace"
 	"github.com/samSRaina/kizen/api/internal/infrastructure/auth/jwt"
 	repoPostgres "github.com/samSRaina/kizen/api/internal/repository/postgres"
@@ -31,6 +32,9 @@ func main() {
 
 	// 2. Database Connection Pool with Functional Options
 	dbURL := os.Getenv("DATABASE_URL")
+	if dbURL == "" {
+		dbURL = "postgres://postgres:postgres@localhost:5432/kizen?sslmode=disable"
+	}
 
 	pool, err := repoPostgres.NewPool(ctx, dbURL)
 	if err != nil {
@@ -41,14 +45,26 @@ func main() {
 	logger.Info("connected to postgresql successfully")
 
 	// 3. Dependency Injection (Accept Interfaces, Return Structs)
+	// Repositories
 	wsRepo := repoPostgres.NewRepository(pool)
-	wsService := appWorkspace.NewService(wsRepo, logger)
-	httpHandler := handler.NewHandler(wsService)
+	ticketRepo := repoPostgres.NewTicketRepository(pool)
 
+	// Services (Use Cases)
+	wsService := appWorkspace.NewService(wsRepo, logger)
+	ticketService := appTicket.NewService(ticketRepo, logger)
+
+	// Inbound Handlers (Pattern A: Domain Sub-Handlers)
+	wsHandler := handler.NewWorkspaceHandler(wsService)
+	ticketHandler := handler.NewTicketHandler(ticketService)
+	server := handler.NewServer(wsHandler, ticketHandler)
+
+	// Auth Provider
 	jwksURL := os.Getenv("AUTH_JWKS_URL")
 	if jwksURL == "" {
-		logger.Error("missing environment variable")
-		os.Exit(1)
+		jwksURL = os.Getenv("AUTH_JKWS_URL")
+	}
+	if jwksURL == "" {
+		jwksURL = "http://web:3000/api/auth/jwks"
 	}
 
 	authProvider, err := jwt.NewAuthenticator(ctx, jwksURL)
@@ -62,7 +78,7 @@ func main() {
 	// 4. Assemble Chi Router with Strict OpenAPI Handler
 	router := transportHTTP.NewRouter(transportHTTP.RouterConfig{
 		Authenticator: authProvider,
-		Handler:       httpHandler,
+		Server:        server,
 	})
 
 	// 5. HTTP Server Configuration
@@ -71,7 +87,7 @@ func main() {
 		port = "8080"
 	}
 
-	server := &http.Server{
+	httpServer := &http.Server{
 		Addr:         ":" + port,
 		Handler:      router,
 		ReadTimeout:  10 * time.Second,
@@ -85,7 +101,7 @@ func main() {
 
 	go func() {
 		logger.Info(fmt.Sprintf("kizen api server listening on :%s", port))
-		if err := server.ListenAndServe(); err != nil && !errors.Is(err, http.ErrServerClosed) {
+		if err := httpServer.ListenAndServe(); err != nil && !errors.Is(err, http.ErrServerClosed) {
 			logger.Error("http server failed", slog.Any("error", err))
 			os.Exit(1)
 		}
@@ -97,7 +113,7 @@ func main() {
 	shutdownCtx, shutdownCancel := context.WithTimeout(context.Background(), 10*time.Second)
 	defer shutdownCancel()
 
-	if err := server.Shutdown(shutdownCtx); err != nil {
+	if err := httpServer.Shutdown(shutdownCtx); err != nil {
 		logger.Error("server forced to shutdown", slog.Any("error", err))
 		os.Exit(1)
 	}

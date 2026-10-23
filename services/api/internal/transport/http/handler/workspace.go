@@ -11,20 +11,18 @@ import (
 	"github.com/samSRaina/kizen/api/internal/transport/http/middleware"
 )
 
-var _ gen.StrictServerInterface = (*Handler)(nil)
-
-type Handler struct {
+type WorkspaceHandler struct {
 	workspaceService *workspace.Service
 }
 
-func NewHandler(wsService *workspace.Service) *Handler {
-	return &Handler{
+func NewWorkspaceHandler(wsService *workspace.Service) *WorkspaceHandler {
+	return &WorkspaceHandler{
 		workspaceService: wsService,
 	}
 }
 
 // ListWorkspaces handles GET /workspaces
-func (h *Handler) ListWorkspaces(
+func (h *WorkspaceHandler) ListWorkspaces(
 	ctx context.Context,
 	request gen.ListWorkspacesRequestObject,
 ) (gen.ListWorkspacesResponseObject, error) {
@@ -50,6 +48,7 @@ func (h *Handler) ListWorkspaces(
 	for i, ws := range workspaces {
 		items[i] = gen.Workspace{
 			Id:                ws.ID,
+			OwnerId:           ws.OwnerID.String(),
 			Name:              ws.Name,
 			DefaultHourlyRate: ws.DefaultHourlyRate,
 			Description:       ws.Description,
@@ -62,7 +61,7 @@ func (h *Handler) ListWorkspaces(
 }
 
 // CreateWorkspace handles POST /workspaces
-func (h *Handler) CreateWorkspace(
+func (h *WorkspaceHandler) CreateWorkspace(
 	ctx context.Context,
 	request gen.CreateWorkspaceRequestObject,
 ) (gen.CreateWorkspaceResponseObject, error) {
@@ -104,6 +103,7 @@ func (h *Handler) CreateWorkspace(
 
 	return gen.CreateWorkspace201JSONResponse{
 		Id:                ws.ID,
+		OwnerId:           ws.OwnerID.String(),
 		Name:              ws.Name,
 		DefaultHourlyRate: ws.DefaultHourlyRate,
 		Description:       ws.Description,
@@ -113,7 +113,7 @@ func (h *Handler) CreateWorkspace(
 }
 
 // DeleteWorkspace handles DELETE /workspaces/{id}
-func (h *Handler) DeleteWorkspace(
+func (h *WorkspaceHandler) DeleteWorkspace(
 	ctx context.Context,
 	request gen.DeleteWorkspaceRequestObject,
 ) (gen.DeleteWorkspaceResponseObject, error) {

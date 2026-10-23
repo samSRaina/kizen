@@ -13,7 +13,7 @@ COPY . .
 RUN CGO_ENABLED=0 GOOS=linux go build \
     -trimpath \
     -ldflags="-s -w" \
-    -o /app/bin/server ./cmd/server
+    -o /app/bin/server ./cmd
 
 # Final stage: minimal distroless runtime (~15MB, zero shell)
 FROM gcr.io/distroless/static-debian12:nonroot

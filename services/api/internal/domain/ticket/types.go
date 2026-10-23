@@ -34,10 +34,9 @@ const (
 type Priority string
 
 const (
-	PriorityCritical Priority = "Critical"
-	PriorityHigh     Priority = "High"
-	PriorityMedium   Priority = "Medium"
-	PriorityLow      Priority = "Low"
+	PriorityHigh   Priority = "High"
+	PriorityMedium Priority = "Medium"
+	PriorityLow    Priority = "Low"
 )
 
 type Type string

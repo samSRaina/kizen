@@ -8,13 +8,12 @@ import (
 	"github.com/samSRaina/kizen/api/internal/application/ports"
 	"github.com/samSRaina/kizen/api/internal/platform/httpx"
 	"github.com/samSRaina/kizen/api/internal/transport/http/gen"
-	"github.com/samSRaina/kizen/api/internal/transport/http/handler"
 	"github.com/samSRaina/kizen/api/internal/transport/http/middleware"
 )
 
 type RouterConfig struct {
 	Authenticator ports.Authenticator
-	Handler       *handler.Handler
+	Server        gen.StrictServerInterface
 }
 
 func NewRouter(cfg RouterConfig) *chi.Mux {
@@ -34,7 +33,7 @@ func NewRouter(cfg RouterConfig) *chi.Mux {
 	})
 
 	// 4. Wrap the Strict Handler
-	strictHandler := gen.NewStrictHandler(cfg.Handler, nil)
+	strictHandler := gen.NewStrictHandler(cfg.Server, nil)
 
 	// 5. Mount all routes generated from OpenAPI under /api/v1 onto base router r
 	gen.HandlerWithOptions(strictHandler, gen.ChiServerOptions{

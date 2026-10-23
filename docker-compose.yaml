@@ -30,7 +30,7 @@ services:
       BETTER_AUTH_SECRET: ${BETTER_AUTH_SECRET:-76350fdbff8fd255efae69225d9c3e44e75fe8085411b841d5454f2c1f2c8071}
       BETTER_AUTH_URL: http://localhost:3000
     ports:
-      - "3000:3000" # Host 3000 -> Container 3000 (web UI & Better-Auth endpoints)
+      - "3000:3000"
     depends_on:
       database:
         condition: service_healthy
@@ -46,7 +46,6 @@ services:
       AUTH_JWKS_URL: http://web:3000/api/auth/jwks
       PORT: "8080"
     ports:
-      # Exposed directly for local development and direct API testing (curl, Postman, etc.)
       - "8080:8080"
     depends_on:
       database:
