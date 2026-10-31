@@ -9,6 +9,7 @@ import (
 	"context"
 	"encoding/base64"
 	"encoding/json"
+	"errors"
 	"fmt"
 	"net/http"
 	"net/url"
@@ -105,6 +106,17 @@ type CreateTicketRequest struct {
 	Type        TicketType     `json:"type"`
 }
 
+// CreateTimeEntryRequest defines model for CreateTimeEntryRequest.
+type CreateTimeEntryRequest struct {
+	Billable        *bool               `json:"billable,omitempty"`
+	Description     *string             `json:"description,omitempty"`
+	DurationSeconds *int                `json:"duration_seconds,omitempty"`
+	EndedAt         *time.Time          `json:"ended_at,omitempty"`
+	HourlyRate      *int                `json:"hourly_rate,omitempty"`
+	StartedAt       *time.Time          `json:"started_at,omitempty"`
+	TicketId        *openapi_types.UUID `json:"ticket_id,omitempty"`
+}
+
 // CreateWorkspaceRequest defines model for CreateWorkspaceRequest.
 type CreateWorkspaceRequest struct {
 	DefaultHourlyRate int     `json:"default_hourly_rate"`
@@ -112,9 +124,7 @@ type CreateWorkspaceRequest struct {
 	Name              string  `json:"name"`
 }
 
-// ProblemDetail RFC 7807 Problem Details. The error shape for every non-2xx response
-// in the API. `type` names the error class; `errors` (validation only)
-// maps field names to human-readable messages.
+// ProblemDetail RFC 7807 Problem Details. The error shape for every non-2xx response in the API. `type` names the error class; `errors` (validation only) maps field names to human-readable messages.
 type ProblemDetail struct {
 	// Detail A human-readable explanation specific to this occurrence of the problem.
 	Detail *string `json:"detail,omitempty"`
@@ -158,6 +168,21 @@ type TicketStatus string
 // TicketType defines model for TicketType.
 type TicketType string
 
+// TimeEntry defines model for TimeEntry.
+type TimeEntry struct {
+	Billable        bool                `json:"billable"`
+	CreatedAt       time.Time           `json:"created_at"`
+	Description     *string             `json:"description,omitempty"`
+	DurationSeconds *int                `json:"duration_seconds,omitempty"`
+	EndedAt         *time.Time          `json:"ended_at,omitempty"`
+	HourlyRate      int                 `json:"hourly_rate"`
+	Id              openapi_types.UUID  `json:"id"`
+	StartedAt       time.Time           `json:"started_at"`
+	TicketId        *openapi_types.UUID `json:"ticket_id,omitempty"`
+	UpdatedAt       time.Time           `json:"updated_at"`
+	WorkspaceId     openapi_types.UUID  `json:"workspace_id"`
+}
+
 // UpdateTicketRequest defines model for UpdateTicketRequest.
 type UpdateTicketRequest struct {
 	Description *string         `json:"description,omitempty"`
@@ -167,6 +192,17 @@ type UpdateTicketRequest struct {
 	Tags        *[]string       `json:"tags,omitempty"`
 	Title       *string         `json:"title,omitempty"`
 	Type        *TicketType     `json:"type,omitempty"`
+}
+
+// UpdateTimeEntryRequest defines model for UpdateTimeEntryRequest.
+type UpdateTimeEntryRequest struct {
+	Billable        *bool               `json:"billable,omitempty"`
+	Description     *string             `json:"description,omitempty"`
+	DurationSeconds *int                `json:"duration_seconds,omitempty"`
+	EndedAt         *time.Time          `json:"ended_at,omitempty"`
+	HourlyRate      *int                `json:"hourly_rate,omitempty"`
+	StartedAt       *time.Time          `json:"started_at,omitempty"`
+	TicketId        *openapi_types.UUID `json:"ticket_id,omitempty"`
 }
 
 // UpdateWorkspaceRequest defines model for UpdateWorkspaceRequest.
@@ -189,30 +225,25 @@ type Workspace struct {
 	UpdatedAt         time.Time          `json:"updated_at"`
 }
 
-// BadRequest RFC 7807 Problem Details. The error shape for every non-2xx response
-// in the API. `type` names the error class; `errors` (validation only)
-// maps field names to human-readable messages.
+// BadRequest RFC 7807 Problem Details. The error shape for every non-2xx response in the API. `type` names the error class; `errors` (validation only) maps field names to human-readable messages.
 type BadRequest = ProblemDetail
 
-// Conflict RFC 7807 Problem Details. The error shape for every non-2xx response
-// in the API. `type` names the error class; `errors` (validation only)
-// maps field names to human-readable messages.
+// Conflict RFC 7807 Problem Details. The error shape for every non-2xx response in the API. `type` names the error class; `errors` (validation only) maps field names to human-readable messages.
 type Conflict = ProblemDetail
 
-// InternalError RFC 7807 Problem Details. The error shape for every non-2xx response
-// in the API. `type` names the error class; `errors` (validation only)
-// maps field names to human-readable messages.
+// InternalError RFC 7807 Problem Details. The error shape for every non-2xx response in the API. `type` names the error class; `errors` (validation only) maps field names to human-readable messages.
 type InternalError = ProblemDetail
 
-// NotFound RFC 7807 Problem Details. The error shape for every non-2xx response
-// in the API. `type` names the error class; `errors` (validation only)
-// maps field names to human-readable messages.
+// NotFound RFC 7807 Problem Details. The error shape for every non-2xx response in the API. `type` names the error class; `errors` (validation only) maps field names to human-readable messages.
 type NotFound = ProblemDetail
 
-// Unauthorized RFC 7807 Problem Details. The error shape for every non-2xx response
-// in the API. `type` names the error class; `errors` (validation only)
-// maps field names to human-readable messages.
+// Unauthorized RFC 7807 Problem Details. The error shape for every non-2xx response in the API. `type` names the error class; `errors` (validation only) maps field names to human-readable messages.
 type Unauthorized = ProblemDetail
+
+// ListTimeEntriesParams defines parameters for ListTimeEntries.
+type ListTimeEntriesParams struct {
+	TicketId *openapi_types.UUID `form:"ticket_id,omitempty" json:"ticket_id,omitempty"`
+}
 
 // CreateWorkspaceJSONRequestBody defines body for CreateWorkspace for application/json ContentType.
 type CreateWorkspaceJSONRequestBody = CreateWorkspaceRequest
@@ -225,6 +256,12 @@ type CreateTicketJSONRequestBody = CreateTicketRequest
 
 // UpdateTicketJSONRequestBody defines body for UpdateTicket for application/json ContentType.
 type UpdateTicketJSONRequestBody = UpdateTicketRequest
+
+// CreateTimeEntryJSONRequestBody defines body for CreateTimeEntry for application/json ContentType.
+type CreateTimeEntryJSONRequestBody = CreateTimeEntryRequest
+
+// UpdateTimeEntryJSONRequestBody defines body for UpdateTimeEntry for application/json ContentType.
+type UpdateTimeEntryJSONRequestBody = UpdateTimeEntryRequest
 
 // Getter for additional properties for ProblemDetail. Returns the specified
 // element and whether it was found
@@ -382,6 +419,24 @@ type ServerInterface interface {
 	// UpdateTicket Update a ticket
 	// (PATCH /workspaces/{workspace_id}/tickets/{identifier})
 	UpdateTicket(w http.ResponseWriter, r *http.Request, workspaceId openapi_types.UUID, identifier string)
+	// ListTimeEntries List time entries for a workspace
+	// (GET /workspaces/{workspace_id}/time-entries)
+	ListTimeEntries(w http.ResponseWriter, r *http.Request, workspaceId openapi_types.UUID, params ListTimeEntriesParams)
+	// CreateTimeEntry Create or start a time entry
+	// (POST /workspaces/{workspace_id}/time-entries)
+	CreateTimeEntry(w http.ResponseWriter, r *http.Request, workspaceId openapi_types.UUID)
+	// DeleteTimeEntry Delete a time entry
+	// (DELETE /workspaces/{workspace_id}/time-entries/{id})
+	DeleteTimeEntry(w http.ResponseWriter, r *http.Request, workspaceId openapi_types.UUID, id openapi_types.UUID)
+	// GetTimeEntry Get a time entry by id
+	// (GET /workspaces/{workspace_id}/time-entries/{id})
+	GetTimeEntry(w http.ResponseWriter, r *http.Request, workspaceId openapi_types.UUID, id openapi_types.UUID)
+	// UpdateTimeEntry Update a time entry
+	// (PATCH /workspaces/{workspace_id}/time-entries/{id})
+	UpdateTimeEntry(w http.ResponseWriter, r *http.Request, workspaceId openapi_types.UUID, id openapi_types.UUID)
+	// StopTimeEntry Stop an active time entry timer
+	// (POST /workspaces/{workspace_id}/time-entries/{id}/stop)
+	StopTimeEntry(w http.ResponseWriter, r *http.Request, workspaceId openapi_types.UUID, id openapi_types.UUID)
 }
 
 // Unimplemented server implementation that returns http.StatusNotImplemented for each endpoint.
@@ -445,6 +500,42 @@ func (_ Unimplemented) GetTicket(w http.ResponseWriter, r *http.Request, workspa
 // UpdateTicket Update a ticket
 // (PATCH /workspaces/{workspace_id}/tickets/{identifier})
 func (_ Unimplemented) UpdateTicket(w http.ResponseWriter, r *http.Request, workspaceId openapi_types.UUID, identifier string) {
+	w.WriteHeader(http.StatusNotImplemented)
+}
+
+// ListTimeEntries List time entries for a workspace
+// (GET /workspaces/{workspace_id}/time-entries)
+func (_ Unimplemented) ListTimeEntries(w http.ResponseWriter, r *http.Request, workspaceId openapi_types.UUID, params ListTimeEntriesParams) {
+	w.WriteHeader(http.StatusNotImplemented)
+}
+
+// CreateTimeEntry Create or start a time entry
+// (POST /workspaces/{workspace_id}/time-entries)
+func (_ Unimplemented) CreateTimeEntry(w http.ResponseWriter, r *http.Request, workspaceId openapi_types.UUID) {
+	w.WriteHeader(http.StatusNotImplemented)
+}
+
+// DeleteTimeEntry Delete a time entry
+// (DELETE /workspaces/{workspace_id}/time-entries/{id})
+func (_ Unimplemented) DeleteTimeEntry(w http.ResponseWriter, r *http.Request, workspaceId openapi_types.UUID, id openapi_types.UUID) {
+	w.WriteHeader(http.StatusNotImplemented)
+}
+
+// GetTimeEntry Get a time entry by id
+// (GET /workspaces/{workspace_id}/time-entries/{id})
+func (_ Unimplemented) GetTimeEntry(w http.ResponseWriter, r *http.Request, workspaceId openapi_types.UUID, id openapi_types.UUID) {
+	w.WriteHeader(http.StatusNotImplemented)
+}
+
+// UpdateTimeEntry Update a time entry
+// (PATCH /workspaces/{workspace_id}/time-entries/{id})
+func (_ Unimplemented) UpdateTimeEntry(w http.ResponseWriter, r *http.Request, workspaceId openapi_types.UUID, id openapi_types.UUID) {
+	w.WriteHeader(http.StatusNotImplemented)
+}
+
+// StopTimeEntry Stop an active time entry timer
+// (POST /workspaces/{workspace_id}/time-entries/{id}/stop)
+func (_ Unimplemented) StopTimeEntry(w http.ResponseWriter, r *http.Request, workspaceId openapi_types.UUID, id openapi_types.UUID) {
 	w.WriteHeader(http.StatusNotImplemented)
 }
 
@@ -720,6 +811,214 @@ func (siw *ServerInterfaceWrapper) UpdateTicket(w http.ResponseWriter, r *http.R
 	handler.ServeHTTP(w, r)
 }
 
+// ListTimeEntries operation middleware
+func (siw *ServerInterfaceWrapper) ListTimeEntries(w http.ResponseWriter, r *http.Request) {
+
+	var err error
+	_ = err
+
+	// ------------- Path parameter "workspace_id" -------------
+	var workspaceId openapi_types.UUID
+
+	err = runtime.BindStyledParameterWithOptions("simple", "workspace_id", chi.URLParam(r, "workspace_id"), &workspaceId, runtime.BindStyledParameterOptions{ParamLocation: runtime.ParamLocationPath, Explode: false, Required: true, Type: "string", Format: "uuid", ValueIsUnescaped: r.URL.RawPath == ""})
+	if err != nil {
+		siw.ErrorHandlerFunc(w, r, &InvalidParamFormatError{ParamName: "workspace_id", Err: err})
+		return
+	}
+
+	// Parameter object where we will unmarshal all parameters from the context
+	var params ListTimeEntriesParams
+
+	// ------------- Optional query parameter "ticket_id" -------------
+
+	err = runtime.BindQueryParameterWithOptions("form", true, false, "ticket_id", r.URL.Query(), &params.TicketId, runtime.BindQueryParameterOptions{Type: "string", Format: "uuid"})
+	if err != nil {
+		var requiredError *runtime.RequiredParameterError
+		if errors.As(err, &requiredError) {
+			siw.ErrorHandlerFunc(w, r, &RequiredParamError{ParamName: "ticket_id"})
+		} else {
+			siw.ErrorHandlerFunc(w, r, &InvalidParamFormatError{ParamName: "ticket_id", Err: err})
+		}
+		return
+	}
+
+	handler := http.Handler(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+		siw.Handler.ListTimeEntries(w, r, workspaceId, params)
+	}))
+
+	for _, middleware := range siw.HandlerMiddlewares {
+		handler = middleware(handler)
+	}
+
+	handler.ServeHTTP(w, r)
+}
+
+// CreateTimeEntry operation middleware
+func (siw *ServerInterfaceWrapper) CreateTimeEntry(w http.ResponseWriter, r *http.Request) {
+
+	var err error
+	_ = err
+
+	// ------------- Path parameter "workspace_id" -------------
+	var workspaceId openapi_types.UUID
+
+	err = runtime.BindStyledParameterWithOptions("simple", "workspace_id", chi.URLParam(r, "workspace_id"), &workspaceId, runtime.BindStyledParameterOptions{ParamLocation: runtime.ParamLocationPath, Explode: false, Required: true, Type: "string", Format: "uuid", ValueIsUnescaped: r.URL.RawPath == ""})
+	if err != nil {
+		siw.ErrorHandlerFunc(w, r, &InvalidParamFormatError{ParamName: "workspace_id", Err: err})
+		return
+	}
+
+	handler := http.Handler(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+		siw.Handler.CreateTimeEntry(w, r, workspaceId)
+	}))
+
+	for _, middleware := range siw.HandlerMiddlewares {
+		handler = middleware(handler)
+	}
+
+	handler.ServeHTTP(w, r)
+}
+
+// DeleteTimeEntry operation middleware
+func (siw *ServerInterfaceWrapper) DeleteTimeEntry(w http.ResponseWriter, r *http.Request) {
+
+	var err error
+	_ = err
+
+	// ------------- Path parameter "workspace_id" -------------
+	var workspaceId openapi_types.UUID
+
+	err = runtime.BindStyledParameterWithOptions("simple", "workspace_id", chi.URLParam(r, "workspace_id"), &workspaceId, runtime.BindStyledParameterOptions{ParamLocation: runtime.ParamLocationPath, Explode: false, Required: true, Type: "string", Format: "uuid", ValueIsUnescaped: r.URL.RawPath == ""})
+	if err != nil {
+		siw.ErrorHandlerFunc(w, r, &InvalidParamFormatError{ParamName: "workspace_id", Err: err})
+		return
+	}
+
+	// ------------- Path parameter "id" -------------
+	var id openapi_types.UUID
+
+	err = runtime.BindStyledParameterWithOptions("simple", "id", chi.URLParam(r, "id"), &id, runtime.BindStyledParameterOptions{ParamLocation: runtime.ParamLocationPath, Explode: false, Required: true, Type: "string", Format: "uuid", ValueIsUnescaped: r.URL.RawPath == ""})
+	if err != nil {
+		siw.ErrorHandlerFunc(w, r, &InvalidParamFormatError{ParamName: "id", Err: err})
+		return
+	}
+
+	handler := http.Handler(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+		siw.Handler.DeleteTimeEntry(w, r, workspaceId, id)
+	}))
+
+	for _, middleware := range siw.HandlerMiddlewares {
+		handler = middleware(handler)
+	}
+
+	handler.ServeHTTP(w, r)
+}
+
+// GetTimeEntry operation middleware
+func (siw *ServerInterfaceWrapper) GetTimeEntry(w http.ResponseWriter, r *http.Request) {
+
+	var err error
+	_ = err
+
+	// ------------- Path parameter "workspace_id" -------------
+	var workspaceId openapi_types.UUID
+
+	err = runtime.BindStyledParameterWithOptions("simple", "workspace_id", chi.URLParam(r, "workspace_id"), &workspaceId, runtime.BindStyledParameterOptions{ParamLocation: runtime.ParamLocationPath, Explode: false, Required: true, Type: "string", Format: "uuid", ValueIsUnescaped: r.URL.RawPath == ""})
+	if err != nil {
+		siw.ErrorHandlerFunc(w, r, &InvalidParamFormatError{ParamName: "workspace_id", Err: err})
+		return
+	}
+
+	// ------------- Path parameter "id" -------------
+	var id openapi_types.UUID
+
+	err = runtime.BindStyledParameterWithOptions("simple", "id", chi.URLParam(r, "id"), &id, runtime.BindStyledParameterOptions{ParamLocation: runtime.ParamLocationPath, Explode: false, Required: true, Type: "string", Format: "uuid", ValueIsUnescaped: r.URL.RawPath == ""})
+	if err != nil {
+		siw.ErrorHandlerFunc(w, r, &InvalidParamFormatError{ParamName: "id", Err: err})
+		return
+	}
+
+	handler := http.Handler(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+		siw.Handler.GetTimeEntry(w, r, workspaceId, id)
+	}))
+
+	for _, middleware := range siw.HandlerMiddlewares {
+		handler = middleware(handler)
+	}
+
+	handler.ServeHTTP(w, r)
+}
+
+// UpdateTimeEntry operation middleware
+func (siw *ServerInterfaceWrapper) UpdateTimeEntry(w http.ResponseWriter, r *http.Request) {
+
+	var err error
+	_ = err
+
+	// ------------- Path parameter "workspace_id" -------------
+	var workspaceId openapi_types.UUID
+
+	err = runtime.BindStyledParameterWithOptions("simple", "workspace_id", chi.URLParam(r, "workspace_id"), &workspaceId, runtime.BindStyledParameterOptions{ParamLocation: runtime.ParamLocationPath, Explode: false, Required: true, Type: "string", Format: "uuid", ValueIsUnescaped: r.URL.RawPath == ""})
+	if err != nil {
+		siw.ErrorHandlerFunc(w, r, &InvalidParamFormatError{ParamName: "workspace_id", Err: err})
+		return
+	}
+
+	// ------------- Path parameter "id" -------------
+	var id openapi_types.UUID
+
+	err = runtime.BindStyledParameterWithOptions("simple", "id", chi.URLParam(r, "id"), &id, runtime.BindStyledParameterOptions{ParamLocation: runtime.ParamLocationPath, Explode: false, Required: true, Type: "string", Format: "uuid", ValueIsUnescaped: r.URL.RawPath == ""})
+	if err != nil {
+		siw.ErrorHandlerFunc(w, r, &InvalidParamFormatError{ParamName: "id", Err: err})
+		return
+	}
+
+	handler := http.Handler(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+		siw.Handler.UpdateTimeEntry(w, r, workspaceId, id)
+	}))
+
+	for _, middleware := range siw.HandlerMiddlewares {
+		handler = middleware(handler)
+	}
+
+	handler.ServeHTTP(w, r)
+}
+
+// StopTimeEntry operation middleware
+func (siw *ServerInterfaceWrapper) StopTimeEntry(w http.ResponseWriter, r *http.Request) {
+
+	var err error
+	_ = err
+
+	// ------------- Path parameter "workspace_id" -------------
+	var workspaceId openapi_types.UUID
+
+	err = runtime.BindStyledParameterWithOptions("simple", "workspace_id", chi.URLParam(r, "workspace_id"), &workspaceId, runtime.BindStyledParameterOptions{ParamLocation: runtime.ParamLocationPath, Explode: false, Required: true, Type: "string", Format: "uuid", ValueIsUnescaped: r.URL.RawPath == ""})
+	if err != nil {
+		siw.ErrorHandlerFunc(w, r, &InvalidParamFormatError{ParamName: "workspace_id", Err: err})
+		return
+	}
+
+	// ------------- Path parameter "id" -------------
+	var id openapi_types.UUID
+
+	err = runtime.BindStyledParameterWithOptions("simple", "id", chi.URLParam(r, "id"), &id, runtime.BindStyledParameterOptions{ParamLocation: runtime.ParamLocationPath, Explode: false, Required: true, Type: "string", Format: "uuid", ValueIsUnescaped: r.URL.RawPath == ""})
+	if err != nil {
+		siw.ErrorHandlerFunc(w, r, &InvalidParamFormatError{ParamName: "id", Err: err})
+		return
+	}
+
+	handler := http.Handler(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+		siw.Handler.StopTimeEntry(w, r, workspaceId, id)
+	}))
+
+	for _, middleware := range siw.HandlerMiddlewares {
+		handler = middleware(handler)
+	}
+
+	handler.ServeHTTP(w, r)
+}
+
 type UnescapedCookieParamError struct {
 	ParamName string
 	Err       error
@@ -862,6 +1161,24 @@ func HandlerWithOptions(si ServerInterface, options ChiServerOptions) http.Handl
 	})
 	r.Group(func(r chi.Router) {
 		r.Patch(options.BaseURL+"/workspaces/{workspace_id}/tickets/{identifier}", wrapper.UpdateTicket)
+	})
+	r.Group(func(r chi.Router) {
+		r.Get(options.BaseURL+"/workspaces/{workspace_id}/time-entries", wrapper.ListTimeEntries)
+	})
+	r.Group(func(r chi.Router) {
+		r.Post(options.BaseURL+"/workspaces/{workspace_id}/time-entries", wrapper.CreateTimeEntry)
+	})
+	r.Group(func(r chi.Router) {
+		r.Delete(options.BaseURL+"/workspaces/{workspace_id}/time-entries/{id}", wrapper.DeleteTimeEntry)
+	})
+	r.Group(func(r chi.Router) {
+		r.Get(options.BaseURL+"/workspaces/{workspace_id}/time-entries/{id}", wrapper.GetTimeEntry)
+	})
+	r.Group(func(r chi.Router) {
+		r.Patch(options.BaseURL+"/workspaces/{workspace_id}/time-entries/{id}", wrapper.UpdateTimeEntry)
+	})
+	r.Group(func(r chi.Router) {
+		r.Post(options.BaseURL+"/workspaces/{workspace_id}/time-entries/{id}/stop", wrapper.StopTimeEntry)
 	})
 
 	return r
@@ -1618,6 +1935,475 @@ func (response UpdateTicket500ApplicationProblemPlusJSONResponse) VisitUpdateTic
 	return err
 }
 
+type ListTimeEntriesRequestObject struct {
+	WorkspaceId openapi_types.UUID `json:"workspace_id"`
+	Params      ListTimeEntriesParams
+}
+
+type ListTimeEntriesResponseObject interface {
+	VisitListTimeEntriesResponse(w http.ResponseWriter) error
+}
+
+type ListTimeEntries200JSONResponse []TimeEntry
+
+func (response ListTimeEntries200JSONResponse) VisitListTimeEntriesResponse(w http.ResponseWriter) error {
+
+	var buf bytes.Buffer
+	if err := json.NewEncoder(&buf).Encode(response); err != nil {
+		return err
+	}
+	w.Header().Set("Content-Type", "application/json")
+	w.WriteHeader(200)
+	_, err := buf.WriteTo(w)
+	return err
+}
+
+type ListTimeEntries401ApplicationProblemPlusJSONResponse struct {
+	UnauthorizedApplicationProblemPlusJSONResponse
+}
+
+func (response ListTimeEntries401ApplicationProblemPlusJSONResponse) VisitListTimeEntriesResponse(w http.ResponseWriter) error {
+
+	var buf bytes.Buffer
+	if err := json.NewEncoder(&buf).Encode(response); err != nil {
+		return err
+	}
+	w.Header().Set("Content-Type", "application/problem+json")
+	w.WriteHeader(401)
+	_, err := buf.WriteTo(w)
+	return err
+}
+
+type ListTimeEntries404ApplicationProblemPlusJSONResponse struct {
+	NotFoundApplicationProblemPlusJSONResponse
+}
+
+func (response ListTimeEntries404ApplicationProblemPlusJSONResponse) VisitListTimeEntriesResponse(w http.ResponseWriter) error {
+
+	var buf bytes.Buffer
+	if err := json.NewEncoder(&buf).Encode(response); err != nil {
+		return err
+	}
+	w.Header().Set("Content-Type", "application/problem+json")
+	w.WriteHeader(404)
+	_, err := buf.WriteTo(w)
+	return err
+}
+
+type ListTimeEntries500ApplicationProblemPlusJSONResponse struct {
+	InternalErrorApplicationProblemPlusJSONResponse
+}
+
+func (response ListTimeEntries500ApplicationProblemPlusJSONResponse) VisitListTimeEntriesResponse(w http.ResponseWriter) error {
+
+	var buf bytes.Buffer
+	if err := json.NewEncoder(&buf).Encode(response); err != nil {
+		return err
+	}
+	w.Header().Set("Content-Type", "application/problem+json")
+	w.WriteHeader(500)
+	_, err := buf.WriteTo(w)
+	return err
+}
+
+type CreateTimeEntryRequestObject struct {
+	WorkspaceId openapi_types.UUID `json:"workspace_id"`
+	Body        *CreateTimeEntryJSONRequestBody
+}
+
+type CreateTimeEntryResponseObject interface {
+	VisitCreateTimeEntryResponse(w http.ResponseWriter) error
+}
+
+type CreateTimeEntry201JSONResponse TimeEntry
+
+func (response CreateTimeEntry201JSONResponse) VisitCreateTimeEntryResponse(w http.ResponseWriter) error {
+
+	var buf bytes.Buffer
+	if err := json.NewEncoder(&buf).Encode(response); err != nil {
+		return err
+	}
+	w.Header().Set("Content-Type", "application/json")
+	w.WriteHeader(201)
+	_, err := buf.WriteTo(w)
+	return err
+}
+
+type CreateTimeEntry400ApplicationProblemPlusJSONResponse struct {
+	BadRequestApplicationProblemPlusJSONResponse
+}
+
+func (response CreateTimeEntry400ApplicationProblemPlusJSONResponse) VisitCreateTimeEntryResponse(w http.ResponseWriter) error {
+
+	var buf bytes.Buffer
+	if err := json.NewEncoder(&buf).Encode(response); err != nil {
+		return err
+	}
+	w.Header().Set("Content-Type", "application/problem+json")
+	w.WriteHeader(400)
+	_, err := buf.WriteTo(w)
+	return err
+}
+
+type CreateTimeEntry401ApplicationProblemPlusJSONResponse struct {
+	UnauthorizedApplicationProblemPlusJSONResponse
+}
+
+func (response CreateTimeEntry401ApplicationProblemPlusJSONResponse) VisitCreateTimeEntryResponse(w http.ResponseWriter) error {
+
+	var buf bytes.Buffer
+	if err := json.NewEncoder(&buf).Encode(response); err != nil {
+		return err
+	}
+	w.Header().Set("Content-Type", "application/problem+json")
+	w.WriteHeader(401)
+	_, err := buf.WriteTo(w)
+	return err
+}
+
+type CreateTimeEntry404ApplicationProblemPlusJSONResponse struct {
+	NotFoundApplicationProblemPlusJSONResponse
+}
+
+func (response CreateTimeEntry404ApplicationProblemPlusJSONResponse) VisitCreateTimeEntryResponse(w http.ResponseWriter) error {
+
+	var buf bytes.Buffer
+	if err := json.NewEncoder(&buf).Encode(response); err != nil {
+		return err
+	}
+	w.Header().Set("Content-Type", "application/problem+json")
+	w.WriteHeader(404)
+	_, err := buf.WriteTo(w)
+	return err
+}
+
+type CreateTimeEntry500ApplicationProblemPlusJSONResponse struct {
+	InternalErrorApplicationProblemPlusJSONResponse
+}
+
+func (response CreateTimeEntry500ApplicationProblemPlusJSONResponse) VisitCreateTimeEntryResponse(w http.ResponseWriter) error {
+
+	var buf bytes.Buffer
+	if err := json.NewEncoder(&buf).Encode(response); err != nil {
+		return err
+	}
+	w.Header().Set("Content-Type", "application/problem+json")
+	w.WriteHeader(500)
+	_, err := buf.WriteTo(w)
+	return err
+}
+
+type DeleteTimeEntryRequestObject struct {
+	WorkspaceId openapi_types.UUID `json:"workspace_id"`
+	Id          openapi_types.UUID `json:"id"`
+}
+
+type DeleteTimeEntryResponseObject interface {
+	VisitDeleteTimeEntryResponse(w http.ResponseWriter) error
+}
+
+type DeleteTimeEntry204Response struct {
+}
+
+func (response DeleteTimeEntry204Response) VisitDeleteTimeEntryResponse(w http.ResponseWriter) error {
+	w.WriteHeader(204)
+	return nil
+}
+
+type DeleteTimeEntry401ApplicationProblemPlusJSONResponse struct {
+	UnauthorizedApplicationProblemPlusJSONResponse
+}
+
+func (response DeleteTimeEntry401ApplicationProblemPlusJSONResponse) VisitDeleteTimeEntryResponse(w http.ResponseWriter) error {
+
+	var buf bytes.Buffer
+	if err := json.NewEncoder(&buf).Encode(response); err != nil {
+		return err
+	}
+	w.Header().Set("Content-Type", "application/problem+json")
+	w.WriteHeader(401)
+	_, err := buf.WriteTo(w)
+	return err
+}
+
+type DeleteTimeEntry404ApplicationProblemPlusJSONResponse struct {
+	NotFoundApplicationProblemPlusJSONResponse
+}
+
+func (response DeleteTimeEntry404ApplicationProblemPlusJSONResponse) VisitDeleteTimeEntryResponse(w http.ResponseWriter) error {
+
+	var buf bytes.Buffer
+	if err := json.NewEncoder(&buf).Encode(response); err != nil {
+		return err
+	}
+	w.Header().Set("Content-Type", "application/problem+json")
+	w.WriteHeader(404)
+	_, err := buf.WriteTo(w)
+	return err
+}
+
+type DeleteTimeEntry500ApplicationProblemPlusJSONResponse struct {
+	InternalErrorApplicationProblemPlusJSONResponse
+}
+
+func (response DeleteTimeEntry500ApplicationProblemPlusJSONResponse) VisitDeleteTimeEntryResponse(w http.ResponseWriter) error {
+
+	var buf bytes.Buffer
+	if err := json.NewEncoder(&buf).Encode(response); err != nil {
+		return err
+	}
+	w.Header().Set("Content-Type", "application/problem+json")
+	w.WriteHeader(500)
+	_, err := buf.WriteTo(w)
+	return err
+}
+
+type GetTimeEntryRequestObject struct {
+	WorkspaceId openapi_types.UUID `json:"workspace_id"`
+	Id          openapi_types.UUID `json:"id"`
+}
+
+type GetTimeEntryResponseObject interface {
+	VisitGetTimeEntryResponse(w http.ResponseWriter) error
+}
+
+type GetTimeEntry200JSONResponse TimeEntry
+
+func (response GetTimeEntry200JSONResponse) VisitGetTimeEntryResponse(w http.ResponseWriter) error {
+
+	var buf bytes.Buffer
+	if err := json.NewEncoder(&buf).Encode(response); err != nil {
+		return err
+	}
+	w.Header().Set("Content-Type", "application/json")
+	w.WriteHeader(200)
+	_, err := buf.WriteTo(w)
+	return err
+}
+
+type GetTimeEntry401ApplicationProblemPlusJSONResponse struct {
+	UnauthorizedApplicationProblemPlusJSONResponse
+}
+
+func (response GetTimeEntry401ApplicationProblemPlusJSONResponse) VisitGetTimeEntryResponse(w http.ResponseWriter) error {
+
+	var buf bytes.Buffer
+	if err := json.NewEncoder(&buf).Encode(response); err != nil {
+		return err
+	}
+	w.Header().Set("Content-Type", "application/problem+json")
+	w.WriteHeader(401)
+	_, err := buf.WriteTo(w)
+	return err
+}
+
+type GetTimeEntry404ApplicationProblemPlusJSONResponse struct {
+	NotFoundApplicationProblemPlusJSONResponse
+}
+
+func (response GetTimeEntry404ApplicationProblemPlusJSONResponse) VisitGetTimeEntryResponse(w http.ResponseWriter) error {
+
+	var buf bytes.Buffer
+	if err := json.NewEncoder(&buf).Encode(response); err != nil {
+		return err
+	}
+	w.Header().Set("Content-Type", "application/problem+json")
+	w.WriteHeader(404)
+	_, err := buf.WriteTo(w)
+	return err
+}
+
+type GetTimeEntry500ApplicationProblemPlusJSONResponse struct {
+	InternalErrorApplicationProblemPlusJSONResponse
+}
+
+func (response GetTimeEntry500ApplicationProblemPlusJSONResponse) VisitGetTimeEntryResponse(w http.ResponseWriter) error {
+
+	var buf bytes.Buffer
+	if err := json.NewEncoder(&buf).Encode(response); err != nil {
+		return err
+	}
+	w.Header().Set("Content-Type", "application/problem+json")
+	w.WriteHeader(500)
+	_, err := buf.WriteTo(w)
+	return err
+}
+
+type UpdateTimeEntryRequestObject struct {
+	WorkspaceId openapi_types.UUID `json:"workspace_id"`
+	Id          openapi_types.UUID `json:"id"`
+	Body        *UpdateTimeEntryJSONRequestBody
+}
+
+type UpdateTimeEntryResponseObject interface {
+	VisitUpdateTimeEntryResponse(w http.ResponseWriter) error
+}
+
+type UpdateTimeEntry200JSONResponse TimeEntry
+
+func (response UpdateTimeEntry200JSONResponse) VisitUpdateTimeEntryResponse(w http.ResponseWriter) error {
+
+	var buf bytes.Buffer
+	if err := json.NewEncoder(&buf).Encode(response); err != nil {
+		return err
+	}
+	w.Header().Set("Content-Type", "application/json")
+	w.WriteHeader(200)
+	_, err := buf.WriteTo(w)
+	return err
+}
+
+type UpdateTimeEntry400ApplicationProblemPlusJSONResponse struct {
+	BadRequestApplicationProblemPlusJSONResponse
+}
+
+func (response UpdateTimeEntry400ApplicationProblemPlusJSONResponse) VisitUpdateTimeEntryResponse(w http.ResponseWriter) error {
+
+	var buf bytes.Buffer
+	if err := json.NewEncoder(&buf).Encode(response); err != nil {
+		return err
+	}
+	w.Header().Set("Content-Type", "application/problem+json")
+	w.WriteHeader(400)
+	_, err := buf.WriteTo(w)
+	return err
+}
+
+type UpdateTimeEntry401ApplicationProblemPlusJSONResponse struct {
+	UnauthorizedApplicationProblemPlusJSONResponse
+}
+
+func (response UpdateTimeEntry401ApplicationProblemPlusJSONResponse) VisitUpdateTimeEntryResponse(w http.ResponseWriter) error {
+
+	var buf bytes.Buffer
+	if err := json.NewEncoder(&buf).Encode(response); err != nil {
+		return err
+	}
+	w.Header().Set("Content-Type", "application/problem+json")
+	w.WriteHeader(401)
+	_, err := buf.WriteTo(w)
+	return err
+}
+
+type UpdateTimeEntry404ApplicationProblemPlusJSONResponse struct {
+	NotFoundApplicationProblemPlusJSONResponse
+}
+
+func (response UpdateTimeEntry404ApplicationProblemPlusJSONResponse) VisitUpdateTimeEntryResponse(w http.ResponseWriter) error {
+
+	var buf bytes.Buffer
+	if err := json.NewEncoder(&buf).Encode(response); err != nil {
+		return err
+	}
+	w.Header().Set("Content-Type", "application/problem+json")
+	w.WriteHeader(404)
+	_, err := buf.WriteTo(w)
+	return err
+}
+
+type UpdateTimeEntry500ApplicationProblemPlusJSONResponse struct {
+	InternalErrorApplicationProblemPlusJSONResponse
+}
+
+func (response UpdateTimeEntry500ApplicationProblemPlusJSONResponse) VisitUpdateTimeEntryResponse(w http.ResponseWriter) error {
+
+	var buf bytes.Buffer
+	if err := json.NewEncoder(&buf).Encode(response); err != nil {
+		return err
+	}
+	w.Header().Set("Content-Type", "application/problem+json")
+	w.WriteHeader(500)
+	_, err := buf.WriteTo(w)
+	return err
+}
+
+type StopTimeEntryRequestObject struct {
+	WorkspaceId openapi_types.UUID `json:"workspace_id"`
+	Id          openapi_types.UUID `json:"id"`
+}
+
+type StopTimeEntryResponseObject interface {
+	VisitStopTimeEntryResponse(w http.ResponseWriter) error
+}
+
+type StopTimeEntry200JSONResponse TimeEntry
+
+func (response StopTimeEntry200JSONResponse) VisitStopTimeEntryResponse(w http.ResponseWriter) error {
+
+	var buf bytes.Buffer
+	if err := json.NewEncoder(&buf).Encode(response); err != nil {
+		return err
+	}
+	w.Header().Set("Content-Type", "application/json")
+	w.WriteHeader(200)
+	_, err := buf.WriteTo(w)
+	return err
+}
+
+type StopTimeEntry400ApplicationProblemPlusJSONResponse struct {
+	BadRequestApplicationProblemPlusJSONResponse
+}
+
+func (response StopTimeEntry400ApplicationProblemPlusJSONResponse) VisitStopTimeEntryResponse(w http.ResponseWriter) error {
+
+	var buf bytes.Buffer
+	if err := json.NewEncoder(&buf).Encode(response); err != nil {
+		return err
+	}
+	w.Header().Set("Content-Type", "application/problem+json")
+	w.WriteHeader(400)
+	_, err := buf.WriteTo(w)
+	return err
+}
+
+type StopTimeEntry401ApplicationProblemPlusJSONResponse struct {
+	UnauthorizedApplicationProblemPlusJSONResponse
+}
+
+func (response StopTimeEntry401ApplicationProblemPlusJSONResponse) VisitStopTimeEntryResponse(w http.ResponseWriter) error {
+
+	var buf bytes.Buffer
+	if err := json.NewEncoder(&buf).Encode(response); err != nil {
+		return err
+	}
+	w.Header().Set("Content-Type", "application/problem+json")
+	w.WriteHeader(401)
+	_, err := buf.WriteTo(w)
+	return err
+}
+
+type StopTimeEntry404ApplicationProblemPlusJSONResponse struct {
+	NotFoundApplicationProblemPlusJSONResponse
+}
+
+func (response StopTimeEntry404ApplicationProblemPlusJSONResponse) VisitStopTimeEntryResponse(w http.ResponseWriter) error {
+
+	var buf bytes.Buffer
+	if err := json.NewEncoder(&buf).Encode(response); err != nil {
+		return err
+	}
+	w.Header().Set("Content-Type", "application/problem+json")
+	w.WriteHeader(404)
+	_, err := buf.WriteTo(w)
+	return err
+}
+
+type StopTimeEntry500ApplicationProblemPlusJSONResponse struct {
+	InternalErrorApplicationProblemPlusJSONResponse
+}
+
+func (response StopTimeEntry500ApplicationProblemPlusJSONResponse) VisitStopTimeEntryResponse(w http.ResponseWriter) error {
+
+	var buf bytes.Buffer
+	if err := json.NewEncoder(&buf).Encode(response); err != nil {
+		return err
+	}
+	w.Header().Set("Content-Type", "application/problem+json")
+	w.WriteHeader(500)
+	_, err := buf.WriteTo(w)
+	return err
+}
+
 // StrictServerInterface represents all server handlers.
 type StrictServerInterface interface {
 	// ListWorkspaces List all workspaces for the authenticated user
@@ -1650,6 +2436,24 @@ type StrictServerInterface interface {
 	// UpdateTicket Update a ticket
 	// (PATCH /workspaces/{workspace_id}/tickets/{identifier})
 	UpdateTicket(ctx context.Context, request UpdateTicketRequestObject) (UpdateTicketResponseObject, error)
+	// ListTimeEntries List time entries for a workspace
+	// (GET /workspaces/{workspace_id}/time-entries)
+	ListTimeEntries(ctx context.Context, request ListTimeEntriesRequestObject) (ListTimeEntriesResponseObject, error)
+	// CreateTimeEntry Create or start a time entry
+	// (POST /workspaces/{workspace_id}/time-entries)
+	CreateTimeEntry(ctx context.Context, request CreateTimeEntryRequestObject) (CreateTimeEntryResponseObject, error)
+	// DeleteTimeEntry Delete a time entry
+	// (DELETE /workspaces/{workspace_id}/time-entries/{id})
+	DeleteTimeEntry(ctx context.Context, request DeleteTimeEntryRequestObject) (DeleteTimeEntryResponseObject, error)
+	// GetTimeEntry Get a time entry by id
+	// (GET /workspaces/{workspace_id}/time-entries/{id})
+	GetTimeEntry(ctx context.Context, request GetTimeEntryRequestObject) (GetTimeEntryResponseObject, error)
+	// UpdateTimeEntry Update a time entry
+	// (PATCH /workspaces/{workspace_id}/time-entries/{id})
+	UpdateTimeEntry(ctx context.Context, request UpdateTimeEntryRequestObject) (UpdateTimeEntryResponseObject, error)
+	// StopTimeEntry Stop an active time entry timer
+	// (POST /workspaces/{workspace_id}/time-entries/{id}/stop)
+	StopTimeEntry(ctx context.Context, request StopTimeEntryRequestObject) (StopTimeEntryResponseObject, error)
 }
 
 type StrictHandlerFunc func(ctx context.Context, w http.ResponseWriter, r *http.Request, request any) (any, error)
@@ -1978,45 +2782,226 @@ func (sh *strictHandler) UpdateTicket(w http.ResponseWriter, r *http.Request, wo
 	}
 }
 
+// ListTimeEntries operation middleware
+func (sh *strictHandler) ListTimeEntries(w http.ResponseWriter, r *http.Request, workspaceId openapi_types.UUID, params ListTimeEntriesParams) {
+	var request ListTimeEntriesRequestObject
+
+	request.WorkspaceId = workspaceId
+	request.Params = params
+
+	handler := func(ctx context.Context, w http.ResponseWriter, r *http.Request, request interface{}) (interface{}, error) {
+		return sh.ssi.ListTimeEntries(ctx, request.(ListTimeEntriesRequestObject))
+	}
+	for _, middleware := range sh.middlewares {
+		handler = middleware(handler, "ListTimeEntries")
+	}
+
+	response, err := handler(r.Context(), w, r, request)
+
+	if err != nil {
+		sh.options.ResponseErrorHandlerFunc(w, r, err)
+	} else if validResponse, ok := response.(ListTimeEntriesResponseObject); ok {
+		if err := validResponse.VisitListTimeEntriesResponse(w); err != nil {
+			sh.options.ResponseErrorHandlerFunc(w, r, err)
+		}
+	} else if response != nil {
+		sh.options.ResponseErrorHandlerFunc(w, r, fmt.Errorf("unexpected response type: %T", response))
+	}
+}
+
+// CreateTimeEntry operation middleware
+func (sh *strictHandler) CreateTimeEntry(w http.ResponseWriter, r *http.Request, workspaceId openapi_types.UUID) {
+	var request CreateTimeEntryRequestObject
+
+	request.WorkspaceId = workspaceId
+
+	var body CreateTimeEntryJSONRequestBody
+	if err := json.NewDecoder(r.Body).Decode(&body); err != nil {
+		sh.options.RequestErrorHandlerFunc(w, r, fmt.Errorf("can't decode JSON body: %w", err))
+		return
+	}
+	request.Body = &body
+
+	handler := func(ctx context.Context, w http.ResponseWriter, r *http.Request, request interface{}) (interface{}, error) {
+		return sh.ssi.CreateTimeEntry(ctx, request.(CreateTimeEntryRequestObject))
+	}
+	for _, middleware := range sh.middlewares {
+		handler = middleware(handler, "CreateTimeEntry")
+	}
+
+	response, err := handler(r.Context(), w, r, request)
+
+	if err != nil {
+		sh.options.ResponseErrorHandlerFunc(w, r, err)
+	} else if validResponse, ok := response.(CreateTimeEntryResponseObject); ok {
+		if err := validResponse.VisitCreateTimeEntryResponse(w); err != nil {
+			sh.options.ResponseErrorHandlerFunc(w, r, err)
+		}
+	} else if response != nil {
+		sh.options.ResponseErrorHandlerFunc(w, r, fmt.Errorf("unexpected response type: %T", response))
+	}
+}
+
+// DeleteTimeEntry operation middleware
+func (sh *strictHandler) DeleteTimeEntry(w http.ResponseWriter, r *http.Request, workspaceId openapi_types.UUID, id openapi_types.UUID) {
+	var request DeleteTimeEntryRequestObject
+
+	request.WorkspaceId = workspaceId
+	request.Id = id
+
+	handler := func(ctx context.Context, w http.ResponseWriter, r *http.Request, request interface{}) (interface{}, error) {
+		return sh.ssi.DeleteTimeEntry(ctx, request.(DeleteTimeEntryRequestObject))
+	}
+	for _, middleware := range sh.middlewares {
+		handler = middleware(handler, "DeleteTimeEntry")
+	}
+
+	response, err := handler(r.Context(), w, r, request)
+
+	if err != nil {
+		sh.options.ResponseErrorHandlerFunc(w, r, err)
+	} else if validResponse, ok := response.(DeleteTimeEntryResponseObject); ok {
+		if err := validResponse.VisitDeleteTimeEntryResponse(w); err != nil {
+			sh.options.ResponseErrorHandlerFunc(w, r, err)
+		}
+	} else if response != nil {
+		sh.options.ResponseErrorHandlerFunc(w, r, fmt.Errorf("unexpected response type: %T", response))
+	}
+}
+
+// GetTimeEntry operation middleware
+func (sh *strictHandler) GetTimeEntry(w http.ResponseWriter, r *http.Request, workspaceId openapi_types.UUID, id openapi_types.UUID) {
+	var request GetTimeEntryRequestObject
+
+	request.WorkspaceId = workspaceId
+	request.Id = id
+
+	handler := func(ctx context.Context, w http.ResponseWriter, r *http.Request, request interface{}) (interface{}, error) {
+		return sh.ssi.GetTimeEntry(ctx, request.(GetTimeEntryRequestObject))
+	}
+	for _, middleware := range sh.middlewares {
+		handler = middleware(handler, "GetTimeEntry")
+	}
+
+	response, err := handler(r.Context(), w, r, request)
+
+	if err != nil {
+		sh.options.ResponseErrorHandlerFunc(w, r, err)
+	} else if validResponse, ok := response.(GetTimeEntryResponseObject); ok {
+		if err := validResponse.VisitGetTimeEntryResponse(w); err != nil {
+			sh.options.ResponseErrorHandlerFunc(w, r, err)
+		}
+	} else if response != nil {
+		sh.options.ResponseErrorHandlerFunc(w, r, fmt.Errorf("unexpected response type: %T", response))
+	}
+}
+
+// UpdateTimeEntry operation middleware
+func (sh *strictHandler) UpdateTimeEntry(w http.ResponseWriter, r *http.Request, workspaceId openapi_types.UUID, id openapi_types.UUID) {
+	var request UpdateTimeEntryRequestObject
+
+	request.WorkspaceId = workspaceId
+	request.Id = id
+
+	var body UpdateTimeEntryJSONRequestBody
+	if err := json.NewDecoder(r.Body).Decode(&body); err != nil {
+		sh.options.RequestErrorHandlerFunc(w, r, fmt.Errorf("can't decode JSON body: %w", err))
+		return
+	}
+	request.Body = &body
+
+	handler := func(ctx context.Context, w http.ResponseWriter, r *http.Request, request interface{}) (interface{}, error) {
+		return sh.ssi.UpdateTimeEntry(ctx, request.(UpdateTimeEntryRequestObject))
+	}
+	for _, middleware := range sh.middlewares {
+		handler = middleware(handler, "UpdateTimeEntry")
+	}
+
+	response, err := handler(r.Context(), w, r, request)
+
+	if err != nil {
+		sh.options.ResponseErrorHandlerFunc(w, r, err)
+	} else if validResponse, ok := response.(UpdateTimeEntryResponseObject); ok {
+		if err := validResponse.VisitUpdateTimeEntryResponse(w); err != nil {
+			sh.options.ResponseErrorHandlerFunc(w, r, err)
+		}
+	} else if response != nil {
+		sh.options.ResponseErrorHandlerFunc(w, r, fmt.Errorf("unexpected response type: %T", response))
+	}
+}
+
+// StopTimeEntry operation middleware
+func (sh *strictHandler) StopTimeEntry(w http.ResponseWriter, r *http.Request, workspaceId openapi_types.UUID, id openapi_types.UUID) {
+	var request StopTimeEntryRequestObject
+
+	request.WorkspaceId = workspaceId
+	request.Id = id
+
+	handler := func(ctx context.Context, w http.ResponseWriter, r *http.Request, request interface{}) (interface{}, error) {
+		return sh.ssi.StopTimeEntry(ctx, request.(StopTimeEntryRequestObject))
+	}
+	for _, middleware := range sh.middlewares {
+		handler = middleware(handler, "StopTimeEntry")
+	}
+
+	response, err := handler(r.Context(), w, r, request)
+
+	if err != nil {
+		sh.options.ResponseErrorHandlerFunc(w, r, err)
+	} else if validResponse, ok := response.(StopTimeEntryResponseObject); ok {
+		if err := validResponse.VisitStopTimeEntryResponse(w); err != nil {
+			sh.options.ResponseErrorHandlerFunc(w, r, err)
+		}
+	} else if response != nil {
+		sh.options.ResponseErrorHandlerFunc(w, r, fmt.Errorf("unexpected response type: %T", response))
+	}
+}
+
 // Base64 encoded, compressed with deflate, json marshaled OpenAPI spec.
 // Stored as a slice of fixed-width chunks rather than one concatenated
 // const string: with thousands of chunks the chained `+` fold is several
 // times slower for the Go compiler than parsing a slice literal.
 var swaggerSpec = []string{
-	"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",
-	"LMRwfsqW18v/DwA=",
+	"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",
 }
 
 // decodeSpec returns the embedded OpenAPI spec as raw JSON bytes,

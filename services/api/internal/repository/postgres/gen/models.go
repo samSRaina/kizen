@@ -8,6 +8,7 @@ import (
 	"time"
 
 	"github.com/google/uuid"
+	"github.com/jackc/pgx/v5/pgtype"
 )
 
 type Ticket struct {
@@ -24,6 +25,20 @@ type Ticket struct {
 	Tags        []string  `json:"tags"`
 	CreatedAt   time.Time `json:"created_at"`
 	UpdatedAt   time.Time `json:"updated_at"`
+}
+
+type TimeEntry struct {
+	ID              uuid.UUID          `json:"id"`
+	WorkspaceID     uuid.UUID          `json:"workspace_id"`
+	TicketID        pgtype.UUID        `json:"ticket_id"`
+	Description     *string            `json:"description"`
+	StartedAt       time.Time          `json:"started_at"`
+	EndedAt         pgtype.Timestamptz `json:"ended_at"`
+	DurationSeconds *int32             `json:"duration_seconds"`
+	Billable        bool               `json:"billable"`
+	HourlyRate      int32              `json:"hourly_rate"`
+	CreatedAt       time.Time          `json:"created_at"`
+	UpdatedAt       time.Time          `json:"updated_at"`
 }
 
 type Workspace struct {

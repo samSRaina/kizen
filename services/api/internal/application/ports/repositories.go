@@ -6,6 +6,7 @@ import (
 	"github.com/google/uuid"
 	"github.com/samSRaina/kizen/api/internal/domain/auth"
 	"github.com/samSRaina/kizen/api/internal/domain/ticket"
+	"github.com/samSRaina/kizen/api/internal/domain/timeentry"
 	"github.com/samSRaina/kizen/api/internal/domain/workspace"
 )
 
@@ -23,4 +24,15 @@ type TicketRepository interface {
 	Create(ctx context.Context, ownerID auth.UserID, workspaceID uuid.UUID, input ticket.CreateInput) (*ticket.Ticket, error)
 	Update(ctx context.Context, ownerID auth.UserID, workspaceID uuid.UUID, identifier string, input ticket.UpdateInput) (*ticket.Ticket, error)
 	Delete(ctx context.Context, ownerID auth.UserID, workspaceID uuid.UUID, identifier string) error
+}
+
+type TimeEntryRepository interface {
+	ListByWorkspace(ctx context.Context, ownerID auth.UserID, workspaceID uuid.UUID, ticketID *uuid.UUID) ([]timeentry.TimeEntry, error)
+	GetByID(ctx context.Context, ownerID auth.UserID, workspaceID uuid.UUID, id uuid.UUID) (*timeentry.TimeEntry, error)
+	GetActive(ctx context.Context, ownerID auth.UserID, workspaceID uuid.UUID) (*timeentry.TimeEntry, error)
+	StopActive(ctx context.Context, ownerID auth.UserID, workspaceID uuid.UUID) error
+	Create(ctx context.Context, ownerID auth.UserID, workspaceID uuid.UUID, input timeentry.CreateInput) (*timeentry.TimeEntry, error)
+	Stop(ctx context.Context, ownerID auth.UserID, workspaceID uuid.UUID, id uuid.UUID) (*timeentry.TimeEntry, error)
+	Update(ctx context.Context, ownerID auth.UserID, workspaceID uuid.UUID, id uuid.UUID, input timeentry.UpdateInput) (*timeentry.TimeEntry, error)
+	Delete(ctx context.Context, ownerID auth.UserID, workspaceID uuid.UUID, id uuid.UUID) error
 }

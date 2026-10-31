@@ -78,6 +78,63 @@ export interface paths {
         patch: operations["updateTicket"];
         trace?: never;
     };
+    "/workspaces/{workspace_id}/time-entries": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /** List time entries for a workspace */
+        get: operations["listTimeEntries"];
+        put?: never;
+        /**
+         * Create or start a time entry
+         * @description Create a completed time entry with duration or start an active timer (ended_at omitted). Starting a new timer automatically stops any existing active timer.
+         */
+        post: operations["createTimeEntry"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/workspaces/{workspace_id}/time-entries/{id}": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /** Get a time entry by id */
+        get: operations["getTimeEntry"];
+        put?: never;
+        post?: never;
+        /** Delete a time entry */
+        delete: operations["deleteTimeEntry"];
+        options?: never;
+        head?: never;
+        /** Update a time entry */
+        patch: operations["updateTimeEntry"];
+        trace?: never;
+    };
+    "/workspaces/{workspace_id}/time-entries/{id}/stop": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        /** Stop an active time entry timer */
+        post: operations["stopTimeEntry"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
 }
 export type webhooks = Record<string, never>;
 export interface components {
@@ -105,11 +162,7 @@ export interface components {
             default_hourly_rate?: number;
             description?: string | null;
         };
-        /**
-         * @description RFC 7807 Problem Details. The error shape for every non-2xx response
-         *     in the API. `type` names the error class; `errors` (validation only)
-         *     maps field names to human-readable messages.
-         */
+        /** @description RFC 7807 Problem Details. The error shape for every non-2xx response in the API. `type` names the error class; `errors` (validation only) maps field names to human-readable messages. */
         ProblemDetail: {
             /**
              * Format: uri
@@ -173,13 +226,54 @@ export interface components {
             points?: number;
             tags?: string[];
         };
+        TimeEntry: {
+            /** Format: uuid */
+            id: string;
+            /** Format: uuid */
+            workspace_id: string;
+            /** Format: uuid */
+            ticket_id?: string | null;
+            description?: string | null;
+            /** Format: date-time */
+            started_at: string;
+            /** Format: date-time */
+            ended_at?: string | null;
+            duration_seconds?: number | null;
+            billable: boolean;
+            hourly_rate: number;
+            /** Format: date-time */
+            created_at: string;
+            /** Format: date-time */
+            updated_at: string;
+        };
+        CreateTimeEntryRequest: {
+            /** Format: uuid */
+            ticket_id?: string | null;
+            description?: string | null;
+            /** Format: date-time */
+            started_at?: string;
+            /** Format: date-time */
+            ended_at?: string | null;
+            duration_seconds?: number | null;
+            /** @default true */
+            billable: boolean;
+            hourly_rate?: number | null;
+        };
+        UpdateTimeEntryRequest: {
+            /** Format: uuid */
+            ticket_id?: string | null;
+            description?: string | null;
+            /** Format: date-time */
+            started_at?: string;
+            /** Format: date-time */
+            ended_at?: string | null;
+            duration_seconds?: number | null;
+            billable?: boolean;
+            hourly_rate?: number;
+        };
     };
     responses: {
-        /**
-         * @description Malformed request or validation failure. Malformed JSON, unknown
-         *     fields, invalid enum values, bad UUIDs, and rule violations (e.g. an
-         *     empty PATCH) all land here. Field-level detail in `Problem.errors`.
-         */
+        /** @description Malformed request or validation failure. Malformed JSON, unknown fields, invalid enum values, bad UUIDs, and rule violations (e.g. an empty PATCH) all land here. Field-level detail in `Problem.errors`. */
         BadRequest: {
             headers: {
                 [name: string]: unknown;
@@ -188,10 +282,7 @@ export interface components {
                 "application/problem+json": components["schemas"]["ProblemDetail"];
             };
         };
-        /**
-         * @description Conflict. The request could not be completed due to a conflict with the current state of the target resource.
-         *     For example, creating a workspace with a name that already exists.
-         */
+        /** @description Conflict. The request could not be completed due to a conflict with the current state of the target resource. For example, creating a workspace with a name that already exists. */
         Conflict: {
             headers: {
                 [name: string]: unknown;
@@ -209,10 +300,7 @@ export interface components {
                 "application/problem+json": components["schemas"]["ProblemDetail"];
             };
         };
-        /**
-         * @description Unexpected server failure. The response deliberately carries no
-         *     internal detail; correlate via the request id in server logs.
-         */
+        /** @description Unexpected server failure. The response deliberately carries no internal detail; correlate via the request id in server logs. */
         InternalError: {
             headers: {
                 [name: string]: unknown;
@@ -273,10 +361,7 @@ export interface operations {
             };
         };
         responses: {
-            /**
-             * @description Created. The response is the complete workspace. Including the
-             *     server-assiged identifier, and expanded summaries.
-             */
+            /** @description Created. The response is the complete workspace. Including the server-assiged identifier, and expanded summaries. */
             201: {
                 headers: {
                     [name: string]: unknown;
@@ -497,6 +582,171 @@ export interface operations {
                 };
                 content: {
                     "application/json": components["schemas"]["Ticket"];
+                };
+            };
+            400: components["responses"]["BadRequest"];
+            401: components["responses"]["Unauthorized"];
+            404: components["responses"]["NotFound"];
+            500: components["responses"]["InternalError"];
+        };
+    };
+    listTimeEntries: {
+        parameters: {
+            query?: {
+                ticket_id?: string;
+            };
+            header?: never;
+            path: {
+                workspace_id: string;
+            };
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description A list of time entries */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["TimeEntry"][];
+                };
+            };
+            401: components["responses"]["Unauthorized"];
+            404: components["responses"]["NotFound"];
+            500: components["responses"]["InternalError"];
+        };
+    };
+    createTimeEntry: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                workspace_id: string;
+            };
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "application/json": components["schemas"]["CreateTimeEntryRequest"];
+            };
+        };
+        responses: {
+            /** @description Created time entry */
+            201: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["TimeEntry"];
+                };
+            };
+            400: components["responses"]["BadRequest"];
+            401: components["responses"]["Unauthorized"];
+            404: components["responses"]["NotFound"];
+            500: components["responses"]["InternalError"];
+        };
+    };
+    getTimeEntry: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                workspace_id: string;
+                id: string;
+            };
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description The time entry details */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["TimeEntry"];
+                };
+            };
+            401: components["responses"]["Unauthorized"];
+            404: components["responses"]["NotFound"];
+            500: components["responses"]["InternalError"];
+        };
+    };
+    deleteTimeEntry: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                workspace_id: string;
+                id: string;
+            };
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description Time entry successfully deleted */
+            204: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content?: never;
+            };
+            401: components["responses"]["Unauthorized"];
+            404: components["responses"]["NotFound"];
+            500: components["responses"]["InternalError"];
+        };
+    };
+    updateTimeEntry: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                workspace_id: string;
+                id: string;
+            };
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "application/json": components["schemas"]["UpdateTimeEntryRequest"];
+            };
+        };
+        responses: {
+            /** @description Updated time entry */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["TimeEntry"];
+                };
+            };
+            400: components["responses"]["BadRequest"];
+            401: components["responses"]["Unauthorized"];
+            404: components["responses"]["NotFound"];
+            500: components["responses"]["InternalError"];
+        };
+    };
+    stopTimeEntry: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                workspace_id: string;
+                id: string;
+            };
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description Stopped time entry with calculated duration */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["TimeEntry"];
                 };
             };
             400: components["responses"]["BadRequest"];

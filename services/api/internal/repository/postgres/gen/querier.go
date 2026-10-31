@@ -10,14 +10,22 @@ import (
 
 type Querier interface {
 	CreateTicket(ctx context.Context, arg CreateTicketParams) (Ticket, error)
+	CreateTimeEntry(ctx context.Context, arg CreateTimeEntryParams) (TimeEntry, error)
 	CreateWorkspace(ctx context.Context, arg CreateWorkspaceParams) (Workspace, error)
 	DeleteTicket(ctx context.Context, arg DeleteTicketParams) (int64, error)
+	DeleteTimeEntry(ctx context.Context, arg DeleteTimeEntryParams) (int64, error)
 	DeleteWorkspace(ctx context.Context, arg DeleteWorkspaceParams) (int64, error)
+	GetActiveTimeEntry(ctx context.Context, arg GetActiveTimeEntryParams) (TimeEntry, error)
 	GetTicketByIdentifier(ctx context.Context, arg GetTicketByIdentifierParams) (Ticket, error)
+	GetTimeEntryByID(ctx context.Context, arg GetTimeEntryByIDParams) (TimeEntry, error)
 	GetWorkspaceByID(ctx context.Context, arg GetWorkspaceByIDParams) (Workspace, error)
 	ListTicketsByWorkspace(ctx context.Context, arg ListTicketsByWorkspaceParams) ([]Ticket, error)
+	ListTimeEntries(ctx context.Context, arg ListTimeEntriesParams) ([]TimeEntry, error)
 	ListWorkspaces(ctx context.Context, ownerID string) ([]Workspace, error)
+	StopActiveTimeEntries(ctx context.Context, arg StopActiveTimeEntriesParams) error
+	StopTimeEntry(ctx context.Context, arg StopTimeEntryParams) (TimeEntry, error)
 	UpdateTicket(ctx context.Context, arg UpdateTicketParams) (Ticket, error)
+	UpdateTimeEntry(ctx context.Context, arg UpdateTimeEntryParams) (TimeEntry, error)
 	UpdateWorkspace(ctx context.Context, arg UpdateWorkspaceParams) (Workspace, error)
 }
 

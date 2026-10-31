@@ -45,12 +45,7 @@ paths:
               $ref: '#/components/schemas/CreateWorkspaceRequest'
       responses:
         '201':
-          description: 'Created. The response is the complete workspace. Including
-            the
-
-            server-assiged identifier, and expanded summaries.
-
-            '
+          description: 'Created. The response is the complete workspace. Including the server-assiged identifier, and expanded summaries.'
           content:
             application/json:
               schema:
@@ -315,6 +310,218 @@ paths:
           $ref: '#/components/responses/NotFound'
         '500':
           $ref: '#/components/responses/InternalError'
+  /workspaces/{workspace_id}/time-entries:
+    get:
+      tags:
+      - TimeEntries
+      summary: List time entries for a workspace
+      operationId: listTimeEntries
+      security:
+      - bearerAuth: []
+      parameters:
+      - name: workspace_id
+        in: path
+        required: true
+        schema:
+          type: string
+          format: uuid
+      - name: ticket_id
+        in: query
+        required: false
+        schema:
+          type: string
+          format: uuid
+      responses:
+        '200':
+          description: A list of time entries
+          content:
+            application/json:
+              schema:
+                type: array
+                items:
+                  $ref: '#/components/schemas/TimeEntry'
+        '401':
+          $ref: '#/components/responses/Unauthorized'
+        '404':
+          $ref: '#/components/responses/NotFound'
+        '500':
+          $ref: '#/components/responses/InternalError'
+    post:
+      tags:
+      - TimeEntries
+      summary: Create or start a time entry
+      description: Create a completed time entry with duration or start an active timer (ended_at omitted). Starting a new timer automatically stops any existing active timer.
+      operationId: createTimeEntry
+      security:
+      - bearerAuth: []
+      parameters:
+      - name: workspace_id
+        in: path
+        required: true
+        schema:
+          type: string
+          format: uuid
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/CreateTimeEntryRequest'
+      responses:
+        '201':
+          description: Created time entry
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/TimeEntry'
+        '400':
+          $ref: '#/components/responses/BadRequest'
+        '401':
+          $ref: '#/components/responses/Unauthorized'
+        '404':
+          $ref: '#/components/responses/NotFound'
+        '500':
+          $ref: '#/components/responses/InternalError'
+  /workspaces/{workspace_id}/time-entries/{id}:
+    get:
+      tags:
+      - TimeEntries
+      summary: Get a time entry by id
+      operationId: getTimeEntry
+      security:
+      - bearerAuth: []
+      parameters:
+      - name: workspace_id
+        in: path
+        required: true
+        schema:
+          type: string
+          format: uuid
+      - name: id
+        in: path
+        required: true
+        schema:
+          type: string
+          format: uuid
+      responses:
+        '200':
+          description: The time entry details
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/TimeEntry'
+        '401':
+          $ref: '#/components/responses/Unauthorized'
+        '404':
+          $ref: '#/components/responses/NotFound'
+        '500':
+          $ref: '#/components/responses/InternalError'
+    patch:
+      tags:
+      - TimeEntries
+      summary: Update a time entry
+      operationId: updateTimeEntry
+      security:
+      - bearerAuth: []
+      parameters:
+      - name: workspace_id
+        in: path
+        required: true
+        schema:
+          type: string
+          format: uuid
+      - name: id
+        in: path
+        required: true
+        schema:
+          type: string
+          format: uuid
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/UpdateTimeEntryRequest'
+      responses:
+        '200':
+          description: Updated time entry
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/TimeEntry'
+        '400':
+          $ref: '#/components/responses/BadRequest'
+        '401':
+          $ref: '#/components/responses/Unauthorized'
+        '404':
+          $ref: '#/components/responses/NotFound'
+        '500':
+          $ref: '#/components/responses/InternalError'
+    delete:
+      tags:
+      - TimeEntries
+      summary: Delete a time entry
+      operationId: deleteTimeEntry
+      security:
+      - bearerAuth: []
+      parameters:
+      - name: workspace_id
+        in: path
+        required: true
+        schema:
+          type: string
+          format: uuid
+      - name: id
+        in: path
+        required: true
+        schema:
+          type: string
+          format: uuid
+      responses:
+        '204':
+          description: Time entry successfully deleted
+        '401':
+          $ref: '#/components/responses/Unauthorized'
+        '404':
+          $ref: '#/components/responses/NotFound'
+        '500':
+          $ref: '#/components/responses/InternalError'
+  /workspaces/{workspace_id}/time-entries/{id}/stop:
+    post:
+      tags:
+      - TimeEntries
+      summary: Stop an active time entry timer
+      operationId: stopTimeEntry
+      security:
+      - bearerAuth: []
+      parameters:
+      - name: workspace_id
+        in: path
+        required: true
+        schema:
+          type: string
+          format: uuid
+      - name: id
+        in: path
+        required: true
+        schema:
+          type: string
+          format: uuid
+      responses:
+        '200':
+          description: Stopped time entry with calculated duration
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/TimeEntry'
+        '400':
+          $ref: '#/components/responses/BadRequest'
+        '401':
+          $ref: '#/components/responses/Unauthorized'
+        '404':
+          $ref: '#/components/responses/NotFound'
+        '500':
+          $ref: '#/components/responses/InternalError'
 components:
   securitySchemes:
     bearerAuth:
@@ -380,13 +587,7 @@ components:
           nullable: true
     ProblemDetail:
       type: object
-      description: 'RFC 7807 Problem Details. The error shape for every non-2xx response
-
-        in the API. `type` names the error class; `errors` (validation only)
-
-        maps field names to human-readable messages.
-
-        '
+      description: 'RFC 7807 Problem Details. The error shape for every non-2xx response in the API. `type` names the error class; `errors` (validation only) maps field names to human-readable messages.'
       required:
       - title
       - status
@@ -401,17 +602,14 @@ components:
           description: A short, human-readable summary of the problem type.
         status:
           type: integer
-          description: The HTTP status code generated by the origin server for this
-            occurrence of the problem.
+          description: The HTTP status code generated by the origin server for this occurrence of the problem.
         detail:
           type: string
-          description: A human-readable explanation specific to this occurrence of
-            the problem.
+          description: A human-readable explanation specific to this occurrence of the problem.
         instance:
           type: string
           format: uri
-          description: A URI reference that identifies the specific occurrence of
-            the problem.
+          description: A URI reference that identifies the specific occurrence of the problem.
       additionalProperties: true
     TicketStatus:
       type: string
@@ -524,52 +722,133 @@ components:
           type: array
           items:
             type: string
+    TimeEntry:
+      type: object
+      required:
+      - id
+      - workspace_id
+      - started_at
+      - billable
+      - hourly_rate
+      - created_at
+      - updated_at
+      properties:
+        id:
+          type: string
+          format: uuid
+        workspace_id:
+          type: string
+          format: uuid
+        ticket_id:
+          type: string
+          format: uuid
+          nullable: true
+        description:
+          type: string
+          nullable: true
+        started_at:
+          type: string
+          format: date-time
+        ended_at:
+          type: string
+          format: date-time
+          nullable: true
+        duration_seconds:
+          type: integer
+          minimum: 0
+          nullable: true
+        billable:
+          type: boolean
+        hourly_rate:
+          type: integer
+          minimum: 0
+        created_at:
+          type: string
+          format: date-time
+        updated_at:
+          type: string
+          format: date-time
+    CreateTimeEntryRequest:
+      type: object
+      properties:
+        ticket_id:
+          type: string
+          format: uuid
+          nullable: true
+        description:
+          type: string
+          nullable: true
+        started_at:
+          type: string
+          format: date-time
+        ended_at:
+          type: string
+          format: date-time
+          nullable: true
+        duration_seconds:
+          type: integer
+          minimum: 0
+          nullable: true
+        billable:
+          type: boolean
+          default: true
+        hourly_rate:
+          type: integer
+          minimum: 0
+          nullable: true
+    UpdateTimeEntryRequest:
+      type: object
+      properties:
+        ticket_id:
+          type: string
+          format: uuid
+          nullable: true
+        description:
+          type: string
+          nullable: true
+        started_at:
+          type: string
+          format: date-time
+        ended_at:
+          type: string
+          format: date-time
+          nullable: true
+        duration_seconds:
+          type: integer
+          minimum: 0
+          nullable: true
+        billable:
+          type: boolean
+        hourly_rate:
+          type: integer
+          minimum: 0
   responses:
     BadRequest:
-      description: 'Malformed request or validation failure. Malformed JSON, unknown
-
-        fields, invalid enum values, bad UUIDs, and rule violations (e.g. an
-
-        empty PATCH) all land here. Field-level detail in `Problem.errors`.
-
-        '
+      description: 'Malformed request or validation failure. Malformed JSON, unknown fields, invalid enum values, bad UUIDs, and rule violations (e.g. an empty PATCH) all land here. Field-level detail in `Problem.errors`.'
       content:
         application/problem+json:
           schema:
             $ref: '#/components/schemas/ProblemDetail'
     Conflict:
-      description: 'Conflict. The request could not be completed due to a conflict
-        with the current state of the target resource.
-
-        For example, creating a workspace with a name that already exists.
-
-        '
+      description: 'Conflict. The request could not be completed due to a conflict with the current state of the target resource. For example, creating a workspace with a name that already exists.'
       content:
         application/problem+json:
           schema:
             $ref: '#/components/schemas/ProblemDetail'
     NotFound:
-      description: 'The referenced resource does not exist.
-
-        '
+      description: 'The referenced resource does not exist.'
       content:
         application/problem+json:
           schema:
             $ref: '#/components/schemas/ProblemDetail'
     InternalError:
-      description: 'Unexpected server failure. The response deliberately carries no
-
-        internal detail; correlate via the request id in server logs.
-
-        '
+      description: 'Unexpected server failure. The response deliberately carries no internal detail; correlate via the request id in server logs.'
       content:
         application/problem+json:
           schema:
             $ref: '#/components/schemas/ProblemDetail'
     Unauthorized:
-      description: 'Unauthorized to access the referenced resource.
-
-        '
+      description: 'Unauthorized to access the referenced resource.'
       content:
         application/problem+json:
           schema:

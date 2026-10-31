@@ -13,6 +13,7 @@ import (
 
 	"github.com/samSRaina/kizen/api/internal/application/ports"
 	appTicket "github.com/samSRaina/kizen/api/internal/application/ticket"
+	appTimeEntry "github.com/samSRaina/kizen/api/internal/application/timeentry"
 	appWorkspace "github.com/samSRaina/kizen/api/internal/application/workspace"
 	"github.com/samSRaina/kizen/api/internal/infrastructure/auth/jwt"
 	repoPostgres "github.com/samSRaina/kizen/api/internal/repository/postgres"
@@ -48,15 +49,18 @@ func main() {
 	// Repositories
 	wsRepo := repoPostgres.NewRepository(pool)
 	ticketRepo := repoPostgres.NewTicketRepository(pool)
+	timeEntryRepo := repoPostgres.NewTimeEntryRepository(pool)
 
 	// Services (Use Cases)
 	wsService := appWorkspace.NewService(wsRepo, logger)
 	ticketService := appTicket.NewService(ticketRepo, logger)
+	timeEntryService := appTimeEntry.NewService(timeEntryRepo, logger)
 
 	// Inbound Handlers (Pattern A: Domain Sub-Handlers)
 	wsHandler := handler.NewWorkspaceHandler(wsService)
 	ticketHandler := handler.NewTicketHandler(ticketService)
-	server := handler.NewServer(wsHandler, ticketHandler)
+	timeEntryHandler := handler.NewTimeEntryHandler(timeEntryService)
+	server := handler.NewServer(wsHandler, ticketHandler, timeEntryHandler)
 
 	// Auth Provider
 	jwksURL := os.Getenv("AUTH_JWKS_URL")
