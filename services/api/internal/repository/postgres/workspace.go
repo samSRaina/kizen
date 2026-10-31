@@ -2,9 +2,12 @@ package postgres
 
 import (
 	"context"
+	"errors"
 	"fmt"
 
 	"github.com/google/uuid"
+	"github.com/jackc/pgx/v5"
+	"github.com/jackc/pgx/v5/pgconn"
 	"github.com/jackc/pgx/v5/pgxpool"
 	"github.com/samSRaina/kizen/api/internal/application/ports"
 	"github.com/samSRaina/kizen/api/internal/domain/auth"
@@ -59,7 +62,7 @@ func (r *Repository) ListByUser(ctx context.Context, ownerID auth.UserID) ([]wor
 	result := make([]workspace.Workspace, len(rows))
 	for i, row := range rows {
 		result[i] = workspace.Workspace{
-			ID:                uuid.UUID(row.ID),
+			ID:                row.ID,
 			OwnerID:           auth.UserID(row.OwnerID),
 			Name:              row.Name,
 			DefaultHourlyRate: int(row.DefaultHourlyRate),
@@ -85,7 +88,48 @@ func (r *Repository) GetByID(ctx context.Context, ownerID auth.UserID, id uuid.U
 	}
 
 	return &workspace.Workspace{
-		ID:                uuid.UUID(row.ID),
+		ID:                row.ID,
+		OwnerID:           auth.UserID(row.OwnerID),
+		Name:              row.Name,
+		DefaultHourlyRate: int(row.DefaultHourlyRate),
+		Description:       row.Description,
+		CreatedAt:         row.CreatedAt,
+		UpdatedAt:         row.UpdatedAt,
+	}, nil
+}
+
+func (r *Repository) Update(
+	ctx context.Context,
+	ownerID auth.UserID,
+	id uuid.UUID,
+	input workspace.UpdateInput,
+) (*workspace.Workspace, error) {
+	var hourlyRate *int32
+	if input.DefaultHourlyRate != nil {
+		rate := int32(*input.DefaultHourlyRate)
+		hourlyRate = &rate
+	}
+
+	row, err := r.q.UpdateWorkspace(ctx, gen.UpdateWorkspaceParams{
+		Name:              input.Name,
+		DefaultHourlyRate: hourlyRate,
+		Description:       input.Description,
+		ID:                id,
+		OwnerID:           ownerID.String(),
+	})
+	if err != nil {
+		if errors.Is(err, pgx.ErrNoRows) {
+			return nil, workspace.ErrNotFound
+		}
+		var pgErr *pgconn.PgError
+		if errors.As(err, &pgErr) && pgErr.Code == "23505" {
+			return nil, workspace.ErrDuplicateName
+		}
+		return nil, fmt.Errorf("db update workspace: %w", err)
+	}
+
+	return &workspace.Workspace{
+		ID:                row.ID,
 		OwnerID:           auth.UserID(row.OwnerID),
 		Name:              row.Name,
 		DefaultHourlyRate: int(row.DefaultHourlyRate),

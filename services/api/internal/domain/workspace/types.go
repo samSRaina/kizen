@@ -38,3 +38,26 @@ func (c *CreateInput) Validate() error {
 	}
 	return nil
 }
+
+type UpdateInput struct {
+	Name              *string
+	DefaultHourlyRate *int
+	Description       *string
+}
+
+// Validate enforces pure business invariants for updates.
+func (u *UpdateInput) Validate() error {
+	if u.Name != nil {
+		trimmed := strings.TrimSpace(*u.Name)
+		if trimmed == "" {
+			return fmt.Errorf("%w: workspace name cannot be empty", ErrInvalidInput)
+		}
+		*u.Name = trimmed
+	}
+
+	if u.DefaultHourlyRate != nil && *u.DefaultHourlyRate < 0 {
+		return fmt.Errorf("%w: default hourly rate cannot be negative", ErrInvalidInput)
+	}
+
+	return nil
+}

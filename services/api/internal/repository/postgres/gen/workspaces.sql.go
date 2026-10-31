@@ -150,3 +150,50 @@ func (q *Queries) ListWorkspaces(ctx context.Context, ownerID string) ([]Workspa
 	}
 	return items, nil
 }
+
+const updateWorkspace = `-- name: UpdateWorkspace :one
+UPDATE workspaces
+SET
+    name                = COALESCE($1, name),
+    default_hourly_rate = COALESCE($2, default_hourly_rate),
+    description         = COALESCE($3, description),
+    updated_at          = NOW()
+WHERE id = $4 AND owner_id = $5
+RETURNING
+    id,
+    owner_id,
+    name,
+    default_hourly_rate,
+    description,
+    created_at,
+    updated_at
+`
+
+type UpdateWorkspaceParams struct {
+	Name              *string   `json:"name"`
+	DefaultHourlyRate *int32    `json:"default_hourly_rate"`
+	Description       *string   `json:"description"`
+	ID                uuid.UUID `json:"id"`
+	OwnerID           string    `json:"owner_id"`
+}
+
+func (q *Queries) UpdateWorkspace(ctx context.Context, arg UpdateWorkspaceParams) (Workspace, error) {
+	row := q.db.QueryRow(ctx, updateWorkspace,
+		arg.Name,
+		arg.DefaultHourlyRate,
+		arg.Description,
+		arg.ID,
+		arg.OwnerID,
+	)
+	var i Workspace
+	err := row.Scan(
+		&i.ID,
+		&i.OwnerID,
+		&i.Name,
+		&i.DefaultHourlyRate,
+		&i.Description,
+		&i.CreatedAt,
+		&i.UpdatedAt,
+	)
+	return i, err
+}

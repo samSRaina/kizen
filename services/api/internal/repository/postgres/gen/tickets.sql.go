@@ -12,10 +12,15 @@ import (
 )
 
 const createTicket = `-- name: CreateTicket :one
-WITH next_ticket AS (
-    SELECT COALESCE(MAX(ticket_num), 0) + 1 AS num
-    FROM tickets
-    WHERE workspace_id = $1
+WITH valid_workspace AS (
+    SELECT w.id, w.name
+    FROM workspaces w
+    WHERE w.id = $8 AND w.owner_id = $9
+),
+next_ticket AS (
+    SELECT COALESCE(MAX(t.ticket_num), 0) + 1 AS num
+    FROM tickets t
+    WHERE t.workspace_id = $8
 )
 INSERT INTO tickets (
     workspace_id,
@@ -30,23 +35,25 @@ INSERT INTO tickets (
     tags
 )
 SELECT
-    $1,
+    vw.id,
     next_ticket.num,
-    $2::text || '-' || next_ticket.num::text,
+    COALESCE(
+        NULLIF(UPPER(SUBSTRING(REGEXP_REPLACE(vw.name, '[^a-zA-Z0-9]', '', 'g') FROM 1 FOR 3)), ''),
+        'KZ'
+    ) || '-' || next_ticket.num::text,
+    $1,
+    $2,
     $3,
     $4,
     $5,
     $6,
-    $7,
-    $8,
-    $9
-FROM next_ticket
+    $7
+FROM valid_workspace vw
+CROSS JOIN next_ticket
 RETURNING id, workspace_id, ticket_num, identifier, title, description, type, status, priority, points, tags, created_at, updated_at
 `
 
 type CreateTicketParams struct {
-	WorkspaceID uuid.UUID `json:"workspace_id"`
-	Prefix      string    `json:"prefix"`
 	Title       string    `json:"title"`
 	Description *string   `json:"description"`
 	Type        string    `json:"type"`
@@ -54,12 +61,12 @@ type CreateTicketParams struct {
 	Priority    string    `json:"priority"`
 	Points      int32     `json:"points"`
 	Tags        []string  `json:"tags"`
+	WorkspaceID uuid.UUID `json:"workspace_id"`
+	OwnerID     string    `json:"owner_id"`
 }
 
 func (q *Queries) CreateTicket(ctx context.Context, arg CreateTicketParams) (Ticket, error) {
 	row := q.db.QueryRow(ctx, createTicket,
-		arg.WorkspaceID,
-		arg.Prefix,
 		arg.Title,
 		arg.Description,
 		arg.Type,
@@ -67,6 +74,8 @@ func (q *Queries) CreateTicket(ctx context.Context, arg CreateTicketParams) (Tic
 		arg.Priority,
 		arg.Points,
 		arg.Tags,
+		arg.WorkspaceID,
+		arg.OwnerID,
 	)
 	var i Ticket
 	err := row.Scan(

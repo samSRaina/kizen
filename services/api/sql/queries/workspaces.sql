@@ -42,6 +42,23 @@ RETURNING
     created_at,
     updated_at;
 
+-- name: UpdateWorkspace :one
+UPDATE workspaces
+SET
+    name                = COALESCE(sqlc.narg('name'), name),
+    default_hourly_rate = COALESCE(sqlc.narg('default_hourly_rate'), default_hourly_rate),
+    description         = COALESCE(sqlc.narg('description'), description),
+    updated_at          = NOW()
+WHERE id = @id AND owner_id = @owner_id
+RETURNING
+    id,
+    owner_id,
+    name,
+    default_hourly_rate,
+    description,
+    created_at,
+    updated_at;
+
 -- name: DeleteWorkspace :execrows
 DELETE FROM workspaces
 WHERE id = $1 AND owner_id = $2;

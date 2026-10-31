@@ -13,10 +13,15 @@ WHERE t.workspace_id = $1 AND t.identifier = $2 AND w.owner_id = $3
 LIMIT 1;
 
 -- name: CreateTicket :one
-WITH next_ticket AS (
-    SELECT COALESCE(MAX(ticket_num), 0) + 1 AS num
-    FROM tickets
-    WHERE workspace_id = @workspace_id
+WITH valid_workspace AS (
+    SELECT w.id, w.name
+    FROM workspaces w
+    WHERE w.id = @workspace_id AND w.owner_id = @owner_id
+),
+next_ticket AS (
+    SELECT COALESCE(MAX(t.ticket_num), 0) + 1 AS num
+    FROM tickets t
+    WHERE t.workspace_id = @workspace_id
 )
 INSERT INTO tickets (
     workspace_id,
@@ -31,9 +36,12 @@ INSERT INTO tickets (
     tags
 )
 SELECT
-    @workspace_id,
+    vw.id,
     next_ticket.num,
-    @prefix::text || '-' || next_ticket.num::text,
+    COALESCE(
+        NULLIF(UPPER(SUBSTRING(REGEXP_REPLACE(vw.name, '[^a-zA-Z0-9]', '', 'g') FROM 1 FOR 3)), ''),
+        'KZ'
+    ) || '-' || next_ticket.num::text,
     @title,
     @description,
     @type,
@@ -41,7 +49,8 @@ SELECT
     @priority,
     @points,
     @tags
-FROM next_ticket
+FROM valid_workspace vw
+CROSS JOIN next_ticket
 RETURNING *;
 
 -- name: UpdateTicket :one

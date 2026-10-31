@@ -79,16 +79,12 @@ func (r *TicketRepository) Create(
 		status = string(*input.Status)
 	}
 
-	prefix := "KZ"
-
 	tags := input.Tags
 	if tags == nil {
 		tags = []string{}
 	}
 
 	row, err := r.q.CreateTicket(ctx, gen.CreateTicketParams{
-		WorkspaceID: workspaceID,
-		Prefix:      prefix,
 		Title:       input.Title,
 		Description: input.Description,
 		Type:        string(input.Type),
@@ -96,8 +92,13 @@ func (r *TicketRepository) Create(
 		Priority:    string(input.Priority),
 		Points:      int32(input.Points),
 		Tags:        tags,
+		WorkspaceID: workspaceID,
+		OwnerID:     ownerID.String(),
 	})
 	if err != nil {
+		if errors.Is(err, pgx.ErrNoRows) {
+			return nil, ticket.ErrNotFound
+		}
 		return nil, fmt.Errorf("db create ticket: %w", err)
 	}
 

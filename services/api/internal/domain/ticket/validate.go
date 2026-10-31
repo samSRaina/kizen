@@ -16,7 +16,7 @@ func (s Status) IsValid() bool {
 
 func (p Priority) IsValid() bool {
 	switch p {
-	case PriorityHigh, PriorityMedium, PriorityLow:
+	case PriorityCritical, PriorityHigh, PriorityMedium, PriorityLow:
 		return true
 	default:
 		return false

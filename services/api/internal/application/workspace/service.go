@@ -89,6 +89,42 @@ func (s *Service) Create(ctx context.Context, caller auth.Identity, input worksp
 	return ws, nil
 }
 
+// Update validates business invariants and updates a workspace owned by the caller.
+func (s *Service) Update(
+	ctx context.Context,
+	caller auth.Identity,
+	id uuid.UUID,
+	input workspace.UpdateInput,
+) (*workspace.Workspace, error) {
+	if caller.UserID == "" {
+		return nil, auth.ErrUnauthenticated
+	}
+	if id == uuid.Nil {
+		return nil, fmt.Errorf("%w: invalid workspace uuid", workspace.ErrInvalidInput)
+	}
+
+	if err := input.Validate(); err != nil {
+		return nil, err
+	}
+
+	ws, err := s.repo.Update(ctx, caller.UserID, id, input)
+	if err != nil {
+		s.log.ErrorContext(ctx, "failed to update workspace",
+			slog.String("workspace_id", id.String()),
+			slog.String("user_id", caller.UserID.String()),
+			slog.Any("error", err),
+		)
+		return nil, err
+	}
+
+	s.log.InfoContext(ctx, "workspace updated successfully",
+		slog.String("workspace_id", ws.ID.String()),
+		slog.String("user_id", caller.UserID.String()),
+	)
+
+	return ws, nil
+}
+
 // Delete removes a workspace owned by the caller.
 func (s *Service) Delete(ctx context.Context, caller auth.Identity, id uuid.UUID) error {
 	if caller.UserID == "" {

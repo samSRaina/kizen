@@ -64,6 +64,70 @@ paths:
         '500':
           $ref: '#/components/responses/InternalError'
   /workspaces/{id}:
+    get:
+      tags:
+      - Workspaces
+      summary: Get a workspace by id
+      operationId: getWorkspace
+      security:
+      - bearerAuth: []
+      parameters:
+      - name: id
+        in: path
+        required: true
+        schema:
+          type: string
+          format: uuid
+      responses:
+        '200':
+          description: The workspace details
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Workspace'
+        '401':
+          $ref: '#/components/responses/Unauthorized'
+        '404':
+          $ref: '#/components/responses/NotFound'
+        '500':
+          $ref: '#/components/responses/InternalError'
+    patch:
+      tags:
+      - Workspaces
+      summary: Update a workspace
+      operationId: updateWorkspace
+      security:
+      - bearerAuth: []
+      parameters:
+      - name: id
+        in: path
+        required: true
+        schema:
+          type: string
+          format: uuid
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/UpdateWorkspaceRequest'
+      responses:
+        '200':
+          description: Updated workspace
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Workspace'
+        '400':
+          $ref: '#/components/responses/BadRequest'
+        '401':
+          $ref: '#/components/responses/Unauthorized'
+        '404':
+          $ref: '#/components/responses/NotFound'
+        '409':
+          $ref: '#/components/responses/Conflict'
+        '500':
+          $ref: '#/components/responses/InternalError'
     delete:
       tags:
       - Workspaces
@@ -302,6 +366,18 @@ components:
         description:
           type: string
           nullable: true
+    UpdateWorkspaceRequest:
+      type: object
+      properties:
+        name:
+          type: string
+          minLength: 1
+        default_hourly_rate:
+          type: integer
+          minimum: 0
+        description:
+          type: string
+          nullable: true
     ProblemDetail:
       type: object
       description: 'RFC 7807 Problem Details. The error shape for every non-2xx response
@@ -423,9 +499,6 @@ components:
         points:
           type: integer
           minimum: 0
-        assignee_id:
-          type: string
-          nullable: true
         tags:
           type: array
           items:
@@ -447,9 +520,6 @@ components:
         points:
           type: integer
           minimum: 0
-        assignee_id:
-          type: string
-          nullable: true
         tags:
           type: array
           items:

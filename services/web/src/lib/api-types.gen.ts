@@ -29,14 +29,16 @@ export interface paths {
             path?: never;
             cookie?: never;
         };
-        get?: never;
+        /** Get a workspace by id */
+        get: operations["getWorkspace"];
         put?: never;
         post?: never;
         /** Delete a workspace by id */
         delete: operations["deleteWorkspace"];
         options?: never;
         head?: never;
-        patch?: never;
+        /** Update a workspace */
+        patch: operations["updateWorkspace"];
         trace?: never;
     };
     "/workspaces/{workspace_id}/tickets": {
@@ -98,6 +100,11 @@ export interface components {
             default_hourly_rate: number;
             description?: string | null;
         };
+        UpdateWorkspaceRequest: {
+            name?: string;
+            default_hourly_rate?: number;
+            description?: string | null;
+        };
         /**
          * @description RFC 7807 Problem Details. The error shape for every non-2xx response
          *     in the API. `type` names the error class; `errors` (validation only)
@@ -127,7 +134,7 @@ export interface components {
         /** @enum {string} */
         TicketStatus: "backlog" | "todo" | "progress" | "review" | "done";
         /** @enum {string} */
-        TicketPriority: "High" | "Medium" | "Low";
+        TicketPriority: "Critical" | "High" | "Medium" | "Low";
         /** @enum {string} */
         TicketType: "feature" | "bug" | "task";
         Ticket: {
@@ -155,7 +162,6 @@ export interface components {
             status?: components["schemas"]["TicketStatus"];
             priority: components["schemas"]["TicketPriority"];
             points?: number;
-            assignee_id?: string | null;
             tags?: string[];
         };
         UpdateTicketRequest: {
@@ -165,7 +171,6 @@ export interface components {
             status?: components["schemas"]["TicketStatus"];
             priority?: components["schemas"]["TicketPriority"];
             points?: number;
-            assignee_id?: string | null;
             tags?: string[];
         };
     };
@@ -286,6 +291,31 @@ export interface operations {
             500: components["responses"]["InternalError"];
         };
     };
+    getWorkspace: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                id: string;
+            };
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description The workspace details */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["Workspace"];
+                };
+            };
+            401: components["responses"]["Unauthorized"];
+            404: components["responses"]["NotFound"];
+            500: components["responses"]["InternalError"];
+        };
+    };
     deleteWorkspace: {
         parameters: {
             query?: never;
@@ -306,6 +336,37 @@ export interface operations {
             };
             401: components["responses"]["Unauthorized"];
             404: components["responses"]["NotFound"];
+            500: components["responses"]["InternalError"];
+        };
+    };
+    updateWorkspace: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                id: string;
+            };
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "application/json": components["schemas"]["UpdateWorkspaceRequest"];
+            };
+        };
+        responses: {
+            /** @description Updated workspace */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["Workspace"];
+                };
+            };
+            400: components["responses"]["BadRequest"];
+            401: components["responses"]["Unauthorized"];
+            404: components["responses"]["NotFound"];
+            409: components["responses"]["Conflict"];
             500: components["responses"]["InternalError"];
         };
     };

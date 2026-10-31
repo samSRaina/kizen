@@ -18,6 +18,7 @@ type Querier interface {
 	ListTicketsByWorkspace(ctx context.Context, arg ListTicketsByWorkspaceParams) ([]Ticket, error)
 	ListWorkspaces(ctx context.Context, ownerID string) ([]Workspace, error)
 	UpdateTicket(ctx context.Context, arg UpdateTicketParams) (Ticket, error)
+	UpdateWorkspace(ctx context.Context, arg UpdateWorkspaceParams) (Workspace, error)
 }
 
 var _ Querier = (*Queries)(nil)

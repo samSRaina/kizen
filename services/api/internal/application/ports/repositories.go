@@ -13,6 +13,7 @@ type WorkspaceRepository interface {
 	Create(ctx context.Context, ownerID auth.UserID, input workspace.CreateInput) (*workspace.Workspace, error)
 	ListByUser(ctx context.Context, ownerID auth.UserID) ([]workspace.Workspace, error)
 	GetByID(ctx context.Context, ownerID auth.UserID, id uuid.UUID) (*workspace.Workspace, error)
+	Update(ctx context.Context, ownerID auth.UserID, id uuid.UUID, input workspace.UpdateInput) (*workspace.Workspace, error)
 	Delete(ctx context.Context, ownerID auth.UserID, id uuid.UUID) error
 }
 
