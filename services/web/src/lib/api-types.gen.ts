@@ -4,755 +4,755 @@
  */
 
 export interface paths {
-    "/workspaces": {
-        parameters: {
-            query?: never;
-            header?: never;
-            path?: never;
-            cookie?: never;
-        };
-        /** List all workspaces for the authenticated user */
-        get: operations["listWorkspaces"];
-        put?: never;
-        /** Create a new workspace */
-        post: operations["createWorkspace"];
-        delete?: never;
-        options?: never;
-        head?: never;
-        patch?: never;
-        trace?: never;
-    };
-    "/workspaces/{id}": {
-        parameters: {
-            query?: never;
-            header?: never;
-            path?: never;
-            cookie?: never;
-        };
-        /** Get a workspace by id */
-        get: operations["getWorkspace"];
-        put?: never;
-        post?: never;
-        /** Delete a workspace by id */
-        delete: operations["deleteWorkspace"];
-        options?: never;
-        head?: never;
-        /** Update a workspace */
-        patch: operations["updateWorkspace"];
-        trace?: never;
-    };
-    "/workspaces/{workspace_id}/tickets": {
-        parameters: {
-            query?: never;
-            header?: never;
-            path?: never;
-            cookie?: never;
-        };
-        /** List tickets for a workspace */
-        get: operations["listTickets"];
-        put?: never;
-        /** Create a new ticket */
-        post: operations["createTicket"];
-        delete?: never;
-        options?: never;
-        head?: never;
-        patch?: never;
-        trace?: never;
-    };
-    "/workspaces/{workspace_id}/tickets/{identifier}": {
-        parameters: {
-            query?: never;
-            header?: never;
-            path?: never;
-            cookie?: never;
-        };
-        /** Get a ticket by identifier */
-        get: operations["getTicket"];
-        put?: never;
-        post?: never;
-        /** Delete a ticket */
-        delete: operations["deleteTicket"];
-        options?: never;
-        head?: never;
-        /** Update a ticket */
-        patch: operations["updateTicket"];
-        trace?: never;
-    };
-    "/workspaces/{workspace_id}/time-entries": {
-        parameters: {
-            query?: never;
-            header?: never;
-            path?: never;
-            cookie?: never;
-        };
-        /** List time entries for a workspace */
-        get: operations["listTimeEntries"];
-        put?: never;
-        /**
-         * Create or start a time entry
-         * @description Create a completed time entry with duration or start an active timer (ended_at omitted). Starting a new timer automatically stops any existing active timer.
-         */
-        post: operations["createTimeEntry"];
-        delete?: never;
-        options?: never;
-        head?: never;
-        patch?: never;
-        trace?: never;
-    };
-    "/workspaces/{workspace_id}/time-entries/{id}": {
-        parameters: {
-            query?: never;
-            header?: never;
-            path?: never;
-            cookie?: never;
-        };
-        /** Get a time entry by id */
-        get: operations["getTimeEntry"];
-        put?: never;
-        post?: never;
-        /** Delete a time entry */
-        delete: operations["deleteTimeEntry"];
-        options?: never;
-        head?: never;
-        /** Update a time entry */
-        patch: operations["updateTimeEntry"];
-        trace?: never;
-    };
-    "/workspaces/{workspace_id}/time-entries/{id}/stop": {
-        parameters: {
-            query?: never;
-            header?: never;
-            path?: never;
-            cookie?: never;
-        };
-        get?: never;
-        put?: never;
-        /** Stop an active time entry timer */
-        post: operations["stopTimeEntry"];
-        delete?: never;
-        options?: never;
-        head?: never;
-        patch?: never;
-        trace?: never;
-    };
+	"/workspaces": {
+		parameters: {
+			query?: never;
+			header?: never;
+			path?: never;
+			cookie?: never;
+		};
+		/** List all workspaces for the authenticated user */
+		get: operations["listWorkspaces"];
+		put?: never;
+		/** Create a new workspace */
+		post: operations["createWorkspace"];
+		delete?: never;
+		options?: never;
+		head?: never;
+		patch?: never;
+		trace?: never;
+	};
+	"/workspaces/{id}": {
+		parameters: {
+			query?: never;
+			header?: never;
+			path?: never;
+			cookie?: never;
+		};
+		/** Get a workspace by id */
+		get: operations["getWorkspace"];
+		put?: never;
+		post?: never;
+		/** Delete a workspace by id */
+		delete: operations["deleteWorkspace"];
+		options?: never;
+		head?: never;
+		/** Update a workspace */
+		patch: operations["updateWorkspace"];
+		trace?: never;
+	};
+	"/workspaces/{workspace_id}/tickets": {
+		parameters: {
+			query?: never;
+			header?: never;
+			path?: never;
+			cookie?: never;
+		};
+		/** List tickets for a workspace */
+		get: operations["listTickets"];
+		put?: never;
+		/** Create a new ticket */
+		post: operations["createTicket"];
+		delete?: never;
+		options?: never;
+		head?: never;
+		patch?: never;
+		trace?: never;
+	};
+	"/workspaces/{workspace_id}/tickets/{identifier}": {
+		parameters: {
+			query?: never;
+			header?: never;
+			path?: never;
+			cookie?: never;
+		};
+		/** Get a ticket by identifier */
+		get: operations["getTicket"];
+		put?: never;
+		post?: never;
+		/** Delete a ticket */
+		delete: operations["deleteTicket"];
+		options?: never;
+		head?: never;
+		/** Update a ticket */
+		patch: operations["updateTicket"];
+		trace?: never;
+	};
+	"/workspaces/{workspace_id}/time-entries": {
+		parameters: {
+			query?: never;
+			header?: never;
+			path?: never;
+			cookie?: never;
+		};
+		/** List time entries for a workspace */
+		get: operations["listTimeEntries"];
+		put?: never;
+		/**
+		 * Create or start a time entry
+		 * @description Create a completed time entry with duration or start an active timer (ended_at omitted). Starting a new timer automatically stops any existing active timer.
+		 */
+		post: operations["createTimeEntry"];
+		delete?: never;
+		options?: never;
+		head?: never;
+		patch?: never;
+		trace?: never;
+	};
+	"/workspaces/{workspace_id}/time-entries/{id}": {
+		parameters: {
+			query?: never;
+			header?: never;
+			path?: never;
+			cookie?: never;
+		};
+		/** Get a time entry by id */
+		get: operations["getTimeEntry"];
+		put?: never;
+		post?: never;
+		/** Delete a time entry */
+		delete: operations["deleteTimeEntry"];
+		options?: never;
+		head?: never;
+		/** Update a time entry */
+		patch: operations["updateTimeEntry"];
+		trace?: never;
+	};
+	"/workspaces/{workspace_id}/time-entries/{id}/stop": {
+		parameters: {
+			query?: never;
+			header?: never;
+			path?: never;
+			cookie?: never;
+		};
+		get?: never;
+		put?: never;
+		/** Stop an active time entry timer */
+		post: operations["stopTimeEntry"];
+		delete?: never;
+		options?: never;
+		head?: never;
+		patch?: never;
+		trace?: never;
+	};
 }
 export type webhooks = Record<string, never>;
 export interface components {
-    schemas: {
-        Workspace: {
-            /** Format: uuid */
-            id: string;
-            owner_id: string;
-            name: string;
-            /** @description baseline rate */
-            default_hourly_rate: number;
-            description?: string | null;
-            /** Format: date-time */
-            created_at: string;
-            /** Format: date-time */
-            updated_at: string;
-        };
-        CreateWorkspaceRequest: {
-            name: string;
-            default_hourly_rate: number;
-            description?: string | null;
-        };
-        UpdateWorkspaceRequest: {
-            name?: string;
-            default_hourly_rate?: number;
-            description?: string | null;
-        };
-        /** @description RFC 7807 Problem Details. The error shape for every non-2xx response in the API. `type` names the error class; `errors` (validation only) maps field names to human-readable messages. */
-        ProblemDetail: {
-            /**
-             * Format: uri
-             * @description A URI reference that identifies the problem type.
-             * @default about:blank
-             */
-            type: string;
-            /** @description A short, human-readable summary of the problem type. */
-            title: string;
-            /** @description The HTTP status code generated by the origin server for this occurrence of the problem. */
-            status: number;
-            /** @description A human-readable explanation specific to this occurrence of the problem. */
-            detail?: string;
-            /**
-             * Format: uri
-             * @description A URI reference that identifies the specific occurrence of the problem.
-             */
-            instance?: string;
-        } & {
-            [key: string]: unknown;
-        };
-        /** @enum {string} */
-        TicketStatus: "backlog" | "todo" | "progress" | "review" | "done";
-        /** @enum {string} */
-        TicketPriority: "Critical" | "High" | "Medium" | "Low";
-        /** @enum {string} */
-        TicketType: "feature" | "bug" | "task";
-        Ticket: {
-            /** Format: uuid */
-            id: string;
-            /** Format: uuid */
-            workspace_id: string;
-            identifier: string;
-            title: string;
-            description?: string;
-            type: components["schemas"]["TicketType"];
-            status: components["schemas"]["TicketStatus"];
-            priority: components["schemas"]["TicketPriority"];
-            points: number;
-            tags?: string[];
-            /** Format: date-time */
-            created_at: string;
-            /** Format: date-time */
-            updated_at: string;
-        };
-        CreateTicketRequest: {
-            title: string;
-            description?: string;
-            type: components["schemas"]["TicketType"];
-            status?: components["schemas"]["TicketStatus"];
-            priority: components["schemas"]["TicketPriority"];
-            points?: number;
-            tags?: string[];
-        };
-        UpdateTicketRequest: {
-            title?: string;
-            description?: string;
-            type?: components["schemas"]["TicketType"];
-            status?: components["schemas"]["TicketStatus"];
-            priority?: components["schemas"]["TicketPriority"];
-            points?: number;
-            tags?: string[];
-        };
-        TimeEntry: {
-            /** Format: uuid */
-            id: string;
-            /** Format: uuid */
-            workspace_id: string;
-            /** Format: uuid */
-            ticket_id?: string | null;
-            description?: string | null;
-            /** Format: date-time */
-            started_at: string;
-            /** Format: date-time */
-            ended_at?: string | null;
-            duration_seconds?: number | null;
-            billable: boolean;
-            hourly_rate: number;
-            /** Format: date-time */
-            created_at: string;
-            /** Format: date-time */
-            updated_at: string;
-        };
-        CreateTimeEntryRequest: {
-            /** Format: uuid */
-            ticket_id?: string | null;
-            description?: string | null;
-            /** Format: date-time */
-            started_at?: string;
-            /** Format: date-time */
-            ended_at?: string | null;
-            duration_seconds?: number | null;
-            /** @default true */
-            billable: boolean;
-            hourly_rate?: number | null;
-        };
-        UpdateTimeEntryRequest: {
-            /** Format: uuid */
-            ticket_id?: string | null;
-            description?: string | null;
-            /** Format: date-time */
-            started_at?: string;
-            /** Format: date-time */
-            ended_at?: string | null;
-            duration_seconds?: number | null;
-            billable?: boolean;
-            hourly_rate?: number;
-        };
-    };
-    responses: {
-        /** @description Malformed request or validation failure. Malformed JSON, unknown fields, invalid enum values, bad UUIDs, and rule violations (e.g. an empty PATCH) all land here. Field-level detail in `Problem.errors`. */
-        BadRequest: {
-            headers: {
-                [name: string]: unknown;
-            };
-            content: {
-                "application/problem+json": components["schemas"]["ProblemDetail"];
-            };
-        };
-        /** @description Conflict. The request could not be completed due to a conflict with the current state of the target resource. For example, creating a workspace with a name that already exists. */
-        Conflict: {
-            headers: {
-                [name: string]: unknown;
-            };
-            content: {
-                "application/problem+json": components["schemas"]["ProblemDetail"];
-            };
-        };
-        /** @description The referenced resource does not exist. */
-        NotFound: {
-            headers: {
-                [name: string]: unknown;
-            };
-            content: {
-                "application/problem+json": components["schemas"]["ProblemDetail"];
-            };
-        };
-        /** @description Unexpected server failure. The response deliberately carries no internal detail; correlate via the request id in server logs. */
-        InternalError: {
-            headers: {
-                [name: string]: unknown;
-            };
-            content: {
-                "application/problem+json": components["schemas"]["ProblemDetail"];
-            };
-        };
-        /** @description Unauthorized to access the referenced resource. */
-        Unauthorized: {
-            headers: {
-                [name: string]: unknown;
-            };
-            content: {
-                "application/problem+json": components["schemas"]["ProblemDetail"];
-            };
-        };
-    };
-    parameters: never;
-    requestBodies: never;
-    headers: never;
-    pathItems: never;
+	schemas: {
+		Workspace: {
+			/** Format: uuid */
+			id: string;
+			owner_id: string;
+			name: string;
+			/** @description baseline rate */
+			default_hourly_rate: number;
+			description?: string | null;
+			/** Format: date-time */
+			created_at: string;
+			/** Format: date-time */
+			updated_at: string;
+		};
+		CreateWorkspaceRequest: {
+			name: string;
+			default_hourly_rate: number;
+			description?: string | null;
+		};
+		UpdateWorkspaceRequest: {
+			name?: string;
+			default_hourly_rate?: number;
+			description?: string | null;
+		};
+		/** @description RFC 7807 Problem Details. The error shape for every non-2xx response in the API. `type` names the error class; `errors` (validation only) maps field names to human-readable messages. */
+		ProblemDetail: {
+			/**
+			 * Format: uri
+			 * @description A URI reference that identifies the problem type.
+			 * @default about:blank
+			 */
+			type: string;
+			/** @description A short, human-readable summary of the problem type. */
+			title: string;
+			/** @description The HTTP status code generated by the origin server for this occurrence of the problem. */
+			status: number;
+			/** @description A human-readable explanation specific to this occurrence of the problem. */
+			detail?: string;
+			/**
+			 * Format: uri
+			 * @description A URI reference that identifies the specific occurrence of the problem.
+			 */
+			instance?: string;
+		} & {
+			[key: string]: unknown;
+		};
+		/** @enum {string} */
+		TicketStatus: "backlog" | "todo" | "progress" | "review" | "done";
+		/** @enum {string} */
+		TicketPriority: "Critical" | "High" | "Medium" | "Low";
+		/** @enum {string} */
+		TicketType: "feature" | "bug" | "task";
+		Ticket: {
+			/** Format: uuid */
+			id: string;
+			/** Format: uuid */
+			workspace_id: string;
+			identifier: string;
+			title: string;
+			description?: string;
+			type: components["schemas"]["TicketType"];
+			status: components["schemas"]["TicketStatus"];
+			priority: components["schemas"]["TicketPriority"];
+			points: number;
+			tags?: string[];
+			/** Format: date-time */
+			created_at: string;
+			/** Format: date-time */
+			updated_at: string;
+		};
+		CreateTicketRequest: {
+			title: string;
+			description?: string;
+			type: components["schemas"]["TicketType"];
+			status?: components["schemas"]["TicketStatus"];
+			priority: components["schemas"]["TicketPriority"];
+			points?: number;
+			tags?: string[];
+		};
+		UpdateTicketRequest: {
+			title?: string;
+			description?: string;
+			type?: components["schemas"]["TicketType"];
+			status?: components["schemas"]["TicketStatus"];
+			priority?: components["schemas"]["TicketPriority"];
+			points?: number;
+			tags?: string[];
+		};
+		TimeEntry: {
+			/** Format: uuid */
+			id: string;
+			/** Format: uuid */
+			workspace_id: string;
+			/** Format: uuid */
+			ticket_id?: string | null;
+			description?: string | null;
+			/** Format: date-time */
+			started_at: string;
+			/** Format: date-time */
+			ended_at?: string | null;
+			duration_seconds?: number | null;
+			billable: boolean;
+			hourly_rate: number;
+			/** Format: date-time */
+			created_at: string;
+			/** Format: date-time */
+			updated_at: string;
+		};
+		CreateTimeEntryRequest: {
+			/** Format: uuid */
+			ticket_id?: string | null;
+			description?: string | null;
+			/** Format: date-time */
+			started_at?: string;
+			/** Format: date-time */
+			ended_at?: string | null;
+			duration_seconds?: number | null;
+			/** @default true */
+			billable: boolean;
+			hourly_rate?: number | null;
+		};
+		UpdateTimeEntryRequest: {
+			/** Format: uuid */
+			ticket_id?: string | null;
+			description?: string | null;
+			/** Format: date-time */
+			started_at?: string;
+			/** Format: date-time */
+			ended_at?: string | null;
+			duration_seconds?: number | null;
+			billable?: boolean;
+			hourly_rate?: number;
+		};
+	};
+	responses: {
+		/** @description Malformed request or validation failure. Malformed JSON, unknown fields, invalid enum values, bad UUIDs, and rule violations (e.g. an empty PATCH) all land here. Field-level detail in `Problem.errors`. */
+		BadRequest: {
+			headers: {
+				[name: string]: unknown;
+			};
+			content: {
+				"application/problem+json": components["schemas"]["ProblemDetail"];
+			};
+		};
+		/** @description Conflict. The request could not be completed due to a conflict with the current state of the target resource. For example, creating a workspace with a name that already exists. */
+		Conflict: {
+			headers: {
+				[name: string]: unknown;
+			};
+			content: {
+				"application/problem+json": components["schemas"]["ProblemDetail"];
+			};
+		};
+		/** @description The referenced resource does not exist. */
+		NotFound: {
+			headers: {
+				[name: string]: unknown;
+			};
+			content: {
+				"application/problem+json": components["schemas"]["ProblemDetail"];
+			};
+		};
+		/** @description Unexpected server failure. The response deliberately carries no internal detail; correlate via the request id in server logs. */
+		InternalError: {
+			headers: {
+				[name: string]: unknown;
+			};
+			content: {
+				"application/problem+json": components["schemas"]["ProblemDetail"];
+			};
+		};
+		/** @description Unauthorized to access the referenced resource. */
+		Unauthorized: {
+			headers: {
+				[name: string]: unknown;
+			};
+			content: {
+				"application/problem+json": components["schemas"]["ProblemDetail"];
+			};
+		};
+	};
+	parameters: never;
+	requestBodies: never;
+	headers: never;
+	pathItems: never;
 }
 export type $defs = Record<string, never>;
 export interface operations {
-    listWorkspaces: {
-        parameters: {
-            query?: never;
-            header?: never;
-            path?: never;
-            cookie?: never;
-        };
-        requestBody?: never;
-        responses: {
-            /** @description A list of workspaces owned by the authenticated user. */
-            200: {
-                headers: {
-                    [name: string]: unknown;
-                };
-                content: {
-                    "application/json": components["schemas"]["Workspace"][];
-                };
-            };
-            401: components["responses"]["Unauthorized"];
-            500: components["responses"]["InternalError"];
-        };
-    };
-    createWorkspace: {
-        parameters: {
-            query?: never;
-            header?: never;
-            path?: never;
-            cookie?: never;
-        };
-        requestBody: {
-            content: {
-                "application/json": components["schemas"]["CreateWorkspaceRequest"];
-            };
-        };
-        responses: {
-            /** @description Created. The response is the complete workspace. Including the server-assiged identifier, and expanded summaries. */
-            201: {
-                headers: {
-                    [name: string]: unknown;
-                };
-                content: {
-                    "application/json": components["schemas"]["Workspace"];
-                };
-            };
-            400: components["responses"]["BadRequest"];
-            401: components["responses"]["Unauthorized"];
-            409: components["responses"]["Conflict"];
-            500: components["responses"]["InternalError"];
-        };
-    };
-    getWorkspace: {
-        parameters: {
-            query?: never;
-            header?: never;
-            path: {
-                id: string;
-            };
-            cookie?: never;
-        };
-        requestBody?: never;
-        responses: {
-            /** @description The workspace details */
-            200: {
-                headers: {
-                    [name: string]: unknown;
-                };
-                content: {
-                    "application/json": components["schemas"]["Workspace"];
-                };
-            };
-            401: components["responses"]["Unauthorized"];
-            404: components["responses"]["NotFound"];
-            500: components["responses"]["InternalError"];
-        };
-    };
-    deleteWorkspace: {
-        parameters: {
-            query?: never;
-            header?: never;
-            path: {
-                id: string;
-            };
-            cookie?: never;
-        };
-        requestBody?: never;
-        responses: {
-            /** @description The workspace was successfully deleted. */
-            204: {
-                headers: {
-                    [name: string]: unknown;
-                };
-                content?: never;
-            };
-            401: components["responses"]["Unauthorized"];
-            404: components["responses"]["NotFound"];
-            500: components["responses"]["InternalError"];
-        };
-    };
-    updateWorkspace: {
-        parameters: {
-            query?: never;
-            header?: never;
-            path: {
-                id: string;
-            };
-            cookie?: never;
-        };
-        requestBody: {
-            content: {
-                "application/json": components["schemas"]["UpdateWorkspaceRequest"];
-            };
-        };
-        responses: {
-            /** @description Updated workspace */
-            200: {
-                headers: {
-                    [name: string]: unknown;
-                };
-                content: {
-                    "application/json": components["schemas"]["Workspace"];
-                };
-            };
-            400: components["responses"]["BadRequest"];
-            401: components["responses"]["Unauthorized"];
-            404: components["responses"]["NotFound"];
-            409: components["responses"]["Conflict"];
-            500: components["responses"]["InternalError"];
-        };
-    };
-    listTickets: {
-        parameters: {
-            query?: never;
-            header?: never;
-            path: {
-                workspace_id: string;
-            };
-            cookie?: never;
-        };
-        requestBody?: never;
-        responses: {
-            /** @description A list of tickets */
-            200: {
-                headers: {
-                    [name: string]: unknown;
-                };
-                content: {
-                    "application/json": components["schemas"]["Ticket"][];
-                };
-            };
-            401: components["responses"]["Unauthorized"];
-            404: components["responses"]["NotFound"];
-            500: components["responses"]["InternalError"];
-        };
-    };
-    createTicket: {
-        parameters: {
-            query?: never;
-            header?: never;
-            path: {
-                workspace_id: string;
-            };
-            cookie?: never;
-        };
-        requestBody: {
-            content: {
-                "application/json": components["schemas"]["CreateTicketRequest"];
-            };
-        };
-        responses: {
-            /** @description Created ticket */
-            201: {
-                headers: {
-                    [name: string]: unknown;
-                };
-                content: {
-                    "application/json": components["schemas"]["Ticket"];
-                };
-            };
-            400: components["responses"]["BadRequest"];
-            401: components["responses"]["Unauthorized"];
-            500: components["responses"]["InternalError"];
-        };
-    };
-    getTicket: {
-        parameters: {
-            query?: never;
-            header?: never;
-            path: {
-                workspace_id: string;
-                identifier: string;
-            };
-            cookie?: never;
-        };
-        requestBody?: never;
-        responses: {
-            /** @description The ticket details */
-            200: {
-                headers: {
-                    [name: string]: unknown;
-                };
-                content: {
-                    "application/json": components["schemas"]["Ticket"];
-                };
-            };
-            401: components["responses"]["Unauthorized"];
-            404: components["responses"]["NotFound"];
-            500: components["responses"]["InternalError"];
-        };
-    };
-    deleteTicket: {
-        parameters: {
-            query?: never;
-            header?: never;
-            path: {
-                workspace_id: string;
-                identifier: string;
-            };
-            cookie?: never;
-        };
-        requestBody?: never;
-        responses: {
-            /** @description Ticket successfully deleted */
-            204: {
-                headers: {
-                    [name: string]: unknown;
-                };
-                content?: never;
-            };
-            401: components["responses"]["Unauthorized"];
-            404: components["responses"]["NotFound"];
-            500: components["responses"]["InternalError"];
-        };
-    };
-    updateTicket: {
-        parameters: {
-            query?: never;
-            header?: never;
-            path: {
-                workspace_id: string;
-                identifier: string;
-            };
-            cookie?: never;
-        };
-        requestBody: {
-            content: {
-                "application/json": components["schemas"]["UpdateTicketRequest"];
-            };
-        };
-        responses: {
-            /** @description Updated ticket */
-            200: {
-                headers: {
-                    [name: string]: unknown;
-                };
-                content: {
-                    "application/json": components["schemas"]["Ticket"];
-                };
-            };
-            400: components["responses"]["BadRequest"];
-            401: components["responses"]["Unauthorized"];
-            404: components["responses"]["NotFound"];
-            500: components["responses"]["InternalError"];
-        };
-    };
-    listTimeEntries: {
-        parameters: {
-            query?: {
-                ticket_id?: string;
-            };
-            header?: never;
-            path: {
-                workspace_id: string;
-            };
-            cookie?: never;
-        };
-        requestBody?: never;
-        responses: {
-            /** @description A list of time entries */
-            200: {
-                headers: {
-                    [name: string]: unknown;
-                };
-                content: {
-                    "application/json": components["schemas"]["TimeEntry"][];
-                };
-            };
-            401: components["responses"]["Unauthorized"];
-            404: components["responses"]["NotFound"];
-            500: components["responses"]["InternalError"];
-        };
-    };
-    createTimeEntry: {
-        parameters: {
-            query?: never;
-            header?: never;
-            path: {
-                workspace_id: string;
-            };
-            cookie?: never;
-        };
-        requestBody: {
-            content: {
-                "application/json": components["schemas"]["CreateTimeEntryRequest"];
-            };
-        };
-        responses: {
-            /** @description Created time entry */
-            201: {
-                headers: {
-                    [name: string]: unknown;
-                };
-                content: {
-                    "application/json": components["schemas"]["TimeEntry"];
-                };
-            };
-            400: components["responses"]["BadRequest"];
-            401: components["responses"]["Unauthorized"];
-            404: components["responses"]["NotFound"];
-            500: components["responses"]["InternalError"];
-        };
-    };
-    getTimeEntry: {
-        parameters: {
-            query?: never;
-            header?: never;
-            path: {
-                workspace_id: string;
-                id: string;
-            };
-            cookie?: never;
-        };
-        requestBody?: never;
-        responses: {
-            /** @description The time entry details */
-            200: {
-                headers: {
-                    [name: string]: unknown;
-                };
-                content: {
-                    "application/json": components["schemas"]["TimeEntry"];
-                };
-            };
-            401: components["responses"]["Unauthorized"];
-            404: components["responses"]["NotFound"];
-            500: components["responses"]["InternalError"];
-        };
-    };
-    deleteTimeEntry: {
-        parameters: {
-            query?: never;
-            header?: never;
-            path: {
-                workspace_id: string;
-                id: string;
-            };
-            cookie?: never;
-        };
-        requestBody?: never;
-        responses: {
-            /** @description Time entry successfully deleted */
-            204: {
-                headers: {
-                    [name: string]: unknown;
-                };
-                content?: never;
-            };
-            401: components["responses"]["Unauthorized"];
-            404: components["responses"]["NotFound"];
-            500: components["responses"]["InternalError"];
-        };
-    };
-    updateTimeEntry: {
-        parameters: {
-            query?: never;
-            header?: never;
-            path: {
-                workspace_id: string;
-                id: string;
-            };
-            cookie?: never;
-        };
-        requestBody: {
-            content: {
-                "application/json": components["schemas"]["UpdateTimeEntryRequest"];
-            };
-        };
-        responses: {
-            /** @description Updated time entry */
-            200: {
-                headers: {
-                    [name: string]: unknown;
-                };
-                content: {
-                    "application/json": components["schemas"]["TimeEntry"];
-                };
-            };
-            400: components["responses"]["BadRequest"];
-            401: components["responses"]["Unauthorized"];
-            404: components["responses"]["NotFound"];
-            500: components["responses"]["InternalError"];
-        };
-    };
-    stopTimeEntry: {
-        parameters: {
-            query?: never;
-            header?: never;
-            path: {
-                workspace_id: string;
-                id: string;
-            };
-            cookie?: never;
-        };
-        requestBody?: never;
-        responses: {
-            /** @description Stopped time entry with calculated duration */
-            200: {
-                headers: {
-                    [name: string]: unknown;
-                };
-                content: {
-                    "application/json": components["schemas"]["TimeEntry"];
-                };
-            };
-            400: components["responses"]["BadRequest"];
-            401: components["responses"]["Unauthorized"];
-            404: components["responses"]["NotFound"];
-            500: components["responses"]["InternalError"];
-        };
-    };
+	listWorkspaces: {
+		parameters: {
+			query?: never;
+			header?: never;
+			path?: never;
+			cookie?: never;
+		};
+		requestBody?: never;
+		responses: {
+			/** @description A list of workspaces owned by the authenticated user. */
+			200: {
+				headers: {
+					[name: string]: unknown;
+				};
+				content: {
+					"application/json": components["schemas"]["Workspace"][];
+				};
+			};
+			401: components["responses"]["Unauthorized"];
+			500: components["responses"]["InternalError"];
+		};
+	};
+	createWorkspace: {
+		parameters: {
+			query?: never;
+			header?: never;
+			path?: never;
+			cookie?: never;
+		};
+		requestBody: {
+			content: {
+				"application/json": components["schemas"]["CreateWorkspaceRequest"];
+			};
+		};
+		responses: {
+			/** @description Created. The response is the complete workspace. Including the server-assiged identifier, and expanded summaries. */
+			201: {
+				headers: {
+					[name: string]: unknown;
+				};
+				content: {
+					"application/json": components["schemas"]["Workspace"];
+				};
+			};
+			400: components["responses"]["BadRequest"];
+			401: components["responses"]["Unauthorized"];
+			409: components["responses"]["Conflict"];
+			500: components["responses"]["InternalError"];
+		};
+	};
+	getWorkspace: {
+		parameters: {
+			query?: never;
+			header?: never;
+			path: {
+				id: string;
+			};
+			cookie?: never;
+		};
+		requestBody?: never;
+		responses: {
+			/** @description The workspace details */
+			200: {
+				headers: {
+					[name: string]: unknown;
+				};
+				content: {
+					"application/json": components["schemas"]["Workspace"];
+				};
+			};
+			401: components["responses"]["Unauthorized"];
+			404: components["responses"]["NotFound"];
+			500: components["responses"]["InternalError"];
+		};
+	};
+	deleteWorkspace: {
+		parameters: {
+			query?: never;
+			header?: never;
+			path: {
+				id: string;
+			};
+			cookie?: never;
+		};
+		requestBody?: never;
+		responses: {
+			/** @description The workspace was successfully deleted. */
+			204: {
+				headers: {
+					[name: string]: unknown;
+				};
+				content?: never;
+			};
+			401: components["responses"]["Unauthorized"];
+			404: components["responses"]["NotFound"];
+			500: components["responses"]["InternalError"];
+		};
+	};
+	updateWorkspace: {
+		parameters: {
+			query?: never;
+			header?: never;
+			path: {
+				id: string;
+			};
+			cookie?: never;
+		};
+		requestBody: {
+			content: {
+				"application/json": components["schemas"]["UpdateWorkspaceRequest"];
+			};
+		};
+		responses: {
+			/** @description Updated workspace */
+			200: {
+				headers: {
+					[name: string]: unknown;
+				};
+				content: {
+					"application/json": components["schemas"]["Workspace"];
+				};
+			};
+			400: components["responses"]["BadRequest"];
+			401: components["responses"]["Unauthorized"];
+			404: components["responses"]["NotFound"];
+			409: components["responses"]["Conflict"];
+			500: components["responses"]["InternalError"];
+		};
+	};
+	listTickets: {
+		parameters: {
+			query?: never;
+			header?: never;
+			path: {
+				workspace_id: string;
+			};
+			cookie?: never;
+		};
+		requestBody?: never;
+		responses: {
+			/** @description A list of tickets */
+			200: {
+				headers: {
+					[name: string]: unknown;
+				};
+				content: {
+					"application/json": components["schemas"]["Ticket"][];
+				};
+			};
+			401: components["responses"]["Unauthorized"];
+			404: components["responses"]["NotFound"];
+			500: components["responses"]["InternalError"];
+		};
+	};
+	createTicket: {
+		parameters: {
+			query?: never;
+			header?: never;
+			path: {
+				workspace_id: string;
+			};
+			cookie?: never;
+		};
+		requestBody: {
+			content: {
+				"application/json": components["schemas"]["CreateTicketRequest"];
+			};
+		};
+		responses: {
+			/** @description Created ticket */
+			201: {
+				headers: {
+					[name: string]: unknown;
+				};
+				content: {
+					"application/json": components["schemas"]["Ticket"];
+				};
+			};
+			400: components["responses"]["BadRequest"];
+			401: components["responses"]["Unauthorized"];
+			500: components["responses"]["InternalError"];
+		};
+	};
+	getTicket: {
+		parameters: {
+			query?: never;
+			header?: never;
+			path: {
+				workspace_id: string;
+				identifier: string;
+			};
+			cookie?: never;
+		};
+		requestBody?: never;
+		responses: {
+			/** @description The ticket details */
+			200: {
+				headers: {
+					[name: string]: unknown;
+				};
+				content: {
+					"application/json": components["schemas"]["Ticket"];
+				};
+			};
+			401: components["responses"]["Unauthorized"];
+			404: components["responses"]["NotFound"];
+			500: components["responses"]["InternalError"];
+		};
+	};
+	deleteTicket: {
+		parameters: {
+			query?: never;
+			header?: never;
+			path: {
+				workspace_id: string;
+				identifier: string;
+			};
+			cookie?: never;
+		};
+		requestBody?: never;
+		responses: {
+			/** @description Ticket successfully deleted */
+			204: {
+				headers: {
+					[name: string]: unknown;
+				};
+				content?: never;
+			};
+			401: components["responses"]["Unauthorized"];
+			404: components["responses"]["NotFound"];
+			500: components["responses"]["InternalError"];
+		};
+	};
+	updateTicket: {
+		parameters: {
+			query?: never;
+			header?: never;
+			path: {
+				workspace_id: string;
+				identifier: string;
+			};
+			cookie?: never;
+		};
+		requestBody: {
+			content: {
+				"application/json": components["schemas"]["UpdateTicketRequest"];
+			};
+		};
+		responses: {
+			/** @description Updated ticket */
+			200: {
+				headers: {
+					[name: string]: unknown;
+				};
+				content: {
+					"application/json": components["schemas"]["Ticket"];
+				};
+			};
+			400: components["responses"]["BadRequest"];
+			401: components["responses"]["Unauthorized"];
+			404: components["responses"]["NotFound"];
+			500: components["responses"]["InternalError"];
+		};
+	};
+	listTimeEntries: {
+		parameters: {
+			query?: {
+				ticket_id?: string;
+			};
+			header?: never;
+			path: {
+				workspace_id: string;
+			};
+			cookie?: never;
+		};
+		requestBody?: never;
+		responses: {
+			/** @description A list of time entries */
+			200: {
+				headers: {
+					[name: string]: unknown;
+				};
+				content: {
+					"application/json": components["schemas"]["TimeEntry"][];
+				};
+			};
+			401: components["responses"]["Unauthorized"];
+			404: components["responses"]["NotFound"];
+			500: components["responses"]["InternalError"];
+		};
+	};
+	createTimeEntry: {
+		parameters: {
+			query?: never;
+			header?: never;
+			path: {
+				workspace_id: string;
+			};
+			cookie?: never;
+		};
+		requestBody: {
+			content: {
+				"application/json": components["schemas"]["CreateTimeEntryRequest"];
+			};
+		};
+		responses: {
+			/** @description Created time entry */
+			201: {
+				headers: {
+					[name: string]: unknown;
+				};
+				content: {
+					"application/json": components["schemas"]["TimeEntry"];
+				};
+			};
+			400: components["responses"]["BadRequest"];
+			401: components["responses"]["Unauthorized"];
+			404: components["responses"]["NotFound"];
+			500: components["responses"]["InternalError"];
+		};
+	};
+	getTimeEntry: {
+		parameters: {
+			query?: never;
+			header?: never;
+			path: {
+				workspace_id: string;
+				id: string;
+			};
+			cookie?: never;
+		};
+		requestBody?: never;
+		responses: {
+			/** @description The time entry details */
+			200: {
+				headers: {
+					[name: string]: unknown;
+				};
+				content: {
+					"application/json": components["schemas"]["TimeEntry"];
+				};
+			};
+			401: components["responses"]["Unauthorized"];
+			404: components["responses"]["NotFound"];
+			500: components["responses"]["InternalError"];
+		};
+	};
+	deleteTimeEntry: {
+		parameters: {
+			query?: never;
+			header?: never;
+			path: {
+				workspace_id: string;
+				id: string;
+			};
+			cookie?: never;
+		};
+		requestBody?: never;
+		responses: {
+			/** @description Time entry successfully deleted */
+			204: {
+				headers: {
+					[name: string]: unknown;
+				};
+				content?: never;
+			};
+			401: components["responses"]["Unauthorized"];
+			404: components["responses"]["NotFound"];
+			500: components["responses"]["InternalError"];
+		};
+	};
+	updateTimeEntry: {
+		parameters: {
+			query?: never;
+			header?: never;
+			path: {
+				workspace_id: string;
+				id: string;
+			};
+			cookie?: never;
+		};
+		requestBody: {
+			content: {
+				"application/json": components["schemas"]["UpdateTimeEntryRequest"];
+			};
+		};
+		responses: {
+			/** @description Updated time entry */
+			200: {
+				headers: {
+					[name: string]: unknown;
+				};
+				content: {
+					"application/json": components["schemas"]["TimeEntry"];
+				};
+			};
+			400: components["responses"]["BadRequest"];
+			401: components["responses"]["Unauthorized"];
+			404: components["responses"]["NotFound"];
+			500: components["responses"]["InternalError"];
+		};
+	};
+	stopTimeEntry: {
+		parameters: {
+			query?: never;
+			header?: never;
+			path: {
+				workspace_id: string;
+				id: string;
+			};
+			cookie?: never;
+		};
+		requestBody?: never;
+		responses: {
+			/** @description Stopped time entry with calculated duration */
+			200: {
+				headers: {
+					[name: string]: unknown;
+				};
+				content: {
+					"application/json": components["schemas"]["TimeEntry"];
+				};
+			};
+			400: components["responses"]["BadRequest"];
+			401: components["responses"]["Unauthorized"];
+			404: components["responses"]["NotFound"];
+			500: components["responses"]["InternalError"];
+		};
+	};
 }
