@@ -11,7 +11,8 @@ import {
 } from "lucide-react";
 import { Loader } from "#/components/layout/loader";
 import { authClient } from "#/lib/auth-client";
-import { authKeys, authQueries } from "#/lib/queries/auth";
+import { clearCachedAuthToken } from "#/lib/goapi-client";
+import { authQueries } from "#/lib/queries/auth";
 
 export const Route = createFileRoute("/_authenticated/user")({
 	component: UserDetailsPage,
@@ -29,7 +30,8 @@ function UserDetailsPage() {
 			if (error) throw new Error(error.message ?? "Sign out failed");
 		},
 		onSuccess: () => {
-			queryClient.removeQueries({ queryKey: authKeys.all });
+			clearCachedAuthToken();
+			queryClient.clear();
 			navigate({ to: "/authenticate" });
 		},
 	});

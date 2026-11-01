@@ -19,7 +19,7 @@ const PASSWORD_CHAR =
 		? "\u25CF"
 		: "\u2022";
 
-export type SmoothInputType = "text" | "password" | "email";
+export type SmoothInputType = "text" | "password" | "email" | "number";
 
 export type SmoothInputProps = Omit<
 	ComponentPropsWithoutRef<"input">,

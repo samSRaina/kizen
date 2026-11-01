@@ -5,6 +5,7 @@ import { useState } from "react";
 import { Loader } from "#/components/layout/loader";
 import { WorkspaceCreateForm } from "#/components/workspaces/workspace-create-form";
 import { WorkspaceList } from "#/components/workspaces/workspace-list";
+import { authQueries } from "#/lib/queries/auth";
 import { workspaceQueries } from "#/lib/queries/workspaces";
 
 export const Route = createFileRoute("/_authenticated/workspaces/")({
@@ -12,12 +13,15 @@ export const Route = createFileRoute("/_authenticated/workspaces/")({
 });
 
 function WorkspacesListPage() {
+	const { data: session } = useQuery(authQueries.session());
+	const userId = session?.user?.id;
+
 	const {
 		data: workspaces,
 		isPending,
 		isError,
 		error,
-	} = useQuery(workspaceQueries.list());
+	} = useQuery(workspaceQueries.list(userId));
 
 	const [isCreating, setIsCreating] = useState(false);
 

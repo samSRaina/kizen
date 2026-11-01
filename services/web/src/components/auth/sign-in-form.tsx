@@ -6,6 +6,7 @@ import { useState } from "react";
 import { AuthErrorAlert } from "#/components/auth/auth-error-alert";
 import { FormInput } from "#/components/ui/form-input";
 import { authClient } from "#/lib/auth-client";
+import { clearCachedAuthToken } from "#/lib/goapi-client";
 import { authKeys } from "#/lib/queries/auth";
 
 export interface SignInFormProps {
@@ -57,6 +58,10 @@ export function SignInForm({ onSuccess }: SignInFormProps) {
 				setIsLoading(false);
 				return;
 			}
+
+			// Clean previous session tokens and cached query data
+			clearCachedAuthToken();
+			queryClient.clear();
 
 			if (data?.user) {
 				queryClient.setQueryData(authKeys.session(), {

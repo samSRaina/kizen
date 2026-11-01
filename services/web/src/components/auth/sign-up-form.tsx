@@ -6,6 +6,7 @@ import { useState } from "react";
 import { AuthErrorAlert } from "#/components/auth/auth-error-alert";
 import { FormInput } from "#/components/ui/form-input";
 import { authClient } from "#/lib/auth-client";
+import { clearCachedAuthToken } from "#/lib/goapi-client";
 import { authKeys } from "#/lib/queries/auth";
 
 export interface SignUpFormProps {
@@ -30,6 +31,7 @@ export function SignUpForm({ onSuccess }: SignUpFormProps) {
 
 	const handleSubmit = async (e: React.FormEvent) => {
 		e.preventDefault();
+
 		if (!email || !secret) {
 			setErrorMessage("Email and password are required.");
 			return;
@@ -40,8 +42,13 @@ export function SignUpForm({ onSuccess }: SignUpFormProps) {
 			return;
 		}
 
+		if (secret.length < 8) {
+			setErrorMessage("Password must be at least 8 characters.");
+			return;
+		}
+
 		if (!acceptTerms) {
-			setErrorMessage("You must accept the terms & conditions.");
+			setErrorMessage("You must accept the terms to proceed.");
 			return;
 		}
 
@@ -67,6 +74,10 @@ export function SignUpForm({ onSuccess }: SignUpFormProps) {
 				setIsLoading(false);
 				return;
 			}
+
+			// Clean previous session tokens and cached query data
+			clearCachedAuthToken();
+			queryClient.clear();
 
 			if (data?.user) {
 				queryClient.setQueryData(authKeys.session(), {

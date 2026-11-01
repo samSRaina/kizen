@@ -5,7 +5,8 @@ import { type ReactNode, useEffect, useRef, useState } from "react";
 import { Logo } from "#/components/ui/logo";
 import { ThemeToggleButton } from "#/components/ui/theme-toggle";
 import { authClient } from "#/lib/auth-client";
-import { authKeys, authQueries } from "#/lib/queries/auth";
+import { clearCachedAuthToken } from "#/lib/goapi-client";
+import { authQueries } from "#/lib/queries/auth";
 import { cn } from "#/lib/utils";
 
 export function AppShell({ children }: { children: ReactNode }) {
@@ -22,7 +23,8 @@ export function AppShell({ children }: { children: ReactNode }) {
 			await authClient.signOut();
 		},
 		onSuccess: () => {
-			queryClient.removeQueries({ queryKey: authKeys.all });
+			clearCachedAuthToken();
+			queryClient.clear();
 			navigate({ to: "/authenticate" });
 		},
 	});
@@ -143,16 +145,6 @@ export function AppShell({ children }: { children: ReactNode }) {
 			<main className="flex-1 w-full max-w-6xl mx-auto px-4 sm:px-6 lg:px-8 py-8 sm:py-12">
 				{children}
 			</main>
-
-			{/* Minimalist Brutalist Footer */}
-			{/*<footer className="w-full border-t border-border-default bg-surface-base px-4 sm:px-8 py-3.5 text-xs font-mono text-text-muted flex items-center justify-between">
-				<div className="flex items-center space-x-2">
-					<span className="font-bold text-text-primary">KIZEN</span>
-					<span className="text-border-strong">/</span>
-					<span>SYSTEMS</span>
-				</div>
-				<span>PRODUCTION</span>
-			</footer>*/}
 		</div>
 	);
 }

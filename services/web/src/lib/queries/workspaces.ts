@@ -8,15 +8,18 @@ import type {
 
 export const workspaceKeys = {
 	all: ["workspaces"] as const,
-	lists: () => [...workspaceKeys.all, "list"] as const,
+	lists: (userId?: string) =>
+		userId
+			? ([...workspaceKeys.all, "list", userId] as const)
+			: ([...workspaceKeys.all, "list"] as const),
 	details: () => [...workspaceKeys.all, "detail"] as const,
 	detail: (id: string) => [...workspaceKeys.details(), id] as const,
 };
 
 export const workspaceQueries = {
-	list: () =>
+	list: (userId?: string) =>
 		queryOptions({
-			queryKey: workspaceKeys.lists(),
+			queryKey: workspaceKeys.lists(userId),
 			queryFn: async (): Promise<Workspace[]> => {
 				const { data, error } = await api.GET("/workspaces");
 				if (error) {

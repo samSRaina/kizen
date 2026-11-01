@@ -3,7 +3,21 @@ import type { paths } from "#/lib/api-types.gen";
 
 const API_BASE_URL = import.meta.env.VITE_API_BASE_URL;
 
-let cachedJwt: { token: string; expiresAt: number } | null = null;
+let cachedJwt: { token: string; userId: string; expiresAt: number } | null =
+	null;
+
+function parseJwtSub(token: string): string | null {
+	try {
+		const parts = token.split(".");
+		if (parts.length !== 3) return null;
+		const payload = JSON.parse(
+			atob(parts[1].replace(/-/g, "+").replace(/_/g, "/")),
+		);
+		return typeof payload?.sub === "string" ? payload.sub : null;
+	} catch {
+		return null;
+	}
+}
 
 export async function getAuthToken(): Promise<string | null> {
 	if (typeof window === "undefined") {
@@ -19,18 +33,23 @@ export async function getAuthToken(): Promise<string | null> {
 			method: "GET",
 			credentials: "include",
 		});
-		if (!res.ok) return null;
+		if (!res.ok) {
+			cachedJwt = null;
+			return null;
+		}
 		const data = (await res.json()) as { token?: string };
 		if (data?.token) {
+			const sub = parseJwtSub(data.token);
 			// Cache token for 4 minutes
 			cachedJwt = {
 				token: data.token,
+				userId: sub ?? "",
 				expiresAt: Date.now() + 4 * 60 * 1000,
 			};
 			return data.token;
 		}
 	} catch {
-		// Ignore failure
+		cachedJwt = null;
 	}
 
 	return null;
