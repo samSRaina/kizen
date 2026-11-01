@@ -1,8 +1,7 @@
 import createClient, { type Middleware } from "openapi-fetch";
 import type { paths } from "#/lib/api-types.gen";
 
-const API_BASE_URL =
-	import.meta.env.VITE_API_BASE_URL || "http://localhost:8080/api/v1";
+const API_BASE_URL = import.meta.env.VITE_API_BASE_URL;
 
 let cachedJwt: { token: string; expiresAt: number } | null = null;
 

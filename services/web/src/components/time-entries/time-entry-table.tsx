@@ -1,5 +1,6 @@
 import { useMutation, useQueryClient } from "@tanstack/react-query";
 import { Trash2 } from "lucide-react";
+import { useConfirm } from "#/components/ui/confirm-dialog";
 import { timeEntryKeys, timeEntryMutations } from "#/lib/queries/time-entries";
 import type { Ticket, TimeEntry } from "#/lib/types";
 
@@ -13,6 +14,7 @@ export function TimeEntryTable({
 	entries: TimeEntry[];
 }) {
 	const queryClient = useQueryClient();
+	const confirm = useConfirm();
 
 	const deleteEntryMutation = useMutation({
 		mutationFn: (id: string) => timeEntryMutations.delete(workspaceId, id),
@@ -59,39 +61,27 @@ export function TimeEntryTable({
 								key={entry.id}
 								className="hover:bg-surface-hover/60 transition-colors group"
 							>
-								<td className="py-3 px-4 font-sans font-medium text-text-primary">
-									{entry.description || "—"}
+								<td className="py-3 px-4 text-text-primary max-w-xs truncate">
+									{entry.description || "No description"}
 								</td>
 								<td className="py-3 px-4 text-text-secondary whitespace-nowrap">
 									{linkedTicket ? (
-										<span className="font-mono">
-											<span className="text-text-primary font-bold">
-												[{linkedTicket.identifier}]
-											</span>{" "}
-											{linkedTicket.title}
+										<span className="inline-block px-1.5 py-0.5 bg-surface-sunken border border-border-subtle text-[11px]">
+											{linkedTicket.identifier}
 										</span>
 									) : (
 										"—"
 									)}
 								</td>
-								<td className="py-3 px-4 text-text-muted whitespace-nowrap">
+								<td className="py-3 px-4 text-text-muted whitespace-nowrap text-[11px]">
 									{new Date(entry.started_at).toLocaleDateString()}
 								</td>
-								<td className="py-3 px-4 whitespace-nowrap">
-									{!entry.ended_at ? (
-										<span className="inline-flex items-center space-x-1.5 text-emerald-400 font-bold">
-											<span className="w-1.5 h-1.5 rounded-full bg-emerald-400 animate-pulse-subtle" />
-											<span>Running…</span>
-										</span>
-									) : (
-										<span>
-											{durationHours}h ({durationMins}m)
-										</span>
-									)}
+								<td className="py-3 px-4 text-text-primary whitespace-nowrap font-bold">
+									{durationHours ? `${durationHours}h` : "In Progress"}
 								</td>
 								<td className="py-3 px-4 whitespace-nowrap">
-									{entry.billable ? (
-										<span className="inline-block px-2 py-0.5 text-[10px] font-bold bg-surface-sunken border border-border-default text-text-primary">
+									{entry.hourly_rate ? (
+										<span className="text-text-secondary text-[11px]">
 											Rate: {entry.hourly_rate}
 										</span>
 									) : (
@@ -103,12 +93,15 @@ export function TimeEntryTable({
 								<td className="py-3 px-4 text-right whitespace-nowrap">
 									<button
 										type="button"
-										onClick={() => {
-											if (
-												window.confirm(
-													"Delete this time entry log permanently?",
-												)
-											) {
+										onClick={async () => {
+											const ok = await confirm({
+												title: "DELETE TIME ENTRY",
+												message:
+													"Delete this time entry permanently? This action cannot be undone.",
+												confirmText: "DELETE",
+												destructive: true,
+											});
+											if (ok) {
 												deleteEntryMutation.mutate(entry.id);
 											}
 										}}

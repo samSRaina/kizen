@@ -46,7 +46,7 @@ function UserDetailsPage() {
 	if (!data?.user) {
 		return (
 			<div className="p-8 border border-border-default bg-surface-base text-center font-mono text-xs text-text-muted">
-				NO ACTIVE OPERATOR SESSION
+				No active session
 			</div>
 		);
 	}
@@ -58,11 +58,10 @@ function UserDetailsPage() {
 			{/* Page Header */}
 			<div className="pb-6 border-b border-border-default">
 				<h1 className="text-2xl sm:text-3xl font-black font-sans uppercase tracking-tight text-text-primary">
-					Operator Profile
+					Account
 				</h1>
 				<p className="mt-1 text-sm text-text-secondary font-sans">
-					Telemetry details and authentication credentials for this operator
-					node.
+					Your account profile and active session details.
 				</p>
 			</div>
 
@@ -77,7 +76,7 @@ function UserDetailsPage() {
 							{user.name}
 						</h2>
 						<span className="font-mono text-xs text-text-muted">
-							@{(user as { username?: string }).username ?? "operator"}
+							@{(user as { username?: string }).username ?? "user"}
 						</span>
 					</div>
 				</div>
@@ -96,7 +95,7 @@ function UserDetailsPage() {
 					<div className="p-3 bg-surface-sunken border border-border-default space-y-1">
 						<span className="text-text-muted text-[11px] uppercase flex items-center space-x-1.5">
 							<Hash className="w-3.5 h-3.5" />
-							<span>Operator ID</span>
+							<span>User ID</span>
 						</span>
 						<p className="font-semibold text-text-primary truncate">
 							{user.id}
@@ -106,7 +105,7 @@ function UserDetailsPage() {
 					<div className="p-3 bg-surface-sunken border border-border-default space-y-1 sm:col-span-2">
 						<span className="text-text-muted text-[11px] uppercase flex items-center space-x-1.5">
 							<Calendar className="w-3.5 h-3.5" />
-							<span>Provisioned Date</span>
+							<span>Created At</span>
 						</span>
 						<p className="font-semibold text-text-primary">
 							{new Date(user.createdAt).toLocaleString()}
@@ -132,7 +131,7 @@ function UserDetailsPage() {
 						) : (
 							<LogOut className="w-3.5 h-3.5" />
 						)}
-						<span>Sign Out Node</span>
+						<span>Sign Out</span>
 					</button>
 				</div>
 			</div>

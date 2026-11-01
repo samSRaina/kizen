@@ -10,6 +10,8 @@
 
 import { Route as rootRouteImport } from './routes/__root'
 import { Route as IndexRouteImport } from './routes/index'
+import { Route as SplatRouteImport } from './routes/$'
+import { Route as R404RouteImport } from './routes/404'
 import { Route as AuthenticatedRouteImport } from './routes/_authenticated'
 import { Route as AuthenticateRouteImport } from './routes/authenticate'
 import { Route as SignInRouteImport } from './routes/sign-in'
@@ -22,6 +24,16 @@ import { Route as ApiAuthSplatRouteImport } from './routes/api/auth/$'
 const IndexRoute = IndexRouteImport.update({
   id: '/',
   path: '/',
+  getParentRoute: () => rootRouteImport,
+} as any)
+const SplatRoute = SplatRouteImport.update({
+  id: '/$',
+  path: '/$',
+  getParentRoute: () => rootRouteImport,
+} as any)
+const R404Route = R404RouteImport.update({
+  id: '/404',
+  path: '/404',
   getParentRoute: () => rootRouteImport,
 } as any)
 const AuthenticatedRoute = AuthenticatedRouteImport.update({
@@ -68,6 +80,8 @@ const ApiAuthSplatRoute = ApiAuthSplatRouteImport.update({
 
 export interface FileRoutesByFullPath {
   '/': typeof IndexRoute
+  '/$': typeof SplatRoute
+  '/404': typeof R404Route
   '/authenticate': typeof AuthenticateRoute
   '/sign-in': typeof SignInRoute
   '/sign-up': typeof SignUpRoute
@@ -78,6 +92,8 @@ export interface FileRoutesByFullPath {
 }
 export interface FileRoutesByTo {
   '/': typeof IndexRoute
+  '/$': typeof SplatRoute
+  '/404': typeof R404Route
   '/authenticate': typeof AuthenticateRoute
   '/sign-in': typeof SignInRoute
   '/sign-up': typeof SignUpRoute
@@ -89,6 +105,8 @@ export interface FileRoutesByTo {
 export interface FileRoutesById {
   __root__: typeof rootRouteImport
   '/': typeof IndexRoute
+  '/$': typeof SplatRoute
+  '/404': typeof R404Route
   '/_authenticated': typeof AuthenticatedRouteWithChildren
   '/authenticate': typeof AuthenticateRoute
   '/sign-in': typeof SignInRoute
@@ -102,6 +120,8 @@ export interface FileRouteTypes {
   fileRoutesByFullPath: FileRoutesByFullPath
   fullPaths:
     | '/'
+    | '/$'
+    | '/404'
     | '/authenticate'
     | '/sign-in'
     | '/sign-up'
@@ -112,6 +132,8 @@ export interface FileRouteTypes {
   fileRoutesByTo: FileRoutesByTo
   to:
     | '/'
+    | '/$'
+    | '/404'
     | '/authenticate'
     | '/sign-in'
     | '/sign-up'
@@ -122,6 +144,8 @@ export interface FileRouteTypes {
   id:
     | '__root__'
     | '/'
+    | '/$'
+    | '/404'
     | '/_authenticated'
     | '/authenticate'
     | '/sign-in'
@@ -134,6 +158,8 @@ export interface FileRouteTypes {
 }
 export interface RootRouteChildren {
   IndexRoute: typeof IndexRoute
+  SplatRoute: typeof SplatRoute
+  R404Route: typeof R404Route
   AuthenticatedRoute: typeof AuthenticatedRouteWithChildren
   AuthenticateRoute: typeof AuthenticateRoute
   SignInRoute: typeof SignInRoute
@@ -148,6 +174,20 @@ declare module '@tanstack/react-router' {
       path: '/'
       fullPath: '/'
       preLoaderRoute: typeof IndexRouteImport
+      parentRoute: typeof rootRouteImport
+    }
+    '/$': {
+      id: '/$'
+      path: '/$'
+      fullPath: '/$'
+      preLoaderRoute: typeof SplatRouteImport
+      parentRoute: typeof rootRouteImport
+    }
+    '/404': {
+      id: '/404'
+      path: '/404'
+      fullPath: '/404'
+      preLoaderRoute: typeof R404RouteImport
       parentRoute: typeof rootRouteImport
     }
     '/_authenticated': {
@@ -228,6 +268,8 @@ const AuthenticatedRouteWithChildren = AuthenticatedRoute._addFileChildren(
 
 const rootRouteChildren: RootRouteChildren = {
   IndexRoute: IndexRoute,
+  SplatRoute: SplatRoute,
+  R404Route: R404Route,
   AuthenticatedRoute: AuthenticatedRouteWithChildren,
   AuthenticateRoute: AuthenticateRoute,
   SignInRoute: SignInRoute,
@@ -237,12 +279,3 @@ const rootRouteChildren: RootRouteChildren = {
 export const routeTree = rootRouteImport
   ._addFileChildren(rootRouteChildren)
   ._addFileTypes<FileRouteTypes>()
-
-import type { getRouter } from './router.tsx'
-import type { createStart } from '@tanstack/react-start'
-declare module '@tanstack/react-start' {
-  interface Register {
-    ssr: true
-    router: Awaited<ReturnType<typeof getRouter>>
-  }
-}

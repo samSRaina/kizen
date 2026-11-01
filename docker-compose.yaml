@@ -4,9 +4,9 @@ services:
     container_name: kizen-postgres
     restart: unless-stopped
     environment:
-      POSTGRES_USER: ${POSTGRES_USER:-postgres}
-      POSTGRES_PASSWORD: ${POSTGRES_PASSWORD:-postgres}
-      POSTGRES_DB: ${POSTGRES_DB:-kizen}
+      POSTGRES_USER: ${POSTGRES_USER}
+      POSTGRES_PASSWORD: ${POSTGRES_PASSWORD}
+      POSTGRES_DB: ${POSTGRES_DB}
     ports:
       - "5432:5432" # Host 5432 -> Container 5432 (local DB tools / psql access)
     volumes:
@@ -14,7 +14,7 @@ services:
       # Mount directory directly at /docker-entrypoint-initdb.d so postgres automatically executes *.sql files on initial volume creation
       - ./services/api/sql/migrations:/docker-entrypoint-initdb.d:ro
     healthcheck:
-      test: ["CMD-SHELL", "pg_isready -U ${POSTGRES_USER:-postgres} -d ${POSTGRES_DB:-kizen}"]
+      test: ["CMD-SHELL", "pg_isready -U ${POSTGRES_USER} -d ${POSTGRES_DB}"]
       interval: 5s
       timeout: 5s
       retries: 5
@@ -26,9 +26,11 @@ services:
     container_name: kizen-web
     restart: unless-stopped
     environment:
-      DATABASE_URL: postgres://${POSTGRES_USER:-postgres}:${POSTGRES_PASSWORD:-postgres}@database:5432/kizen?sslmode=disable
-      BETTER_AUTH_SECRET: ${BETTER_AUTH_SECRET:-76350fdbff8fd255efae69225d9c3e44e75fe8085411b841d5454f2c1f2c8071}
-      BETTER_AUTH_URL: http://localhost:3000
+      DATABASE_URL: ${DATABASE_URL}
+      BETTER_AUTH_SECRET: ${BETTER_AUTH_SECRET}
+      BETTER_AUTH_URL: ${BETTER_AUTH_URL}
+      VITE_API_BASE_URL: ${VITE_API_BASE_URL}
+      API_INTERNAL_URL: ${API_INTERNAL_URL}
     ports:
       - "3000:3000"
     depends_on:
@@ -42,11 +44,11 @@ services:
     container_name: kizen-api
     restart: unless-stopped
     environment:
-      DATABASE_URL: postgres://${POSTGRES_USER:-postgres}:${POSTGRES_PASSWORD:-postgres}@database:5432/kizen?sslmode=disable
-      AUTH_JWKS_URL: http://web:3000/api/auth/jwks
-      PORT: "8080"
+      DATABASE_URL: ${DATABASE_URL}
+      AUTH_JWKS_URL: ${AUTH_JWKS_URL}
+      PORT: ${PORT}
     ports:
-      - "8080:8080"
+      - "8080:8080" # Backend api exposed outside for development purposes
     depends_on:
       database:
         condition: service_healthy

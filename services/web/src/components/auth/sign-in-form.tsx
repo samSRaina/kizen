@@ -1,7 +1,7 @@
 import { useQueryClient } from "@tanstack/react-query";
 import { useNavigate } from "@tanstack/react-router";
 import { motion } from "framer-motion";
-import { ArrowRight, Loader2, ShieldCheck } from "lucide-react";
+import { ArrowRight, Loader2 } from "lucide-react";
 import { useState } from "react";
 import { AuthErrorAlert } from "#/components/auth/auth-error-alert";
 import { FormInput } from "#/components/ui/form-input";
@@ -29,7 +29,7 @@ export function SignInForm({ onSuccess }: SignInFormProps) {
 		e.preventDefault();
 		const trimmedIdentifier = identifier.trim();
 		if (!trimmedIdentifier || !secret) {
-			setErrorMessage("Identifier and secret credentials are required.");
+			setErrorMessage("Email/username and password are required.");
 			return;
 		}
 
@@ -51,7 +51,9 @@ export function SignInForm({ onSuccess }: SignInFormProps) {
 					});
 
 			if (error) {
-				setErrorMessage(error.message || "Invalid authentication credentials.");
+				setErrorMessage(
+					error.message || "Invalid email, username, or password.",
+				);
 				setIsLoading(false);
 				return;
 			}
@@ -71,9 +73,7 @@ export function SignInForm({ onSuccess }: SignInFormProps) {
 			}
 		} catch (err: unknown) {
 			const msg =
-				err instanceof Error
-					? err.message
-					: "Network error during authentication handshake.";
+				err instanceof Error ? err.message : "Network error during sign in.";
 			setErrorMessage(msg);
 		} finally {
 			setIsLoading(false);
@@ -105,7 +105,7 @@ export function SignInForm({ onSuccess }: SignInFormProps) {
 						clearError();
 						setIdentifier(e.target.value);
 					}}
-					placeholder="operator@domain.network or username"
+					placeholder="name@example.com or username"
 					disabled={isLoading}
 					required
 				/>
@@ -117,7 +117,7 @@ export function SignInForm({ onSuccess }: SignInFormProps) {
 			>
 				<FormInput
 					id="sign-in-secret"
-					label="AUTHENTICATOR SECRET"
+					label="PASSWORD"
 					type="password"
 					value={secret}
 					onChange={(e) => {
@@ -126,14 +126,6 @@ export function SignInForm({ onSuccess }: SignInFormProps) {
 					}}
 					placeholder="••••••••••••••••"
 					disabled={isLoading}
-					trailingAction={
-						<button
-							type="button"
-							className="text-text-muted hover:text-text-primary transition-colors cursor-pointer"
-						>
-							[RECOVER_KEY?]
-						</button>
-					}
 					required
 				/>
 			</motion.div>
@@ -151,8 +143,8 @@ export function SignInForm({ onSuccess }: SignInFormProps) {
 						disabled={isLoading}
 						className="w-4 h-4 bg-surface-elevated border border-border-default text-accent-primary rounded-none focus:ring-0 focus:ring-offset-0 cursor-pointer accent-accent-primary"
 					/>
-					<span className="text-[11px] tracking-wide">
-						MAINTAIN SESSION TOKEN (24H)
+					<span className="text-[11px] tracking-wide uppercase">
+						REMEMBER ME
 					</span>
 				</label>
 			</motion.div>
@@ -169,14 +161,8 @@ export function SignInForm({ onSuccess }: SignInFormProps) {
 					<span className="flex items-center space-x-2">
 						{isLoading ? (
 							<Loader2 className="w-4 h-4 text-accent-primary-fg animate-spin" />
-						) : (
-							<ShieldCheck className="w-4 h-4 text-accent-primary-fg" />
-						)}
-						<span>
-							{isLoading
-								? "AUTHENTICATING_HANDSHAKE..."
-								: "AUTHENTICATE_IDENTITY"}
-						</span>
+						) : null}
+						<span>{isLoading ? "SIGNING IN..." : "SIGN IN"}</span>
 					</span>
 					<div className="w-7 h-7 bg-accent-primary-fg text-accent-primary flex items-center justify-center transform group-hover:translate-x-1 transition-transform">
 						<ArrowRight className="w-3.5 h-3.5" />

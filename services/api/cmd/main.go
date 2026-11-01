@@ -33,9 +33,6 @@ func main() {
 
 	// 2. Database Connection Pool with Functional Options
 	dbURL := os.Getenv("DATABASE_URL")
-	if dbURL == "" {
-		dbURL = "postgres://postgres:postgres@localhost:5432/kizen?sslmode=disable"
-	}
 
 	pool, err := repoPostgres.NewPool(ctx, dbURL)
 	if err != nil {
@@ -64,12 +61,6 @@ func main() {
 
 	// Auth Provider
 	jwksURL := os.Getenv("AUTH_JWKS_URL")
-	if jwksURL == "" {
-		jwksURL = os.Getenv("AUTH_JKWS_URL")
-	}
-	if jwksURL == "" {
-		jwksURL = "http://web:3000/api/auth/jwks"
-	}
 
 	authProvider, err := jwt.NewAuthenticator(ctx, jwksURL)
 	if err != nil {
@@ -87,9 +78,6 @@ func main() {
 
 	// 5. HTTP Server Configuration
 	port := os.Getenv("PORT")
-	if port == "" {
-		port = "8080"
-	}
 
 	httpServer := &http.Server{
 		Addr:         ":" + port,
@@ -100,18 +88,18 @@ func main() {
 	}
 
 	// 6. Graceful Shutdown Listener
-	shutdownChan := make(chan os.Signal, 1)
-	signal.Notify(shutdownChan, os.Interrupt, syscall.SIGTERM)
+	stop := make(chan os.Signal, 1)
+	signal.Notify(stop, os.Interrupt, syscall.SIGTERM)
 
 	go func() {
 		logger.Info(fmt.Sprintf("kizen api server listening on :%s", port))
 		if err := httpServer.ListenAndServe(); err != nil && !errors.Is(err, http.ErrServerClosed) {
-			logger.Error("http server failed", slog.Any("error", err))
+			logger.Error("server encountered an error", slog.Any("error", err))
 			os.Exit(1)
 		}
 	}()
 
-	<-shutdownChan
+	<-stop
 	logger.Info("shutting down server gracefully...")
 
 	shutdownCtx, shutdownCancel := context.WithTimeout(context.Background(), 10*time.Second)

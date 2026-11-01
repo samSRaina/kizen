@@ -1,5 +1,6 @@
 import { useMutation, useQueryClient } from "@tanstack/react-query";
 import { Clock, Trash2 } from "lucide-react";
+import { useConfirm } from "#/components/ui/confirm-dialog";
 import { ticketKeys, ticketMutations } from "#/lib/queries/tickets";
 import type { Ticket, TicketStatus } from "#/lib/types";
 
@@ -13,6 +14,7 @@ export function TicketTable({
 	onStartTimer: (ticketId: string) => void;
 }) {
 	const queryClient = useQueryClient();
+	const confirm = useConfirm();
 
 	const updateStatusMutation = useMutation({
 		mutationFn: ({
@@ -43,10 +45,23 @@ export function TicketTable({
 	if (tickets.length === 0) {
 		return (
 			<div className="py-12 px-6 border border-dashed border-border-default bg-surface-base/50 text-center text-text-muted font-mono text-xs">
-				NO TICKETS FOUND IN THIS SECTOR
+				NO TICKETS FOUND MATCHING CRITERIA
 			</div>
 		);
 	}
+
+	const getPriorityBadgeClass = (priority: string) => {
+		switch (priority) {
+			case "Urgent":
+				return "bg-red-950/60 text-red-300 border-red-800";
+			case "High":
+				return "bg-amber-950/60 text-amber-300 border-amber-800";
+			case "Medium":
+				return "bg-yellow-950/40 text-yellow-300 border-yellow-800/80";
+			default:
+				return "bg-surface-sunken text-text-muted border-border-default";
+		}
+	};
 
 	return (
 		<div className="border border-border-default bg-surface-base overflow-x-auto">
@@ -55,9 +70,9 @@ export function TicketTable({
 					<tr className="border-b border-border-default bg-surface-elevated/40 text-[11px] font-mono uppercase tracking-wider text-text-muted">
 						<th className="py-3 px-4 font-semibold">Identifier</th>
 						<th className="py-3 px-4 font-semibold">Title</th>
-						<th className="py-3 px-4 font-semibold">Type</th>
-						<th className="py-3 px-4 font-semibold">Priority</th>
 						<th className="py-3 px-4 font-semibold">Status</th>
+						<th className="py-3 px-4 font-semibold">Priority</th>
+						<th className="py-3 px-4 font-semibold">Type</th>
 						<th className="py-3 px-4 font-semibold text-right">Actions</th>
 					</tr>
 				</thead>
@@ -67,54 +82,47 @@ export function TicketTable({
 							key={t.id}
 							className="hover:bg-surface-hover/60 transition-colors group"
 						>
-							<td className="py-3 px-4 text-text-muted font-bold whitespace-nowrap">
+							<td className="py-3 px-4 font-bold text-text-primary whitespace-nowrap">
 								{t.identifier}
 							</td>
-							<td className="py-3 px-4">
-								<div className="font-sans font-semibold text-text-primary text-sm">
-									{t.title}
-								</div>
+							<td className="py-3 px-4 max-w-sm truncate text-text-primary">
+								<span>{t.title}</span>
 								{t.description ? (
-									<p className="font-sans text-xs text-text-secondary mt-0.5 line-clamp-1">
+									<p className="text-[11px] text-text-muted truncate mt-0.5">
 										{t.description}
 									</p>
 								) : null}
 							</td>
-							<td className="py-3 px-4 uppercase text-text-secondary text-[11px]">
-								{t.type}
-							</td>
-							<td className="py-3 px-4">
-								<span
-									className={`inline-block px-2 py-0.5 text-[10px] uppercase font-bold border ${
-										t.priority === "Critical"
-											? "border-red-800 bg-red-950/40 text-red-300"
-											: t.priority === "High"
-												? "border-amber-800 bg-amber-950/40 text-amber-300"
-												: t.priority === "Medium"
-													? "border-border-default bg-surface-sunken text-text-primary"
-													: "border-border-subtle bg-surface-base text-text-muted"
-									}`}
-								>
-									{t.priority}
-								</span>
-							</td>
-							<td className="py-3 px-4">
+							<td className="py-3 px-4 whitespace-nowrap">
 								<select
 									value={t.status}
+									disabled={updateStatusMutation.isPending}
 									onChange={(e) =>
 										updateStatusMutation.mutate({
 											identifier: t.identifier,
 											newStatus: e.target.value as TicketStatus,
 										})
 									}
-									className="px-2 py-1 text-xs bg-surface-elevated border border-border-default text-text-primary focus:outline-hidden focus:border-text-primary font-mono cursor-pointer"
+									className="bg-surface-sunken border border-border-default px-2 py-1 text-[11px] uppercase font-mono text-text-primary focus:outline-hidden cursor-pointer"
 								>
-									<option value="backlog">Backlog</option>
-									<option value="todo">Todo</option>
-									<option value="progress">In Progress</option>
-									<option value="review">Review</option>
-									<option value="done">Done</option>
+									<option value="backlog">BACKLOG</option>
+									<option value="todo">TODO</option>
+									<option value="progress">IN PROGRESS</option>
+									<option value="review">IN REVIEW</option>
+									<option value="done">DONE</option>
 								</select>
+							</td>
+							<td className="py-3 px-4 whitespace-nowrap">
+								<span
+									className={`inline-block px-2 py-0.5 text-[10px] uppercase font-bold border ${getPriorityBadgeClass(
+										t.priority,
+									)}`}
+								>
+									{t.priority}
+								</span>
+							</td>
+							<td className="py-3 px-4 uppercase text-text-muted text-[11px] whitespace-nowrap">
+								{t.type}
 							</td>
 							<td className="py-3 px-4 text-right whitespace-nowrap">
 								<div className="inline-flex items-center space-x-2">
@@ -130,12 +138,14 @@ export function TicketTable({
 
 									<button
 										type="button"
-										onClick={() => {
-											if (
-												window.confirm(
-													`Delete ticket ${t.identifier}? This cannot be undone.`,
-												)
-											) {
+										onClick={async () => {
+											const ok = await confirm({
+												title: "DELETE TICKET",
+												message: `Delete ticket "${t.identifier}"? This deterring action cannot be undone.`,
+												confirmText: "DELETE",
+												destructive: true,
+											});
+											if (ok) {
 												deleteTicketMutation.mutate(t.identifier);
 											}
 										}}

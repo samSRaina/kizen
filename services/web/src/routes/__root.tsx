@@ -8,6 +8,7 @@ import {
 import { TanStackRouterDevtoolsPanel } from "@tanstack/react-router-devtools";
 import { ThemeProvider } from "next-themes";
 import { NotFoundComponent } from "#/components/not-found";
+import { ConfirmProvider } from "#/components/ui/confirm-dialog";
 import TanStackQueryDevtools from "../integrations/tanstack-query/devtools";
 import appCss from "../styles.css?url";
 
@@ -52,7 +53,7 @@ function RootDocument({ children }: { children: React.ReactNode }) {
 					defaultTheme="dark"
 					enableSystem={false}
 				>
-					{children}
+					<ConfirmProvider>{children}</ConfirmProvider>
 				</ThemeProvider>
 				<TanStackDevtools
 					config={{

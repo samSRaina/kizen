@@ -1,6 +1,7 @@
 import { useMutation, useQueryClient } from "@tanstack/react-query";
 import { Link } from "@tanstack/react-router";
 import { ArrowRight, Briefcase, Trash2 } from "lucide-react";
+import { useConfirm } from "#/components/ui/confirm-dialog";
 import { workspaceKeys, workspaceMutations } from "#/lib/queries/workspaces";
 import type { Workspace } from "#/lib/types";
 
@@ -14,6 +15,7 @@ export function WorkspaceList({
 	onCreateClick,
 }: WorkspaceListProps) {
 	const queryClient = useQueryClient();
+	const confirm = useConfirm();
 
 	const deleteMutation = useMutation({
 		mutationFn: (id: string) => workspaceMutations.delete(id),
@@ -92,12 +94,14 @@ export function WorkspaceList({
 
 						<button
 							type="button"
-							onClick={() => {
-								if (
-									window.confirm(
-										`Delete workspace "${ws.name}"? This action cannot be undone.`,
-									)
-								) {
+							onClick={async () => {
+								const ok = await confirm({
+									title: "DELETE WORKSPACE",
+									message: `Delete workspace "${ws.name}"? All associated tickets and time logs will be deleted. This action cannot be undone.`,
+									confirmText: "DELETE WORKSPACE",
+									destructive: true,
+								});
+								if (ok) {
 									deleteMutation.mutate(ws.id);
 								}
 							}}

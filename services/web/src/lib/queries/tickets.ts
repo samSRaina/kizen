@@ -37,7 +37,7 @@ export const ticketQueries = {
 				return data ?? [];
 			},
 			staleTime: 1000 * 30,
-			enabled: Boolean(workspaceId),
+			enabled: typeof window !== "undefined" && Boolean(workspaceId),
 		}),
 
 	detail: (workspaceId: string, identifier: string) =>
@@ -61,7 +61,8 @@ export const ticketQueries = {
 				return data;
 			},
 			staleTime: 1000 * 30,
-			enabled: Boolean(workspaceId && identifier),
+			enabled:
+				typeof window !== "undefined" && Boolean(workspaceId && identifier),
 		}),
 };
 

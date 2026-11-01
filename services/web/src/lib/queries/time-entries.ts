@@ -40,7 +40,7 @@ export const timeEntryQueries = {
 				return data ?? [];
 			},
 			staleTime: 1000 * 15,
-			enabled: Boolean(workspaceId),
+			enabled: typeof window !== "undefined" && Boolean(workspaceId),
 		}),
 };
 
@@ -67,24 +67,6 @@ export const timeEntryMutations = {
 		return data;
 	},
 
-	stop: async (workspaceId: string, id: string): Promise<TimeEntry> => {
-		const { data, error } = await api.POST(
-			"/workspaces/{workspace_id}/time-entries/{id}/stop",
-			{
-				params: { path: { workspace_id: workspaceId, id } },
-			},
-		);
-		if (error) {
-			const message =
-				typeof error === "object" && error && "detail" in error
-					? (error as { detail?: string }).detail
-					: "Failed to stop time entry";
-			throw new Error(message || "Failed to stop time entry");
-		}
-		if (!data) throw new Error("No data returned from stop time entry");
-		return data;
-	},
-
 	update: async (
 		workspaceId: string,
 		id: string,
@@ -105,6 +87,24 @@ export const timeEntryMutations = {
 			throw new Error(message || "Failed to update time entry");
 		}
 		if (!data) throw new Error("No data returned from update time entry");
+		return data;
+	},
+
+	stop: async (workspaceId: string, id: string): Promise<TimeEntry> => {
+		const { data, error } = await api.POST(
+			"/workspaces/{workspace_id}/time-entries/{id}/stop",
+			{
+				params: { path: { workspace_id: workspaceId, id } },
+			},
+		);
+		if (error) {
+			const message =
+				typeof error === "object" && error && "detail" in error
+					? (error as { detail?: string }).detail
+					: "Failed to stop time entry";
+			throw new Error(message || "Failed to stop time entry");
+		}
+		if (!data) throw new Error("No data returned from stop time entry");
 		return data;
 	},
 

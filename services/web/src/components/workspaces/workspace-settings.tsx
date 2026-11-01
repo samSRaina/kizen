@@ -1,6 +1,7 @@
 import { useMutation, useQueryClient } from "@tanstack/react-query";
 import { AlertCircle, Check, Loader2, Save, Trash2 } from "lucide-react";
 import { useState } from "react";
+import { useConfirm } from "#/components/ui/confirm-dialog";
 import { FormInput } from "#/components/ui/form-input";
 import { workspaceKeys, workspaceMutations } from "#/lib/queries/workspaces";
 import type { UpdateWorkspaceRequest, Workspace } from "#/lib/types";
@@ -13,6 +14,7 @@ export function WorkspaceSettings({
 	onDeleted: () => void;
 }) {
 	const queryClient = useQueryClient();
+	const confirm = useConfirm();
 	const [name, setName] = useState(workspace.name);
 	const [rate, setRate] = useState(String(workspace.default_hourly_rate));
 	const [description, setDescription] = useState(workspace.description || "");
@@ -40,6 +42,9 @@ export function WorkspaceSettings({
 			queryClient.invalidateQueries({ queryKey: workspaceKeys.lists() });
 			onDeleted();
 		},
+		onError: (err) => {
+			setStatusMsg({ type: "error", text: err.message });
+		},
 	});
 
 	const handleSubmit = (e: React.FormEvent) => {
@@ -53,25 +58,24 @@ export function WorkspaceSettings({
 	};
 
 	return (
-		<div className="space-y-8 max-w-2xl">
-			{/* Settings Form Card */}
+		<div className="space-y-10 max-w-2xl">
+			{/* Edit Workspace Settings Form */}
 			<div className="border border-border-default bg-surface-base p-6 sm:p-8 space-y-6">
 				<div className="border-b border-border-default pb-4">
-					<h3 className="font-bold text-lg uppercase tracking-tight text-text-primary font-sans">
+					<h2 className="font-bold text-base uppercase tracking-tight text-text-primary font-sans">
 						Workspace Configuration
-					</h3>
-					<p className="text-xs text-text-secondary mt-1 font-sans">
-						Update workspace identifier, default billing rate, and operational
-						notes.
+					</h2>
+					<p className="text-xs text-text-secondary mt-1">
+						Update workspace details and hourly rate.
 					</p>
 				</div>
 
 				{statusMsg ? (
 					<div
-						className={`p-3 font-mono text-xs flex items-center space-x-2 border ${
+						className={`p-3 text-xs font-mono border flex items-center space-x-2 ${
 							statusMsg.type === "success"
-								? "bg-emerald-950/30 border-emerald-800/80 text-emerald-300"
-								: "bg-red-950/30 border-red-800/80 text-red-300"
+								? "bg-emerald-950/20 border-emerald-800 text-emerald-300"
+								: "bg-red-950/20 border-red-800 text-red-300"
 						}`}
 					>
 						{statusMsg.type === "success" ? (
@@ -83,42 +87,38 @@ export function WorkspaceSettings({
 					</div>
 				) : null}
 
-				<form onSubmit={handleSubmit} className="space-y-5">
+				<form onSubmit={handleSubmit} className="space-y-4 font-mono">
 					<FormInput
-						id="edit-ws-name"
-						label="WORKSPACE NAME *"
-						type="text"
-						required
+						id="workspace-name"
+						label="WORKSPACE NAME"
 						value={name}
 						onChange={(e) => setName(e.target.value)}
-						disabled={updateMutation.isPending}
+						required
 					/>
 
 					<FormInput
-						id="edit-ws-rate"
-						label="DEFAULT HOURLY RATE (UNITS) *"
-						type="text"
-						inputMode="numeric"
-						required
+						id="workspace-rate"
+						label="DEFAULT HOURLY RATE"
+						type="number"
 						value={rate}
 						onChange={(e) => setRate(e.target.value)}
-						disabled={updateMutation.isPending}
+						min="0"
+						required
 					/>
 
-					<div className="space-y-1.5">
+					<div className="space-y-1.5 text-xs font-mono">
 						<label
-							htmlFor="edit-ws-desc"
-							className="block font-mono text-[11px] uppercase tracking-wider font-semibold text-text-secondary"
+							htmlFor="workspace-desc"
+							className="block text-[11px] font-bold text-text-secondary uppercase tracking-wider"
 						>
 							DESCRIPTION
 						</label>
 						<textarea
-							id="edit-ws-desc"
-							rows={3}
+							id="workspace-desc"
 							value={description}
 							onChange={(e) => setDescription(e.target.value)}
-							disabled={updateMutation.isPending}
-							className="w-full px-3 py-2 text-sm bg-surface-elevated/40 border border-border-default text-text-primary focus:outline-hidden focus:border-text-primary font-mono placeholder:text-text-muted/40 transition-colors"
+							rows={3}
+							className="w-full bg-surface-sunken border border-border-default px-3 py-2 text-text-primary focus:outline-hidden focus:border-border-strong text-xs font-sans leading-relaxed transition-colors"
 						/>
 					</div>
 
@@ -133,32 +133,34 @@ export function WorkspaceSettings({
 							) : (
 								<Save className="w-3.5 h-3.5" />
 							)}
-							<span>Save Changes</span>
+							<span>Save Settings</span>
 						</button>
 					</div>
 				</form>
 			</div>
 
 			{/* Danger Zone */}
-			<div className="border border-red-900/30 bg-red-950/10 p-6 sm:p-8 space-y-4">
+			<div className="border border-red-900/60 bg-red-950/10 p-6 sm:p-8 space-y-4">
 				<div>
 					<h3 className="font-bold text-sm uppercase tracking-wider text-red-400 font-mono">
-						{"DANGER ZONE // TERMINATION"}
+						DANGER ZONE
 					</h3>
 					<p className="text-xs text-text-secondary mt-1 leading-relaxed">
-						Permanently delete this workspace and erase all associated tickets,
-						time logs, and billable telemetry. This action cannot be reversed.
+						Permanently delete this workspace and erase all associated tickets
+						and time logs. This action cannot be reversed.
 					</p>
 				</div>
 
 				<button
 					type="button"
-					onClick={() => {
-						if (
-							window.confirm(
-								`Permanently delete workspace "${workspace.name}"? This action cannot be undone.`,
-							)
-						) {
+					onClick={async () => {
+						const ok = await confirm({
+							title: "DELETE WORKSPACE",
+							message: `Permanently delete workspace "${workspace.name}"? This deterring action cannot be undone.`,
+							confirmText: "DELETE WORKSPACE",
+							destructive: true,
+						});
+						if (ok) {
 							deleteMutation.mutate();
 						}
 					}}

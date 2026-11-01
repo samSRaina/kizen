@@ -29,6 +29,7 @@ export const workspaceQueries = {
 				return data ?? [];
 			},
 			staleTime: 1000 * 60,
+			enabled: typeof window !== "undefined",
 		}),
 
 	detail: (id: string) =>
@@ -49,7 +50,7 @@ export const workspaceQueries = {
 				return data;
 			},
 			staleTime: 1000 * 60,
-			enabled: Boolean(id),
+			enabled: typeof window !== "undefined" && Boolean(id),
 		}),
 };
 

@@ -1,7 +1,7 @@
 import { useQueryClient } from "@tanstack/react-query";
 import { useNavigate } from "@tanstack/react-router";
 import { motion } from "framer-motion";
-import { ArrowRight, Loader2, UserPlus } from "lucide-react";
+import { ArrowRight, Loader2 } from "lucide-react";
 import { useState } from "react";
 import { AuthErrorAlert } from "#/components/auth/auth-error-alert";
 import { FormInput } from "#/components/ui/form-input";
@@ -31,17 +31,17 @@ export function SignUpForm({ onSuccess }: SignUpFormProps) {
 	const handleSubmit = async (e: React.FormEvent) => {
 		e.preventDefault();
 		if (!email || !secret) {
-			setErrorMessage("Email and master secret are required.");
+			setErrorMessage("Email and password are required.");
 			return;
 		}
 
 		if (secret !== confirmSecret) {
-			setErrorMessage("Master secrets do not match.");
+			setErrorMessage("Passwords do not match.");
 			return;
 		}
 
 		if (!acceptTerms) {
-			setErrorMessage("You must accept workspace policies & terms.");
+			setErrorMessage("You must accept the terms & conditions.");
 			return;
 		}
 
@@ -63,7 +63,7 @@ export function SignUpForm({ onSuccess }: SignUpFormProps) {
 			});
 
 			if (error) {
-				setErrorMessage(error.message || "Account provisioning rejected.");
+				setErrorMessage(error.message || "Failed to create account.");
 				setIsLoading(false);
 				return;
 			}
@@ -83,9 +83,7 @@ export function SignUpForm({ onSuccess }: SignUpFormProps) {
 			}
 		} catch (err: unknown) {
 			const msg =
-				err instanceof Error
-					? err.message
-					: "Network error during account registration.";
+				err instanceof Error ? err.message : "Network error during sign up.";
 			setErrorMessage(msg);
 		} finally {
 			setIsLoading(false);
@@ -111,7 +109,7 @@ export function SignUpForm({ onSuccess }: SignUpFormProps) {
 			>
 				<FormInput
 					id="sign-up-name"
-					label="DISPLAY NAME"
+					label="NAME"
 					type="text"
 					value={displayName}
 					onChange={(e) => {
@@ -125,7 +123,7 @@ export function SignUpForm({ onSuccess }: SignUpFormProps) {
 
 				<FormInput
 					id="sign-up-username"
-					label="OPERATOR USERNAME"
+					label="USERNAME"
 					type="text"
 					value={username}
 					onChange={(e) => {
@@ -144,14 +142,14 @@ export function SignUpForm({ onSuccess }: SignUpFormProps) {
 			>
 				<FormInput
 					id="sign-up-email"
-					label="EMAIL ADDRESS"
+					label="EMAIL"
 					type="email"
 					value={email}
 					onChange={(e) => {
 						clearError();
 						setEmail(e.target.value);
 					}}
-					placeholder="alex@domain.network"
+					placeholder="alex@example.com"
 					disabled={isLoading}
 					required
 				/>
@@ -164,7 +162,7 @@ export function SignUpForm({ onSuccess }: SignUpFormProps) {
 			>
 				<FormInput
 					id="sign-up-secret"
-					label="MASTER SECRET"
+					label="PASSWORD"
 					type="password"
 					value={secret}
 					onChange={(e) => {
@@ -178,7 +176,7 @@ export function SignUpForm({ onSuccess }: SignUpFormProps) {
 
 				<FormInput
 					id="sign-up-confirm-secret"
-					label="CONFIRM SECRET"
+					label="CONFIRM PASSWORD"
 					type="password"
 					value={confirmSecret}
 					onChange={(e) => {
@@ -208,8 +206,8 @@ export function SignUpForm({ onSuccess }: SignUpFormProps) {
 						required
 						className="w-4 h-4 bg-surface-elevated border border-border-default text-accent-primary rounded-none focus:ring-0 focus:ring-offset-0 cursor-pointer accent-accent-primary"
 					/>
-					<span className="text-[11px] tracking-wide">
-						ACCEPT ACCESS POLICIES & TERMS
+					<span className="text-[11px] tracking-wide uppercase">
+						I AGREE TO TERMS & CONDITIONS
 					</span>
 				</label>
 			</motion.div>
@@ -226,14 +224,8 @@ export function SignUpForm({ onSuccess }: SignUpFormProps) {
 					<span className="flex items-center space-x-2">
 						{isLoading ? (
 							<Loader2 className="w-4 h-4 text-accent-primary-fg animate-spin" />
-						) : (
-							<UserPlus className="w-4 h-4 text-accent-primary-fg" />
-						)}
-						<span>
-							{isLoading
-								? "PROVISIONING_OPERATOR..."
-								: "CREATE_OPERATOR_ACCOUNT"}
-						</span>
+						) : null}
+						<span>{isLoading ? "CREATING ACCOUNT..." : "CREATE ACCOUNT"}</span>
 					</span>
 					<div className="w-7 h-7 bg-accent-primary-fg text-accent-primary flex items-center justify-center transform group-hover:translate-x-1 transition-transform">
 						<ArrowRight className="w-3.5 h-3.5" />
