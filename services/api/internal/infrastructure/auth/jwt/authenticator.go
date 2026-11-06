@@ -27,10 +27,23 @@ func NewAuthenticator(ctx context.Context, jwksURL string) (*Authenticator, erro
 		return nil, fmt.Errorf("create jwk cache: %w", err)
 	}
 
-	// 2. Register the URL (fetches the public keys immediately so it's ready)
-	err = cache.Register(ctx, jwksURL, jwkfetch.WithMinInterval(15*time.Minute))
-	if err != nil {
-		return nil, fmt.Errorf("register jwks: %w", err)
+	// 2. Register the URL with retry & timeout to prevent startup deadlock
+	var regErr error
+	for attempt := 1; attempt <= 10; attempt++ {
+		regCtx, cancel := context.WithTimeout(ctx, 3*time.Second)
+		regErr = cache.Register(regCtx, jwksURL, jwkfetch.WithMinInterval(15*time.Minute))
+		cancel()
+		if regErr == nil {
+			break
+		}
+		select {
+		case <-ctx.Done():
+			return nil, ctx.Err()
+		case <-time.After(1 * time.Second):
+		}
+	}
+	if regErr != nil {
+		return nil, fmt.Errorf("register jwks: %w", regErr)
 	}
 
 	return &Authenticator{

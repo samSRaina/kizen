@@ -29,7 +29,11 @@ export function TimeEntryForm({
 		preselectedTicketId || "",
 	);
 	const [isManualMode, setIsManualMode] = useState(false);
-	const [manualMinutes, setManualMinutes] = useState("60");
+	const [manualHours, setManualHours] = useState("1");
+	const [manualMinutes, setManualMinutes] = useState("0");
+	const [manualDate, setManualDate] = useState(() =>
+		new Date().toISOString().slice(0, 10),
+	);
 	const [billable, setBillable] = useState(true);
 
 	useEffect(() => {
@@ -57,23 +61,31 @@ export function TimeEntryForm({
 			ticket_id: selectedTicketId || undefined,
 			started_at: new Date().toISOString(),
 			billable,
+			hourly_rate: billable ? workspace.default_hourly_rate : 0,
 		});
 	};
 
 	const handleManualSubmit = (e: React.FormEvent) => {
 		e.preventDefault();
-		const now = new Date();
-		const durationSeconds = (Number(manualMinutes) || 60) * 60;
-		const started = new Date(now.getTime() - durationSeconds * 1000);
+		const hours = Math.max(0, Number(manualHours) || 0);
+		const minutes = Math.max(0, Number(manualMinutes) || 0);
+		const durationSeconds = Math.max(60, hours * 3600 + minutes * 60);
+
+		// Calculate timestamps based on chosen date
+		const baseDate = manualDate
+			? new Date(`${manualDate}T12:00:00Z`)
+			: new Date();
+		const started = new Date(baseDate.getTime() - durationSeconds * 1000);
+		const ended = baseDate;
 
 		createTimerMutation.mutate({
 			description: desc.trim() || undefined,
 			ticket_id: selectedTicketId || undefined,
 			started_at: started.toISOString(),
-			ended_at: now.toISOString(),
+			ended_at: ended.toISOString(),
 			duration_seconds: durationSeconds,
 			billable,
-			hourly_rate: workspace.default_hourly_rate,
+			hourly_rate: billable ? workspace.default_hourly_rate : 0,
 		});
 	};
 
@@ -85,12 +97,15 @@ export function TimeEntryForm({
 					<h3 className="font-bold text-sm uppercase tracking-wider text-text-primary font-mono flex items-center space-x-2">
 						<Clock className="w-4 h-4 text-text-muted" />
 						<span>
-							{isManualMode ? "Log Manual Entry" : "Start Live Session"}
+							{isManualMode
+								? "Log Manual Time Entry"
+								: "Start Live Timer Session"}
 						</span>
 					</h3>
-					{activeTimer ? (
+					{activeTimer && !isManualMode ? (
 						<p className="text-xs text-amber-500 font-mono mt-0.5">
-							Notice: An active timer is already running for this workspace.
+							Notice: Starting a new timer will auto-finalize and archive the
+							currently active session.
 						</p>
 					) : null}
 				</div>
@@ -143,16 +158,39 @@ export function TimeEntryForm({
 					</div>
 
 					{isManualMode ? (
-						<FormInput
-							id="timer-duration"
-							label="DURATION (MINUTES)"
-							type="text"
-							inputMode="numeric"
-							value={manualMinutes}
-							onChange={(e) => setManualMinutes(e.target.value)}
-							disabled={createTimerMutation.isPending}
-							required
-						/>
+						<div className="grid grid-cols-3 gap-2">
+							<FormInput
+								id="timer-date"
+								label="DATE"
+								type="text"
+								value={manualDate}
+								onChange={(e) => setManualDate(e.target.value)}
+								placeholder="YYYY-MM-DD"
+								disabled={createTimerMutation.isPending}
+								required
+							/>
+							<FormInput
+								id="timer-hours"
+								label="HOURS"
+								type="number"
+								min="0"
+								value={manualHours}
+								onChange={(e) => setManualHours(e.target.value)}
+								disabled={createTimerMutation.isPending}
+								required
+							/>
+							<FormInput
+								id="timer-minutes"
+								label="MINUTES"
+								type="number"
+								min="0"
+								max="59"
+								value={manualMinutes}
+								onChange={(e) => setManualMinutes(e.target.value)}
+								disabled={createTimerMutation.isPending}
+								required
+							/>
+						</div>
 					) : (
 						<div className="flex items-center pt-6">
 							<label className="flex items-center space-x-2.5 font-mono text-xs text-text-secondary cursor-pointer">

@@ -205,6 +205,7 @@ function WorkspaceDetailPage() {
 						<TicketTable
 							workspaceId={workspaceId}
 							tickets={filteredTickets}
+							activeTimer={activeTimer}
 							onStartTimer={(ticketId) => {
 								setPreselectedTicketId(ticketId);
 								setActiveTab("time");

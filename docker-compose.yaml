@@ -33,6 +33,12 @@ services:
       API_INTERNAL_URL: ${API_INTERNAL_URL}
     ports:
       - "3000:3000"
+    healthcheck:
+      test: ["CMD-SHELL", "wget -q -O /dev/null http://localhost:3000/api/auth/ok || exit 1"]
+      interval: 3s
+      timeout: 3s
+      retries: 10
+      start_period: 5s
     depends_on:
       database:
         condition: service_healthy
@@ -53,7 +59,7 @@ services:
       database:
         condition: service_healthy
       web:
-        condition: service_started
+        condition: service_healthy
 
 volumes:
   postgres_data:
