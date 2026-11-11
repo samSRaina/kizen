@@ -2,8 +2,9 @@ import { useEffect, useRef } from "react";
 
 interface CelestialSphereProps {
 	className?: string;
-	/** Optional phase (0 to 2) to subtly alter camera focal length or tilt */
+	/** Optional phase or stage (0 to 2) to subtly alter camera focal length or tilt */
 	phase?: number;
+	stage?: number;
 }
 
 interface Particle {
@@ -17,15 +18,17 @@ interface Particle {
 
 export function CelestialSphere({
 	className = "",
-	phase = 0,
+	phase,
+	stage = 0,
 }: CelestialSphereProps) {
 	const canvasRef = useRef<HTMLCanvasElement | null>(null);
 	const mouseRef = useRef({ x: 0, y: 0, targetX: 0, targetY: 0 });
-	const phaseRef = useRef(phase);
+	const resolvedPhase = phase ?? stage;
+	const phaseRef = useRef(resolvedPhase);
 
 	useEffect(() => {
-		phaseRef.current = phase;
-	}, [phase]);
+		phaseRef.current = resolvedPhase;
+	}, [resolvedPhase]);
 
 	useEffect(() => {
 		const canvas = canvasRef.current;
@@ -224,20 +227,10 @@ export function CelestialSphere({
 		<div
 			className={`absolute inset-0 pointer-events-none select-none overflow-hidden ${className}`}
 		>
-			{/* Celestial Core Radial Glow backdrop */}
-			<div
-				className="absolute top-[45%] left-1/2 -translate-x-1/2 -translate-y-1/2 w-[340px] sm:w-[480px] h-[340px] sm:h-[480px] rounded-full pointer-events-none opacity-20 blur-3xl"
-				style={{
-					background:
-						"radial-gradient(circle, rgba(255, 229, 0, 0.35) 0%, rgba(245, 158, 11, 0.12) 50%, transparent 75%)",
-				}}
-			/>
+			{/* Celestial Core Radial Glow backdrop (Single source of truth in styles.css) */}
+			<div className="absolute top-[45%] left-1/2 -translate-x-1/2 -translate-y-1/2 w-[340px] sm:w-[480px] h-[340px] sm:h-[480px] rounded-full pointer-events-none opacity-20 blur-3xl celestial-radial-glow" />
 
-			<canvas
-				ref={canvasRef}
-				className="w-full h-full block"
-				style={{ width: "100%", height: "100%" }}
-			/>
+			<canvas ref={canvasRef} className="w-full h-full block" />
 		</div>
 	);
 }

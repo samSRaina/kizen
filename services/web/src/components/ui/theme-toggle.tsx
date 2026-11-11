@@ -1,4 +1,3 @@
-import { motion } from "framer-motion";
 import { useTheme } from "next-themes";
 import { useCallback, useEffect, useState } from "react";
 import { flushSync } from "react-dom";
@@ -135,26 +134,6 @@ export const createAnimation = (
 						from: "polygon(100% 0%, 100% 0%, 100% 100%, 100% 100%)",
 						to: "polygon(0% 0%, 100% 0%, 100% 100%, 0% 100%)",
 					};
-				case "top-left":
-					return {
-						from: "polygon(0% 0%, 0% 0%, 0% 0%, 0% 0%)",
-						to: "polygon(0% 0%, 100% 0%, 100% 100%, 0% 100%)",
-					};
-				case "top-right":
-					return {
-						from: "polygon(100% 0%, 100% 0%, 100% 0%, 100% 0%)",
-						to: "polygon(0% 0%, 100% 0%, 100% 100%, 0% 100%)",
-					};
-				case "bottom-left":
-					return {
-						from: "polygon(0% 100%, 0% 100%, 0% 100%, 0% 100%)",
-						to: "polygon(0% 0%, 100% 0%, 100% 100%, 0% 100%)",
-					};
-				case "bottom-right":
-					return {
-						from: "polygon(100% 100%, 100% 100%, 100% 100%, 100% 100%)",
-						to: "polygon(0% 0%, 100% 0%, 100% 100%, 0% 100%)",
-					};
 				default:
 					return {
 						from: "polygon(0% 100%, 100% 100%, 100% 100%, 0% 100%)",
@@ -166,91 +145,149 @@ export const createAnimation = (
 		const clipPath = getClipPath(start);
 
 		return {
-			name: `${variant}-${start}${blur ? "-blur" : ""}`,
+			name: `rectangle-${start}`,
 			css: `
-       ::view-transition-group(root) {\n        animation-duration: 0.65s;\n        animation-timing-function: var(--expo-out);\n      }\n            \n      ::view-transition-new(root) {\n        animation-name: reveal-light-${start}${blur ? "-blur" : ""};\n        ${blur ? "filter: blur(2px);" : ""}\n      }\n\n      ::view-transition-old(root),\n      .dark::view-transition-old(root) {\n        animation: none;\n        z-index: -1;\n      }\n      .dark::view-transition-new(root) {\n        animation-name: reveal-dark-${start}${blur ? "-blur" : ""};\n        ${blur ? "filter: blur(2px);" : ""}\n      }\n\n      @keyframes reveal-dark-${start}${blur ? "-blur" : ""} {\n        from {\n          clip-path: ${clipPath.from};\n          ${blur ? "filter: blur(8px);" : ""}\n        }\n        ${blur ? "50% { filter: blur(4px); }" : ""}\n        to {\n          clip-path: ${clipPath.to};\n          ${blur ? "filter: blur(0px);" : ""}\n        }\n      }\n\n      @keyframes reveal-light-${start}${blur ? "-blur" : ""} {\n        from {\n          clip-path: ${clipPath.from};\n          ${blur ? "filter: blur(8px);" : ""}\n        }\n        ${blur ? "50% { filter: blur(4px); }" : ""}\n        to {\n          clip-path: ${clipPath.to};\n          ${blur ? "filter: blur(0px);" : ""}\n        }\n      }\n      `,
+        ::view-transition-group(root) {
+          animation-duration: 0.7s;
+          animation-timing-function: var(--expo-out);
+        }
+        ::view-transition-new(root) {
+          animation-name: reveal-${start};
+          ${blur ? "filter: blur(2px);" : ""}
+        }
+        ::view-transition-old(root) {
+          animation: none;
+        }
+        @keyframes reveal-${start} {
+          from {
+            clip-path: ${clipPath.from};
+          }
+          to {
+            clip-path: ${clipPath.to};
+            ${blur ? "filter: blur(0px);" : ""}
+          }
+        }
+      `,
 		};
 	}
 
-	if (variant === "circle" && start === "center") {
+	if (variant === "circle-blur") {
 		return {
-			name: `${variant}-${start}${blur ? "-blur" : ""}`,
+			name: `circle-blur-${start}`,
 			css: `
-       ::view-transition-group(root) {\n        animation-duration: 0.7s;\n        animation-timing-function: var(--expo-out);\n      }\n            \n      ::view-transition-new(root) {\n        animation-name: reveal-light${blur ? "-blur" : ""};\n        ${blur ? "filter: blur(2px);" : ""}\n      }\n\n      ::view-transition-old(root),\n      .dark::view-transition-old(root) {\n        animation: none;\n        z-index: -1;\n      }\n      .dark::view-transition-new(root) {\n        animation-name: reveal-dark${blur ? "-blur" : ""};\n        ${blur ? "filter: blur(2px);" : ""}\n      }\n\n      @keyframes reveal-dark${blur ? "-blur" : ""} {\n        from {\n          clip-path: circle(0% at 50% 50%);\n          ${blur ? "filter: blur(8px);" : ""}\n        }\n        ${blur ? "50% { filter: blur(4px); }" : ""}\n        to {\n          clip-path: circle(100.0% at 50% 50%);\n          ${blur ? "filter: blur(0px);" : ""}\n        }\n      }\n\n      @keyframes reveal-light${blur ? "-blur" : ""} {\n        from {\n           clip-path: circle(0% at 50% 50%);\n           ${blur ? "filter: blur(8px);" : ""}\n        }\n        ${blur ? "50% { filter: blur(4px); }" : ""}\n        to {\n          clip-path: circle(100.0% at 50% 50%);\n          ${blur ? "filter: blur(0px);" : ""}\n        }\n      }\n      `,
+        ::view-transition-group(root) {
+          animation-duration: 0.7s;
+          animation-timing-function: var(--expo-out);
+        }
+        ::view-transition-new(root) {
+          animation-name: reveal-${start};
+          mask: url('${svg}') ${transformOrigin} / 0% 0% no-repeat;
+        }
+        ::view-transition-old(root) {
+          animation: none;
+        }
+        @keyframes reveal-${start} {
+          from {
+            mask-size: 0% 0%;
+          }
+          to {
+            mask-size: 300% 300%;
+          }
+        }
+      `,
 		};
 	}
 
 	if (variant === "gif") {
 		return {
-			name: `${variant}-${start}`,
+			name: `gif-${start}`,
 			css: `
-      ::view-transition-group(root) {\n  animation-timing-function: var(--expo-in);\n}\n\n::view-transition-new(root) {\n  mask: url('${url}') center / 0 no-repeat;\n  animation: scale 3s;\n}\n\n::view-transition-old(root),\n.dark::view-transition-old(root) {\n  animation: scale 3s;\n}\n\n@keyframes scale {\n  0% {\n    mask-size: 0;\n  }\n  10% {\n    mask-size: 50vmax;\n  }\n  90% {\n    mask-size: 50vmax;\n  }\n  100% {\n    mask-size: 2000vmax;\n  }\n}`,
-		};
-	}
-
-	if (variant === "circle-blur") {
-		if (start === "center") {
-			return {
-				name: `${variant}-${start}`,
-				css: `
-        ::view-transition-group(root) {\n          animation-timing-function: var(--expo-out);\n        }\n\n        ::view-transition-new(root) {\n          mask: url('${svg}') center / 0 no-repeat;\n          mask-origin: content-box;\n          animation: scale 1s;\n          transform-origin: center;\n        }\n\n        ::view-transition-old(root),\n        .dark::view-transition-old(root) {\n          animation: scale 1s;\n          transform-origin: center;\n          z-index: -1;\n        }\n\n        @keyframes scale {\n          to {\n            mask-size: 350vmax;\n          }\n        }\n        `,
-			};
-		}
-
-		return {
-			name: `${variant}-${start}`,
-			css: `
-      ::view-transition-group(root) {\n        animation-timing-function: var(--expo-out);\n      }\n\n      ::view-transition-new(root) {\n        mask: url('${svg}') ${start.replace("-", " ")} / 0 no-repeat;\n        mask-origin: content-box;\n        animation: scale 1s;\n        transform-origin: ${transformOrigin};\n      }\n\n      ::view-transition-old(root),\n      .dark::view-transition-old(root) {\n        animation: scale 1s;\n        transform-origin: ${transformOrigin};\n        z-index: -1;\n      }\n\n      @keyframes scale {\n        to {\n          mask-size: 350vmax;\n        }\n      }\n      `,
+        ::view-transition-group(root) {
+          animation-duration: 0.7s;
+          animation-timing-function: var(--expo-out);
+        }
+        ::view-transition-new(root) {
+          animation-name: reveal-${start};
+          mask: url('${url}') center / 0% 0% no-repeat;
+        }
+        ::view-transition-old(root) {
+          animation: none;
+        }
+        @keyframes reveal-${start} {
+          from {
+            mask-size: 0% 0%;
+          }
+          to {
+            mask-size: 100% 100%;
+          }
+        }
+      `,
 		};
 	}
 
 	if (variant === "polygon") {
-		const getPolygonClipPaths = (position: AnimationStart) => {
-			switch (position) {
-				case "top-left":
-					return {
-						darkFrom: "polygon(50% -71%, -50% 71%, -50% 71%, 50% -71%)",
-						darkTo: "polygon(50% -71%, -50% 71%, 50% 171%, 171% 50%)",
-						lightFrom: "polygon(171% 50%, 50% 171%, 50% 171%, 171% 50%)",
-						lightTo: "polygon(171% 50%, 50% 171%, -50% 71%, 50% -71%)",
-					};
-				case "top-right":
-					return {
-						darkFrom: "polygon(150% -71%, 250% 71%, 250% 71%, 150% -71%)",
-						darkTo: "polygon(150% -71%, 250% 71%, 50% 171%, -71% 50%)",
-						lightFrom: "polygon(-71% 50%, 50% 171%, 50% 171%, -71% 50%)",
-						lightTo: "polygon(-71% 50%, 50% 171%, 250% 71%, 150% -71%)",
-					};
-				default:
-					return {
-						darkFrom: "polygon(50% -71%, -50% 71%, -50% 71%, 50% -71%)",
-						darkTo: "polygon(50% -71%, -50% 71%, 50% 171%, 171% 50%)",
-						lightFrom: "polygon(171% 50%, 50% 171%, 50% 171%, 171% 50%)",
-						lightTo: "polygon(171% 50%, 50% 171%, -50% 71%, 50% -71%)",
-					};
-			}
-		};
-
-		const clipPaths = getPolygonClipPaths(start);
-
 		return {
-			name: `${variant}-${start}${blur ? "-blur" : ""}`,
+			name: `polygon-${start}`,
 			css: `
-       ::view-transition-group(root) {\n        animation-duration: 0.7s;\n        animation-timing-function: var(--expo-out);\n      }\n            \n      ::view-transition-new(root) {\n        animation-name: reveal-light-${start}${blur ? "-blur" : ""};\n        ${blur ? "filter: blur(2px);" : ""}\n      }\n\n      ::view-transition-old(root),\n      .dark::view-transition-old(root) {\n        animation: none;\n        z-index: -1;\n      }\n      .dark::view-transition-new(root) {\n        animation-name: reveal-dark-${start}${blur ? "-blur" : ""};\n        ${blur ? "filter: blur(2px);" : ""}\n      }\n\n      @keyframes reveal-dark-${start}${blur ? "-blur" : ""} {\n        from {\n          clip-path: ${clipPaths.darkFrom};\n          ${blur ? "filter: blur(8px);" : ""}\n        }\n        ${blur ? "50% { filter: blur(4px); }" : ""}\n        to {\n          clip-path: ${clipPaths.darkTo};\n          ${blur ? "filter: blur(0px);" : ""}\n        }\n      }\n\n      @keyframes reveal-light-${start}${blur ? "-blur" : ""} {\n        from {\n          clip-path: ${clipPaths.lightFrom};\n          ${blur ? "filter: blur(8px);" : ""}\n        }\n        ${blur ? "50% { filter: blur(4px); }" : ""}\n        to {\n          clip-path: ${clipPaths.lightTo};\n          ${blur ? "filter: blur(0px);" : ""}\n        }\n      }\n      `,
+        ::view-transition-group(root) {
+          animation-duration: 0.7s;
+          animation-timing-function: var(--expo-out);
+        }
+        ::view-transition-new(root) {
+          animation-name: reveal-${start};
+        }
+        ::view-transition-old(root) {
+          animation: none;
+        }
+        @keyframes reveal-${start} {
+          from {
+            clip-path: polygon(50% 50%, 50% 50%, 50% 50%);
+          }
+          to {
+            clip-path: polygon(50% -100%, -100% 150%, 200% 150%);
+          }
+        }
+      `,
+		};
+	}
+
+	if (variant === "circle") {
+		return {
+			name: `circle-${start}`,
+			css: `
+        ::view-transition-group(root) {
+          animation-duration: 0.7s;
+          animation-timing-function: var(--expo-out);
+        }
+        ::view-transition-new(root) {
+          animation-name: reveal-${start};
+          mask: url('${svg}') ${transformOrigin} / 0% 0% no-repeat;
+        }
+        ::view-transition-old(root) {
+          animation: none;
+        }
+        @keyframes reveal-${start} {
+          from {
+            mask-size: 0% 0%;
+          }
+          to {
+            mask-size: 300% 300%;
+          }
+        }
+      `,
 		};
 	}
 
 	return {
-		name: `${variant}-${start}${blur ? "-blur" : ""}`,
-		css: `
-      ::view-transition-group(root) {\n        animation-timing-function: var(--expo-in);\n      }\n      ::view-transition-new(root) {\n        mask: url('${svg}') ${start.replace("-", " ")} / 0 no-repeat;\n        mask-origin: content-box;\n        animation: scale-${start}${blur ? "-blur" : ""} 1s;\n        transform-origin: ${transformOrigin};\n        ${blur ? "filter: blur(2px);" : ""}\n      }\n      ::view-transition-old(root),\n      .dark::view-transition-old(root) {\n        animation: scale-${start}${blur ? "-blur" : ""} 1s;\n        transform-origin: ${transformOrigin};\n        z-index: -1;\n      }\n      @keyframes scale-${start}${blur ? "-blur" : ""} {\n        from {\n          ${blur ? "filter: blur(8px);" : ""}\n        }\n        ${blur ? "50% { filter: blur(4px); }" : ""}\n        to {\n          mask-size: 2000vmax;\n          ${blur ? "filter: blur(0px);" : ""}\n        }\n      }\n    `,
+		name: "default",
+		css: "",
 	};
 };
 
 export const useThemeToggle = ({
-	variant = "rectangle",
-	start = "right-left",
-	blur = true,
+	variant = "circle",
+	start = "center",
+	blur = false,
 	gifUrl = "",
 }: {
 	variant?: AnimationVariant;
@@ -259,25 +296,20 @@ export const useThemeToggle = ({
 	gifUrl?: string;
 } = {}) => {
 	const { theme, setTheme, resolvedTheme } = useTheme();
-	const [isDark, setIsDark] = useState(true);
+	const [isDark, setIsDark] = useState(false);
 
 	useEffect(() => {
-		const currentDark =
-			resolvedTheme === "dark" ||
-			document.documentElement.classList.contains("dark");
-		setIsDark(currentDark);
+		setIsDark(resolvedTheme === "dark");
 	}, [resolvedTheme]);
 
-	const styleId = "theme-transition-styles";
-
 	const updateStyles = useCallback((css: string) => {
-		if (typeof window === "undefined") return;
+		if (typeof document === "undefined") return;
 
-		let styleElement = document.getElementById(styleId) as HTMLStyleElement;
+		let styleElement = document.getElementById("theme-transition-styles");
 
 		if (!styleElement) {
 			styleElement = document.createElement("style");
-			styleElement.id = styleId;
+			styleElement.id = "theme-transition-styles";
 			document.head.appendChild(styleElement);
 		}
 
@@ -286,8 +318,10 @@ export const useThemeToggle = ({
 
 	const toggleTheme = useCallback(() => {
 		const currentIsDark =
-			(resolvedTheme ?? theme ?? "dark") === "dark" ||
-			document.documentElement.classList.contains("dark");
+			theme === "dark" ||
+			(!theme &&
+				window.matchMedia &&
+				window.matchMedia("(prefers-color-scheme: dark)").matches);
 		const nextTheme = currentIsDark ? "light" : "dark";
 
 		const animation = createAnimation(variant, start, blur, gifUrl);
@@ -313,16 +347,7 @@ export const useThemeToggle = ({
 		}
 
 		document.startViewTransition(applyThemeSwitch);
-	}, [
-		theme,
-		resolvedTheme,
-		setTheme,
-		variant,
-		start,
-		blur,
-		gifUrl,
-		updateStyles,
-	]);
+	}, [theme, setTheme, variant, start, blur, gifUrl, updateStyles]);
 
 	return {
 		isDark,
@@ -354,43 +379,15 @@ export const ThemeToggleButton = ({
 		<button
 			type="button"
 			className={cn(
-				"w-7 h-7 flex items-center justify-center cursor-pointer bg-transparent text-text-primary hover:bg-surface-hover transition-colors p-1 rounded-full enabled:active:scale-[0.96]",
+				"h-8 px-2.5 inline-flex items-center justify-center text-xs font-mono font-bold uppercase tracking-wider bg-surface-elevated/40 hover:bg-surface-hover text-text-primary transition-colors cursor-pointer enabled:active:scale-[0.96] rounded-xs",
 				className,
 			)}
 			onClick={toggleTheme}
-			aria-label="Toggle theme"
-			title="Toggle theme"
+			aria-label={`Shift to ${isDark ? "light" : "dark"} mode`}
+			title={`Shift to ${isDark ? "light" : "dark"} mode`}
 		>
-			<svg
-				viewBox="0 0 240 240"
-				fill="none"
-				xmlns="http://www.w3.org/2000/svg"
-				className="w-4 h-4"
-				aria-hidden="true"
-			>
-				<motion.g
-					animate={{ rotate: isDark ? -180 : 0 }}
-					transition={{ ease: "easeInOut", duration: 0.5 }}
-				>
-					<path
-						d="M120 67.5C149.25 67.5 172.5 90.75 172.5 120C172.5 149.25 149.25 172.5 120 172.5"
-						fill="currentColor"
-					/>
-					<path
-						d="M120 67.5C90.75 67.5 67.5 90.75 67.5 120C67.5 149.25 90.75 172.5 120 172.5"
-						fill="currentColor"
-						className="opacity-25"
-					/>
-				</motion.g>
-				<motion.path
-					animate={{ rotate: isDark ? 180 : 0 }}
-					transition={{ ease: "easeInOut", duration: 0.5 }}
-					d="M120 3.75C55.5 3.75 3.75 55.5 3.75 120C3.75 184.5 55.5 236.25 120 236.25C184.5 236.25 236.25 184.5 236.25 120C236.25 55.5 184.5 3.75 120 3.75ZM120 214.5V172.5C90.75 172.5 67.5 149.25 67.5 120C67.5 90.75 90.75 67.5 120 67.5V25.5C172.5 25.5 214.5 67.5 214.5 120C214.5 172.5 172.5 214.5 120 214.5Z"
-					fill="currentColor"
-				/>
-			</svg>
+			{isDark ? "light" : "dark"}
 		</button>
 	);
 };
-
 export default ThemeToggleButton;

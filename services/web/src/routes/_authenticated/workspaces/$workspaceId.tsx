@@ -3,6 +3,7 @@ import { createFileRoute, Link, useNavigate } from "@tanstack/react-router";
 import { ArrowLeft, Plus } from "lucide-react";
 import { useState } from "react";
 import { Loader } from "#/components/layout/loader";
+import { TicketBoardView } from "#/components/tickets/board";
 import { TicketCreateForm } from "#/components/tickets/ticket-create-form";
 import { TicketTable } from "#/components/tickets/ticket-table";
 import { ActiveTimerBar } from "#/components/time-entries/active-timer-bar";
@@ -39,6 +40,7 @@ function WorkspaceDetailPage() {
 
 	type Tab = "tickets" | "time" | "settings";
 	const [activeTab, setActiveTab] = useState<Tab>("tickets");
+	const [ticketView, setTicketView] = useState<"board" | "table">("board");
 	const [isCreatingTicket, setIsCreatingTicket] = useState(false);
 	const [filterStatus, setFilterStatus] = useState<string>("all");
 	const [preselectedTicketId, setPreselectedTicketId] = useState<string>("");
@@ -49,14 +51,11 @@ function WorkspaceDetailPage() {
 
 	if (isWsError || !workspace) {
 		return (
-			<div className="p-8 border border-border-default bg-surface-base text-center space-y-4">
+			<div className="p-8 bg-surface-base shadow-lg rounded-xs text-center space-y-4 ring-1 ring-border-default/20">
 				<p className="font-mono text-sm text-red-400">
 					Error: {String(wsError || "Workspace not found")}
 				</p>
-				<Link
-					to="/workspaces"
-					className="inline-flex items-center space-x-1.5 px-4 py-2 text-xs font-mono font-bold uppercase tracking-wider bg-surface-elevated hover:bg-surface-hover border border-border-default text-text-primary transition-colors cursor-pointer"
-				>
+				<Link to="/workspaces" className="h-8 btn-kizen-ghost">
 					<ArrowLeft className="w-3.5 h-3.5" />
 					<span>Back to Workspaces</span>
 				</Link>
@@ -72,8 +71,8 @@ function WorkspaceDetailPage() {
 
 	return (
 		<div className="space-y-8">
-			{/* Breadcrumb Navigation */}
-			<nav className="flex items-center space-x-2 font-mono text-xs text-text-muted">
+			{/* Breadcrumb Navigation - 32px standard row */}
+			<nav className="h-8 flex items-center space-x-2 font-mono text-xs text-text-muted">
 				<Link
 					to="/workspaces"
 					className="hover:text-text-primary transition-colors flex items-center space-x-1"
@@ -87,14 +86,14 @@ function WorkspaceDetailPage() {
 				</span>
 			</nav>
 
-			{/* Workspace Header */}
-			<div className="flex flex-col sm:flex-row sm:items-start sm:justify-between gap-4 pb-6 border-b border-border-default">
+			{/* Workspace Header - Clean without hard bottom border */}
+			<div className="flex flex-col sm:flex-row sm:items-start sm:justify-between gap-4 pb-2">
 				<div className="space-y-1">
 					<div className="flex items-center space-x-3">
 						<h1 className="text-2xl sm:text-3xl font-black font-sans uppercase tracking-tight text-text-primary">
 							{workspace.name}
 						</h1>
-						<span className="inline-block px-2.5 py-1 text-xs font-mono font-bold bg-surface-sunken border border-border-default text-text-primary">
+						<span className="inline-block px-2.5 py-1 text-xs font-mono font-bold bg-surface-elevated/60 text-text-primary rounded-xs">
 							Rate: {workspace.default_hourly_rate}/hr
 						</span>
 					</div>
@@ -115,16 +114,12 @@ function WorkspaceDetailPage() {
 				/>
 			) : null}
 
-			{/* Segmented Navigation Tabs */}
-			<div className="flex items-center border border-border-default bg-surface-sunken w-fit">
+			{/* Segmented Navigation Ghost Tabs - 32px height row (Modular classes from styles.css) */}
+			<div className="h-8 tab-group-32">
 				<button
 					type="button"
 					onClick={() => setActiveTab("tickets")}
-					className={`py-2 px-4 font-mono text-xs font-bold uppercase tracking-wider transition-all cursor-pointer enabled:active:scale-[0.96] ${
-						activeTab === "tickets"
-							? "bg-accent-primary text-accent-primary-fg"
-							: "text-text-muted hover:text-text-primary hover:bg-surface-hover"
-					}`}
+					className={`htab-7item-32 ${activeTab === "tickets" ? "active" : ""}`}
 				>
 					Tickets ({tickets.length})
 				</button>
@@ -132,11 +127,7 @@ function WorkspaceDetailPage() {
 				<button
 					type="button"
 					onClick={() => setActiveTab("time")}
-					className={`py-2 px-4 font-mono text-xs font-bold uppercase tracking-wider border-l border-border-default transition-all cursor-pointer enabled:active:scale-[0.96] ${
-						activeTab === "time"
-							? "bg-accent-primary text-accent-primary-fg"
-							: "text-text-muted hover:text-text-primary hover:bg-surface-hover"
-					}`}
+					className={`htab-7item-32 ${activeTab === "time" ? "active" : ""}`}
 				>
 					Time Tracking ({timeEntries.length})
 				</button>
@@ -144,11 +135,7 @@ function WorkspaceDetailPage() {
 				<button
 					type="button"
 					onClick={() => setActiveTab("settings")}
-					className={`py-2 px-4 font-mono text-xs font-bold uppercase tracking-wider border-l border-border-default transition-all cursor-pointer enabled:active:scale-[0.96] ${
-						activeTab === "settings"
-							? "bg-accent-primary text-accent-primary-fg"
-							: "text-text-muted hover:text-text-primary hover:bg-surface-hover"
-					}`}
+					className={`htab-7item-32 ${activeTab === "settings" ? "active" : ""}`}
 				>
 					Settings
 				</button>
@@ -158,34 +145,56 @@ function WorkspaceDetailPage() {
 			{activeTab === "tickets" ? (
 				<section className="space-y-6">
 					<div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4">
-						{/* Filters */}
-						<div className="flex flex-wrap items-center gap-1.5 font-mono text-xs">
-							<span className="text-text-muted mr-1 uppercase text-[11px]">
-								FILTER:
-							</span>
-							{["all", "backlog", "todo", "progress", "review", "done"].map(
-								(s) => (
-									<button
-										key={s}
-										type="button"
-										onClick={() => setFilterStatus(s)}
-										className={`px-2.5 py-1 text-[11px] font-bold uppercase tracking-wider border transition-colors cursor-pointer enabled:active:scale-[0.96] ${
-											filterStatus === s
-												? "bg-text-primary text-canvas border-text-primary"
-												: "bg-surface-elevated hover:bg-surface-hover border-border-default text-text-muted"
-										}`}
-									>
-										{s}
-									</button>
-								),
-							)}
+						<div className="flex flex-wrap items-center gap-3">
+							{/* View Mode Toggle: [ BOARD ] / [ TABLE ] Ghost Pills (32px row) */}
+							<div className="h-8 tab-group-32">
+								<button
+									type="button"
+									onClick={() => setTicketView("board")}
+									className={`h-7 tab-item-flex items-center32 ${ticketView === "board" ? "active" : ""}`}
+								>
+									BOARD
+								</button>
+								<button
+									type="button"
+									onClick={() => setTicketView("table")}
+									className={`h-7 tab-item-flex items-center32 ${ticketView === "table" ? "active" : ""}`}
+								>
+									TABLE
+								</button>
+							</div>
+
+							{/* Status Filters (active in Table view - 32px row) */}
+							{ticketView === "table" ? (
+								<div className="h-8 flex flex-wrap items-center gap-1.5 font-mono text-xs">
+									<span className="text-text-muted mr-1 uppercase text-[11px]">
+										FILTER:
+									</span>
+									{["all", "backlog", "todo", "progress", "review", "done"].map(
+										(s) => (
+											<button
+												key={s}
+												type="button"
+												onClick={() => setFilterStatus(s)}
+												className={`h-7 px-2.5 inlineinline-flex items-centerflex items-center text-[11px] font-bold uppercase tracking-wider rounded-xs transition-colors cursor-pointer enabled:active:scale-[0.96] ${
+													filterStatus === s
+														? "bg-text-primary text-canvas"
+														: "bg-surface-elevated/40 hover:bg-surface-elevated text-text-muted hover:text-text-primary"
+												}`}
+											>
+												{s}
+											</button>
+										),
+									)}
+								</div>
+							) : null}
 						</div>
 
-						{/* Action */}
+						{/* Action: Create New Ticket Trigger (Modular 32px height button) */}
 						<button
 							type="button"
 							onClick={() => setIsCreatingTicket(true)}
-							className="inline-flex items-center space-x-1.5 px-4 py-2 text-xs font-mono font-bold uppercase tracking-wider bg-accent-primary text-accent-primary-fg hover:bg-accent-primary-hover enabled:active:scale-[0.96] transition-all cursor-pointer shadow-sm self-start sm:self-auto"
+							className="h-8 px-3.5 btn-kizen-primary self-start sm:self-auto"
 						>
 							<Plus className="w-3.5 h-3.5" />
 							<span>New Ticket</span>
@@ -201,6 +210,16 @@ function WorkspaceDetailPage() {
 
 					{isTicketsPending ? (
 						<Loader />
+					) : ticketView === "board" ? (
+						<TicketBoardView
+							workspaceId={workspaceId}
+							tickets={tickets}
+							activeTimer={activeTimer}
+							onStartTimer={(ticketId) => {
+								setPreselectedTicketId(ticketId);
+								setActiveTab("time");
+							}}
+						/>
 					) : (
 						<TicketTable
 							workspaceId={workspaceId}

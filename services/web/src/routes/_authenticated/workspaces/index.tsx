@@ -27,8 +27,8 @@ function WorkspacesListPage() {
 
 	return (
 		<div className="space-y-8">
-			{/* Header Section */}
-			<div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4 pb-8 border-b border-border-default">
+			{/* Header Section - Clean without hard bottom border */}
+			<div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4 pb-4">
 				<div>
 					<h1 className="text-2xl sm:text-3xl font-black font-sans uppercase tracking-tight text-text-primary">
 						Workspaces
@@ -43,7 +43,7 @@ function WorkspacesListPage() {
 					<button
 						type="button"
 						onClick={() => setIsCreating(true)}
-						className="inline-flex items-center space-x-2 px-5 py-2.5 text-xs font-mono font-bold uppercase tracking-wider bg-accent-primary text-accent-primary-fg hover:bg-accent-primary-hover enabled:active:scale-[0.96] transition-all cursor-pointer shadow-sm"
+						className="btn-kizen-primary"
 					>
 						<Plus className="w-4 h-4" />
 						<span>Create Workspace</span>
@@ -60,7 +60,7 @@ function WorkspacesListPage() {
 			{isPending ? (
 				<Loader size="lg" />
 			) : isError ? (
-				<div className="p-8 border border-border-default bg-surface-base text-center space-y-4">
+				<div className="p-8 bg-surface-base shadow-lg rounded-xs text-center space-y-4 ring-1 ring-border-default/20">
 					<AlertCircle className="w-8 h-8 text-amber-500 mx-auto" />
 					<div className="space-y-1">
 						<h2 className="font-bold text-base text-text-primary uppercase font-sans">

@@ -9,8 +9,7 @@
   "scripts": {
     "generate-api": "openapi-typescript ../../contracts/openapi.yaml -o ./src/lib/api-types.gen.ts",
     "migrate-db": "bunx --bun auth@latest migrate -y",
-    "dev": "vite dev --host --port 3000",
-    "prod": "bun run migrate-db && vite dev --host --port 3000",
+    "dev": "bun run migrate-db && vite dev --host --port 3000",
     "generate-routes": "tsr generate",
     "build": "vite build",
     "preview": "vite preview",

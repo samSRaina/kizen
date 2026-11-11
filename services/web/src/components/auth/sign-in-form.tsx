@@ -146,7 +146,7 @@ export function SignInForm({ onSuccess }: SignInFormProps) {
 						checked={rememberMe}
 						onChange={(e) => setRememberMe(e.target.checked)}
 						disabled={isLoading}
-						className="w-4 h-4 bg-surface-elevated border border-border-default text-accent-primary rounded-none focus:ring-0 focus:ring-offset-0 cursor-pointer accent-accent-primary"
+						className="w-4 h-4 bg-surface-elevated border border-border-default text-accent-primary rounded-xs focus:ring-0 focus:ring-offset-0 cursor-pointer accent-accent-primary"
 					/>
 					<span className="text-[11px] tracking-wide uppercase">
 						REMEMBER ME
@@ -161,7 +161,7 @@ export function SignInForm({ onSuccess }: SignInFormProps) {
 				<button
 					type="submit"
 					disabled={isLoading}
-					className="w-full group bg-accent-primary text-accent-primary-fg font-mono font-bold text-xs uppercase tracking-widest py-3.5 px-5 flex items-center justify-between border border-accent-primary hover:bg-accent-primary-hover enabled:active:scale-[0.96] transition-all cursor-pointer disabled:opacity-50 disabled:cursor-not-allowed"
+					className="w-full group bg-accent-primary text-accent-primary-fg font-mono font-bold text-xs uppercase tracking-widest py-3.5 px-5 flex items-center justify-between border border-accent-primary hover:bg-accent-primary-hover enabled:active:scale-[0.96] transition-all cursor-pointer rounded-xs disabled:opacity-50 disabled:cursor-not-allowed"
 				>
 					<span className="flex items-center space-x-2">
 						{isLoading ? (
@@ -169,7 +169,7 @@ export function SignInForm({ onSuccess }: SignInFormProps) {
 						) : null}
 						<span>{isLoading ? "SIGNING IN..." : "SIGN IN"}</span>
 					</span>
-					<div className="w-7 h-7 bg-accent-primary-fg text-accent-primary flex items-center justify-center transform group-hover:translate-x-1 transition-transform">
+					<div className="w-7 h-7 bg-accent-primary-fg text-accent-primary flex items-center justify-center transform group-hover:translate-x-1 transition-transform rounded-xs">
 						<ArrowRight className="w-3.5 h-3.5" />
 					</div>
 				</button>

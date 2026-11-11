@@ -40,7 +40,7 @@ export function ActiveTimerBar({
 	const { digital } = formatSeconds(elapsedSeconds);
 
 	return (
-		<div className="border border-border-strong bg-surface-elevated p-4 flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4 font-mono text-xs shadow-sm">
+		<div className="bg-surface-elevated/50 hover:bg-surface-elevated/75 shadow-sm p-4 flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4 font-mono text-xs rounded-xs transition-colors">
 			<div className="flex items-center space-x-3.5">
 				<div className="relative flex items-center justify-center shrink-0">
 					<span className="w-2.5 h-2.5 bg-emerald-500 rounded-full animate-ping absolute opacity-75" />
@@ -49,7 +49,7 @@ export function ActiveTimerBar({
 
 				<div className="space-y-0.5">
 					<div className="flex items-center space-x-2">
-						<span className="px-1.5 py-0.5 text-[10px] font-bold uppercase tracking-wider bg-emerald-950/40 text-emerald-400 border border-emerald-800/80">
+						<span className="px-1.5 py-0.5 text-[10px] font-bold uppercase tracking-wider bg-emerald-500/15 text-emerald-400 rounded-xs">
 							ACTIVE SESSION
 						</span>
 						<span className="font-bold text-text-primary text-base tracking-wider font-mono">
@@ -83,7 +83,7 @@ export function ActiveTimerBar({
 				type="button"
 				disabled={stopMutation.isPending}
 				onClick={() => stopMutation.mutate()}
-				className="inline-flex items-center justify-center space-x-1.5 px-4 py-2 text-xs font-bold uppercase tracking-wider bg-red-950/40 hover:bg-red-900/60 text-red-300 border border-red-800/80 transition-colors cursor-pointer enabled:active:scale-[0.96] disabled:opacity-50 self-start sm:self-auto"
+				className="h-8 inline-flex items-center justify-center space-x-1.5 px-3.5 text-xs font-bold uppercase tracking-wider bg-red-500/15 hover:bg-red-500/25 text-red-300 rounded-xs transition-colors cursor-pointer enabled:active:scale-[0.96] disabled:opacity-50 self-start sm:self-auto"
 			>
 				{stopMutation.isPending ? (
 					<Loader2 className="w-3.5 h-3.5 animate-spin" />

@@ -16,9 +16,9 @@ export interface SignUpFormProps {
 export function SignUpForm({ onSuccess }: SignUpFormProps) {
 	const navigate = useNavigate();
 	const queryClient = useQueryClient();
-	const [displayName, setDisplayName] = useState("");
-	const [username, setUsername] = useState("");
 	const [email, setEmail] = useState("");
+	const [username, setUsername] = useState("");
+	const [displayName, setDisplayName] = useState("");
 	const [secret, setSecret] = useState("");
 	const [confirmSecret, setConfirmSecret] = useState("");
 	const [acceptTerms, setAcceptTerms] = useState(false);
@@ -31,9 +31,18 @@ export function SignUpForm({ onSuccess }: SignUpFormProps) {
 
 	const handleSubmit = async (e: React.FormEvent) => {
 		e.preventDefault();
+		const trimmedEmail = email.trim();
+		const trimmedUsername = username.trim();
+		const trimmedDisplayName = displayName.trim();
 
-		if (!email || !secret) {
-			setErrorMessage("Email and password are required.");
+		if (
+			!trimmedEmail ||
+			!trimmedUsername ||
+			!trimmedDisplayName ||
+			!secret ||
+			!confirmSecret
+		) {
+			setErrorMessage("All fields are required.");
 			return;
 		}
 
@@ -48,7 +57,7 @@ export function SignUpForm({ onSuccess }: SignUpFormProps) {
 		}
 
 		if (!acceptTerms) {
-			setErrorMessage("You must accept the terms to proceed.");
+			setErrorMessage("Please accept terms and conditions to proceed.");
 			return;
 		}
 
@@ -56,17 +65,11 @@ export function SignUpForm({ onSuccess }: SignUpFormProps) {
 		setErrorMessage(null);
 
 		try {
-			const formattedUsername =
-				username.trim() ||
-				(displayName.trim()
-					? displayName.toLowerCase().replace(/[^a-z0-9_-]/g, "_")
-					: email.split("@")[0].replace(/[^a-z0-9_-]/g, "_"));
-
 			const { data, error } = await authClient.signUp.email({
-				name: displayName || formattedUsername,
-				email,
+				email: trimmedEmail,
 				password: secret,
-				username: formattedUsername,
+				name: trimmedDisplayName,
+				username: trimmedUsername,
 			});
 
 			if (error) {
@@ -94,7 +97,9 @@ export function SignUpForm({ onSuccess }: SignUpFormProps) {
 			}
 		} catch (err: unknown) {
 			const msg =
-				err instanceof Error ? err.message : "Network error during sign up.";
+				err instanceof Error
+					? err.message
+					: "Network error during registration.";
 			setErrorMessage(msg);
 		} finally {
 			setIsLoading(false);
@@ -180,13 +185,13 @@ export function SignUpForm({ onSuccess }: SignUpFormProps) {
 						clearError();
 						setSecret(e.target.value);
 					}}
-					placeholder="••••••••••••"
+					placeholder="••••••••••••••••"
 					disabled={isLoading}
 					required
 				/>
 
 				<FormInput
-					id="sign-up-confirm-secret"
+					id="sign-up-confirm"
 					label="CONFIRM PASSWORD"
 					type="password"
 					value={confirmSecret}
@@ -194,7 +199,7 @@ export function SignUpForm({ onSuccess }: SignUpFormProps) {
 						clearError();
 						setConfirmSecret(e.target.value);
 					}}
-					placeholder="••••••••••••"
+					placeholder="••••••••••••••••"
 					disabled={isLoading}
 					required
 				/>
@@ -203,7 +208,7 @@ export function SignUpForm({ onSuccess }: SignUpFormProps) {
 			<motion.div
 				layout="position"
 				transition={{ duration: 0.45, ease: [0.16, 1, 0.3, 1] }}
-				className="flex items-center justify-between pt-1 font-mono text-xs text-text-secondary"
+				className="pt-1 font-mono text-xs text-text-secondary"
 			>
 				<label className="flex items-center space-x-2.5 cursor-pointer">
 					<input
@@ -215,7 +220,7 @@ export function SignUpForm({ onSuccess }: SignUpFormProps) {
 						}}
 						disabled={isLoading}
 						required
-						className="w-4 h-4 bg-surface-elevated border border-border-default text-accent-primary rounded-none focus:ring-0 focus:ring-offset-0 cursor-pointer accent-accent-primary"
+						className="w-4 h-4 bg-surface-elevated border border-border-default text-accent-primary rounded-xs focus:ring-0 focus:ring-offset-0 cursor-pointer accent-accent-primary"
 					/>
 					<span className="text-[11px] tracking-wide uppercase">
 						I AGREE TO TERMS & CONDITIONS
@@ -230,7 +235,7 @@ export function SignUpForm({ onSuccess }: SignUpFormProps) {
 				<button
 					type="submit"
 					disabled={isLoading}
-					className="w-full group bg-accent-primary text-accent-primary-fg font-mono font-bold text-xs uppercase tracking-widest py-3.5 px-5 flex items-center justify-between border border-accent-primary hover:bg-accent-primary-hover enabled:active:scale-[0.96] transition-all cursor-pointer mt-2 disabled:opacity-50 disabled:cursor-not-allowed"
+					className="w-full group bg-accent-primary text-accent-primary-fg font-mono font-bold text-xs uppercase tracking-widest py-3.5 px-5 flex items-center justify-between border border-accent-primary hover:bg-accent-primary-hover enabled:active:scale-[0.96] transition-all cursor-pointer mt-2 rounded-xs disabled:opacity-50 disabled:cursor-not-allowed"
 				>
 					<span className="flex items-center space-x-2">
 						{isLoading ? (
@@ -238,7 +243,7 @@ export function SignUpForm({ onSuccess }: SignUpFormProps) {
 						) : null}
 						<span>{isLoading ? "CREATING ACCOUNT..." : "CREATE ACCOUNT"}</span>
 					</span>
-					<div className="w-7 h-7 bg-accent-primary-fg text-accent-primary flex items-center justify-center transform group-hover:translate-x-1 transition-transform">
+					<div className="w-7 h-7 bg-accent-primary-fg text-accent-primary flex items-center justify-center transform group-hover:translate-x-1 transition-transform rounded-xs">
 						<ArrowRight className="w-3.5 h-3.5" />
 					</div>
 				</button>

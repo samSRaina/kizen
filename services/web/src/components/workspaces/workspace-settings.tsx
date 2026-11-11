@@ -58,10 +58,10 @@ export function WorkspaceSettings({
 	};
 
 	return (
-		<div className="space-y-10 max-w-2xl">
+		<div className="space-y-8 max-w-2xl">
 			{/* Edit Workspace Settings Form */}
-			<div className="border border-border-default bg-surface-base p-6 sm:p-8 space-y-6">
-				<div className="border-b border-border-default pb-4">
+			<div className="bg-surface-base/80 shadow-2xs hover:shadow-sm p-6 sm:p-8 space-y-6 rounded-xs transition-all">
+				<div className="border-b border-border-default/15 pb-4">
 					<h2 className="font-bold text-base uppercase tracking-tight text-text-primary font-sans">
 						Workspace Configuration
 					</h2>
@@ -72,10 +72,10 @@ export function WorkspaceSettings({
 
 				{statusMsg ? (
 					<div
-						className={`p-3 text-xs font-mono border flex items-center space-x-2 ${
+						className={`p-3 text-xs font-mono rounded-xs flex items-center space-x-2 ${
 							statusMsg.type === "success"
-								? "bg-emerald-950/20 border-emerald-800 text-emerald-300"
-								: "bg-red-950/20 border-red-800 text-red-300"
+								? "bg-emerald-500/15 text-emerald-300"
+								: "bg-red-500/15 text-red-300"
 						}`}
 					>
 						{statusMsg.type === "success" ? (
@@ -118,7 +118,7 @@ export function WorkspaceSettings({
 							value={description}
 							onChange={(e) => setDescription(e.target.value)}
 							rows={3}
-							className="w-full bg-surface-sunken border border-border-default px-3 py-2 text-text-primary focus:outline-hidden focus:border-border-strong text-xs font-sans leading-relaxed transition-colors"
+							className="w-full bg-surface-elevated/40 focus:bg-surface-elevated/70 px-3 py-2 text-text-primary focus:outline-hidden text-xs font-sans leading-relaxed rounded-xs transition-colors"
 						/>
 					</div>
 
@@ -126,7 +126,7 @@ export function WorkspaceSettings({
 						<button
 							type="submit"
 							disabled={updateMutation.isPending}
-							className="inline-flex items-center space-x-2 px-5 py-2.5 text-xs font-mono font-bold uppercase tracking-wider bg-accent-primary text-accent-primary-fg hover:bg-accent-primary-hover enabled:active:scale-[0.96] transition-all cursor-pointer disabled:opacity-50"
+							className="inline-flex items-center space-x-2 px-5 py-2.5 text-xs font-mono font-bold uppercase tracking-wider bg-accent-primary text-accent-primary-fg hover:bg-accent-primary-hover enabled:active:scale-[0.96] transition-all cursor-pointer disabled:opacity-50 rounded-xs"
 						>
 							{updateMutation.isPending ? (
 								<Loader2 className="w-3.5 h-3.5 animate-spin" />
@@ -140,7 +140,7 @@ export function WorkspaceSettings({
 			</div>
 
 			{/* Danger Zone */}
-			<div className="border border-red-900/60 bg-red-950/10 p-6 sm:p-8 space-y-4">
+			<div className="bg-red-500/10 p-6 sm:p-8 space-y-4 rounded-xs">
 				<div>
 					<h3 className="font-bold text-sm uppercase tracking-wider text-red-400 font-mono">
 						DANGER ZONE
@@ -165,7 +165,7 @@ export function WorkspaceSettings({
 						}
 					}}
 					disabled={deleteMutation.isPending}
-					className="inline-flex items-center space-x-2 px-4 py-2 text-xs font-mono font-bold uppercase tracking-wider bg-red-900/80 hover:bg-red-800 text-red-100 border border-red-700/80 enabled:active:scale-[0.96] transition-all cursor-pointer disabled:opacity-50"
+					className="inline-flex items-center space-x-2 px-4 py-2 text-xs font-mono font-bold uppercase tracking-wider bg-red-500/20 hover:bg-red-500/30 text-red-300 rounded-xs enabled:active:scale-[0.96] transition-all cursor-pointer disabled:opacity-50"
 				>
 					{deleteMutation.isPending ? (
 						<Loader2 className="w-3.5 h-3.5 animate-spin" />

@@ -39,7 +39,7 @@ function UserDetailsPage() {
 	if (isPending) return <Loader size="lg" />;
 	if (isError) {
 		return (
-			<div className="p-8 border border-border-default bg-surface-base text-center space-y-4">
+			<div className="p-8 bg-surface-base shadow-lg rounded-xs text-center space-y-4 ring-1 ring-border-default/20">
 				<AlertCircle className="w-8 h-8 text-amber-500 mx-auto" />
 				<p className="font-mono text-sm text-red-400">Error: {String(error)}</p>
 			</div>
@@ -47,7 +47,7 @@ function UserDetailsPage() {
 	}
 	if (!data?.user) {
 		return (
-			<div className="p-8 border border-border-default bg-surface-base text-center font-mono text-xs text-text-muted">
+			<div className="p-8 bg-surface-base shadow-lg rounded-xs text-center font-mono text-xs text-text-muted ring-1 ring-border-default/20">
 				No active session
 			</div>
 		);
@@ -58,7 +58,7 @@ function UserDetailsPage() {
 	return (
 		<div className="space-y-8 max-w-2xl">
 			{/* Page Header */}
-			<div className="pb-6 border-b border-border-default">
+			<div className="pb-4">
 				<h1 className="text-2xl sm:text-3xl font-black font-sans uppercase tracking-tight text-text-primary">
 					Account
 				</h1>
@@ -67,10 +67,10 @@ function UserDetailsPage() {
 				</p>
 			</div>
 
-			{/* User Details Matrix */}
-			<div className="border border-border-default bg-surface-base p-6 sm:p-8 space-y-6">
-				<div className="flex items-center space-x-4 border-b border-border-default pb-6">
-					<div className="w-14 h-14 bg-surface-elevated border border-border-default flex items-center justify-center text-text-muted">
+			{/* User Details Matrix - Clean Ghost Surface */}
+			<div className="bg-surface-base/80 shadow-2xs hover:shadow-sm p-6 sm:p-8 space-y-6 rounded-xs transition-all">
+				<div className="flex items-center space-x-4 border-b border-border-default/15 pb-6">
+					<div className="w-14 h-14 bg-surface-elevated/70 rounded-xs flex items-center justify-center text-text-muted">
 						<User className="w-7 h-7 text-text-primary" />
 					</div>
 					<div>
@@ -84,7 +84,7 @@ function UserDetailsPage() {
 				</div>
 
 				<div className="grid grid-cols-1 sm:grid-cols-2 gap-4 font-mono text-xs">
-					<div className="p-3 bg-surface-sunken border border-border-default space-y-1">
+					<div className="p-3 bg-surface-elevated/40 hover:bg-surface-elevated/70 rounded-xs space-y-1 transition-colors">
 						<span className="text-text-muted text-[11px] uppercase flex items-center space-x-1.5">
 							<Mail className="w-3.5 h-3.5" />
 							<span>Email Address</span>
@@ -94,7 +94,7 @@ function UserDetailsPage() {
 						</p>
 					</div>
 
-					<div className="p-3 bg-surface-sunken border border-border-default space-y-1">
+					<div className="p-3 bg-surface-elevated/40 hover:bg-surface-elevated/70 rounded-xs space-y-1 transition-colors">
 						<span className="text-text-muted text-[11px] uppercase flex items-center space-x-1.5">
 							<Hash className="w-3.5 h-3.5" />
 							<span>User ID</span>
@@ -104,7 +104,7 @@ function UserDetailsPage() {
 						</p>
 					</div>
 
-					<div className="p-3 bg-surface-sunken border border-border-default space-y-1 sm:col-span-2">
+					<div className="p-3 bg-surface-elevated/40 hover:bg-surface-elevated/70 rounded-xs space-y-1 sm:col-span-2 transition-colors">
 						<span className="text-text-muted text-[11px] uppercase flex items-center space-x-1.5">
 							<Calendar className="w-3.5 h-3.5" />
 							<span>Created At</span>
@@ -121,12 +121,12 @@ function UserDetailsPage() {
 					</p>
 				) : null}
 
-				<div className="pt-4 border-t border-border-subtle flex justify-end">
+				<div className="pt-4 border-t border-border-default/15 flex justify-end">
 					<button
 						type="button"
 						onClick={() => signOut.mutate()}
 						disabled={signOut.isPending}
-						className="inline-flex items-center space-x-2 px-5 py-2.5 text-xs font-mono font-bold uppercase tracking-wider bg-red-950/40 hover:bg-red-900/60 text-red-300 border border-red-800/80 transition-colors cursor-pointer enabled:active:scale-[0.96] disabled:opacity-50"
+						className="inline-flex items-center space-x-2 px-5 py-2.5 text-xs font-mono font-bold uppercase tracking-wider bg-red-500/15 hover:bg-red-500/25 text-red-300 rounded-xs transition-colors cursor-pointer enabled:active:scale-[0.96] disabled:opacity-50"
 					>
 						{signOut.isPending ? (
 							<Loader2 className="w-3.5 h-3.5 animate-spin" />

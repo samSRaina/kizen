@@ -109,7 +109,7 @@ export function ConfirmProvider({ children }: { children: ReactNode }) {
 							<div className="max-w-5xl mx-auto flex flex-col sm:flex-row items-start sm:items-center justify-between gap-4 font-mono">
 								{/* Icon & Message */}
 								<div className="flex items-start sm:items-center space-x-3 text-xs flex-1">
-									<div className="p-1.5 bg-red-500/10 border border-red-500/40 text-red-500 shrink-0">
+									<div className="p-1.5 bg-red-500/10 border border-red-500/40 text-red-500 shrink-0 rounded-xs">
 										{dialog.destructive ? (
 											<Trash2 className="w-4 h-4" />
 										) : (
@@ -122,7 +122,7 @@ export function ConfirmProvider({ children }: { children: ReactNode }) {
 											className="font-bold uppercase tracking-wider text-text-primary text-xs flex items-center gap-2"
 										>
 											<span>{dialog.title || "CONFIRM ACTION"}</span>
-											<span className="text-[10px] px-1.5 py-0.2 bg-red-500/20 text-red-400 font-normal">
+											<span className="text-[10px] px-1.5 py-0.2 bg-red-500/20 text-red-400 font-normal rounded-xs">
 												DETERRENT
 											</span>
 										</h2>
@@ -140,7 +140,7 @@ export function ConfirmProvider({ children }: { children: ReactNode }) {
 									<button
 										type="button"
 										onClick={handleCancel}
-										className="px-3.5 py-1.5 text-xs font-mono font-bold uppercase tracking-wider bg-surface-base hover:bg-surface-hover border border-border-default text-text-secondary hover:text-text-primary transition-colors cursor-pointer enabled:active:scale-[0.96]"
+										className="px-3.5 py-1.5 text-xs font-mono font-bold uppercase tracking-wider bg-surface-base hover:bg-surface-hover border border-border-default text-text-secondary hover:text-text-primary transition-colors cursor-pointer enabled:active:scale-[0.96] rounded-xs"
 									>
 										{dialog.cancelText || "CANCEL"}
 									</button>
@@ -149,7 +149,7 @@ export function ConfirmProvider({ children }: { children: ReactNode }) {
 										ref={confirmBtnRef}
 										type="button"
 										onClick={handleConfirm}
-										className="px-4 py-1.5 text-xs font-mono font-bold uppercase tracking-wider bg-red-600 hover:bg-red-500 text-white border border-red-600 shadow-sm transition-colors cursor-pointer enabled:active:scale-[0.96]"
+										className="px-4 py-1.5 text-xs font-mono font-bold uppercase tracking-wider bg-red-600 hover:bg-red-500 text-white border border-red-600 shadow-sm transition-colors cursor-pointer enabled:active:scale-[0.96] rounded-xs"
 									>
 										{dialog.confirmText || "PROCEED"}
 									</button>
@@ -157,7 +157,7 @@ export function ConfirmProvider({ children }: { children: ReactNode }) {
 									<button
 										type="button"
 										onClick={handleCancel}
-										className="p-1 text-text-muted hover:text-text-primary transition-colors cursor-pointer ml-1"
+										className="p-1 text-text-muted hover:text-text-primary transition-colors cursor-pointer ml-1 rounded-xs"
 										title="Dismiss"
 									>
 										<X className="w-4 h-4" />

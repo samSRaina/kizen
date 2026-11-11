@@ -90,9 +90,9 @@ export function TimeEntryForm({
 	};
 
 	return (
-		<div className="border border-border-default bg-surface-base p-6 space-y-6">
+		<div className="bg-surface-base/80 shadow-2xs hover:shadow-sm p-6 space-y-6 rounded-xs transition-all">
 			{/* Mode Header */}
-			<div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-3 border-b border-border-default pb-4">
+			<div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-3 border-b border-border-default/15 pb-4">
 				<div>
 					<h3 className="font-bold text-sm uppercase tracking-wider text-text-primary font-mono flex items-center space-x-2">
 						<Clock className="w-4 h-4 text-text-muted" />
@@ -113,7 +113,7 @@ export function TimeEntryForm({
 				<button
 					type="button"
 					onClick={() => setIsManualMode((prev) => !prev)}
-					className="px-3 py-1.5 text-xs font-mono font-semibold uppercase tracking-wider border border-border-default hover:bg-surface-hover text-text-secondary transition-colors cursor-pointer enabled:active:scale-[0.96] self-start sm:self-auto"
+					className="px-3 py-1.5 text-xs font-mono font-semibold uppercase tracking-wider bg-surface-elevated/40 hover:bg-surface-elevated text-text-secondary hover:text-text-primary rounded-xs transition-colors cursor-pointer enabled:active:scale-[0.96] self-start sm:self-auto"
 				>
 					Switch to {isManualMode ? "Live Timer" : "Manual Log"}
 				</button>
@@ -146,7 +146,7 @@ export function TimeEntryForm({
 							value={selectedTicketId}
 							onChange={(e) => setSelectedTicketId(e.target.value)}
 							disabled={createTimerMutation.isPending}
-							className="w-full px-3 py-2 text-xs bg-surface-elevated/40 border border-border-default text-text-primary focus:outline-hidden focus:border-text-primary font-mono cursor-pointer"
+							className="w-full px-3 py-2 text-xs bg-surface-elevated/40 hover:bg-surface-elevated/70 text-text-primary focus:outline-hidden font-mono cursor-pointer rounded-xs transition-colors"
 						>
 							<option value="">None / General</option>
 							{tickets.map((t) => (
@@ -198,7 +198,7 @@ export function TimeEntryForm({
 									type="checkbox"
 									checked={billable}
 									onChange={(e) => setBillable(e.target.checked)}
-									className="w-4 h-4 bg-surface-elevated border border-border-default text-accent-primary rounded-none focus:ring-0 focus:ring-offset-0 cursor-pointer accent-accent-primary"
+									className="w-4 h-4 bg-surface-elevated text-accent-primary rounded-xs focus:ring-0 focus:ring-offset-0 cursor-pointer accent-accent-primary"
 								/>
 								<span className="text-[11px] tracking-wide">
 									BILLABLE (RATE: {workspace.default_hourly_rate}/HR)
@@ -215,7 +215,7 @@ export function TimeEntryForm({
 								type="checkbox"
 								checked={billable}
 								onChange={(e) => setBillable(e.target.checked)}
-								className="w-4 h-4 bg-surface-elevated border border-border-default text-accent-primary rounded-none focus:ring-0 focus:ring-offset-0 cursor-pointer accent-accent-primary"
+								className="w-4 h-4 bg-surface-elevated text-accent-primary rounded-xs focus:ring-0 focus:ring-offset-0 cursor-pointer accent-accent-primary"
 							/>
 							<span className="text-[11px] tracking-wide">
 								BILLABLE AT WORKSPACE RATE ({workspace.default_hourly_rate}/HR)
@@ -228,7 +228,7 @@ export function TimeEntryForm({
 					<button
 						type="submit"
 						disabled={createTimerMutation.isPending}
-						className="inline-flex items-center space-x-2 px-5 py-2.5 text-xs font-mono font-bold uppercase tracking-wider bg-accent-primary text-accent-primary-fg hover:bg-accent-primary-hover enabled:active:scale-[0.96] transition-all cursor-pointer disabled:opacity-50"
+						className="inline-flex items-center space-x-2 px-5 py-2.5 text-xs font-mono font-bold uppercase tracking-wider bg-accent-primary text-accent-primary-fg hover:bg-accent-primary-hover enabled:active:scale-[0.96] transition-all cursor-pointer disabled:opacity-50 rounded-xs"
 					>
 						{createTimerMutation.isPending ? (
 							<Loader2 className="w-3.5 h-3.5 animate-spin" />

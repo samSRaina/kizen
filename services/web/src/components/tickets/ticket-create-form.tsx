@@ -61,16 +61,16 @@ export function TicketCreateForm({
 
 	return (
 		<div className="fixed inset-0 z-50 flex items-center justify-center bg-black/60 backdrop-blur-xs p-4">
-			<div className="w-full max-w-lg border border-border-default bg-surface-base shadow-2xl">
+			<div className="w-full max-w-lg bg-surface-base shadow-2xl rounded-xs ring-1 ring-border-default/20">
 				{/* Modal Header */}
-				<div className="border-b border-border-default px-6 py-4 flex items-center justify-between bg-surface-elevated/40">
+				<div className="px-6 py-4 flex items-center justify-between bg-surface-elevated/30 border-b border-border-default/15">
 					<h2 className="font-bold text-xs uppercase tracking-wider text-text-primary font-mono">
 						Create New Ticket
 					</h2>
 					<button
 						type="button"
 						onClick={onDone}
-						className="text-text-muted hover:text-text-primary cursor-pointer p-1 transition-colors enabled:active:scale-[0.96]"
+						className="text-text-muted hover:text-text-primary hover:bg-surface-elevated/60 cursor-pointer p-1 rounded-xs transition-colors enabled:active:scale-[0.96]"
 					>
 						<X className="w-4 h-4" />
 					</button>
@@ -110,7 +110,7 @@ export function TicketCreateForm({
 								value={type}
 								onChange={(e) => setType(e.target.value as TicketType)}
 								disabled={createTicketMutation.isPending}
-								className="w-full px-3 py-2 text-xs bg-surface-elevated/40 border border-border-default text-text-primary focus:outline-hidden focus:border-text-primary font-mono"
+								className="w-full px-3 py-2 text-xs bg-surface-elevated/40 hover:bg-surface-elevated/70 text-text-primary focus:outline-hidden font-mono rounded-xs transition-colors cursor-pointer"
 							>
 								<option value="feature">Feature</option>
 								<option value="bug">Bug</option>
@@ -130,7 +130,7 @@ export function TicketCreateForm({
 								value={priority}
 								onChange={(e) => setPriority(e.target.value as TicketPriority)}
 								disabled={createTicketMutation.isPending}
-								className="w-full px-3 py-2 text-xs bg-surface-elevated/40 border border-border-default text-text-primary focus:outline-hidden focus:border-text-primary font-mono"
+								className="w-full px-3 py-2 text-xs bg-surface-elevated/40 hover:bg-surface-elevated/70 text-text-primary focus:outline-hidden font-mono rounded-xs transition-colors cursor-pointer"
 							>
 								<option value="Low">Low</option>
 								<option value="Medium">Medium</option>
@@ -151,7 +151,7 @@ export function TicketCreateForm({
 								value={status}
 								onChange={(e) => setStatus(e.target.value as TicketStatus)}
 								disabled={createTicketMutation.isPending}
-								className="w-full px-3 py-2 text-xs bg-surface-elevated/40 border border-border-default text-text-primary focus:outline-hidden focus:border-text-primary font-mono"
+								className="w-full px-3 py-2 text-xs bg-surface-elevated/40 hover:bg-surface-elevated/70 text-text-primary focus:outline-hidden font-mono rounded-xs transition-colors cursor-pointer"
 							>
 								<option value="backlog">Backlog</option>
 								<option value="todo">Todo</option>
@@ -176,7 +176,7 @@ export function TicketCreateForm({
 							value={description}
 							onChange={(e) => setDescription(e.target.value)}
 							disabled={createTicketMutation.isPending}
-							className="w-full px-3 py-2 text-sm bg-surface-elevated/40 border border-border-default text-text-primary focus:outline-hidden focus:border-text-primary font-mono placeholder:text-text-muted/40 transition-colors"
+							className="w-full px-3 py-2 text-sm bg-surface-elevated/40 focus:bg-surface-elevated/70 text-text-primary focus:outline-hidden font-mono placeholder:text-text-muted/40 transition-colors rounded-xs"
 						/>
 					</div>
 
@@ -186,14 +186,14 @@ export function TicketCreateForm({
 							type="button"
 							onClick={onDone}
 							disabled={createTicketMutation.isPending}
-							className="px-4 py-2 text-xs font-mono font-semibold uppercase tracking-wider border border-border-default hover:bg-surface-hover text-text-secondary transition-colors cursor-pointer enabled:active:scale-[0.96] disabled:opacity-50"
+							className="px-4 py-2 text-xs font-mono font-semibold uppercase tracking-wider text-text-muted hover:text-text-primary hover:bg-surface-elevated/60 rounded-xs transition-colors cursor-pointer enabled:active:scale-[0.96] disabled:opacity-50"
 						>
 							Cancel
 						</button>
 						<button
 							type="submit"
 							disabled={createTicketMutation.isPending}
-							className="inline-flex items-center space-x-1.5 px-4 py-2 text-xs font-mono font-semibold uppercase tracking-wider bg-accent-primary text-accent-primary-fg hover:bg-accent-primary-hover enabled:active:scale-[0.96] transition-all cursor-pointer disabled:opacity-50"
+							className="inline-flex items-center space-x-1.5 px-4 py-2 text-xs font-mono font-semibold uppercase tracking-wider bg-accent-primary text-accent-primary-fg hover:bg-accent-primary-hover enabled:active:scale-[0.96] transition-all cursor-pointer disabled:opacity-50 rounded-xs"
 						>
 							{createTicketMutation.isPending ? (
 								<Loader2 className="w-3.5 h-3.5 animate-spin" />

@@ -37,14 +37,8 @@ export function AuthBentoMatrix() {
 							setTile1X("50%");
 						}}
 					>
-						{/* Subtle Dynamic Grid Reticle */}
-						<div
-							className="absolute inset-0 bg-[size:16px_16px] opacity-40 pointer-events-none"
-							style={{
-								backgroundImage:
-									"linear-gradient(to right, color-mix(in srgb, var(--text-primary) 9%, transparent) 1px, transparent 1px), linear-gradient(to bottom, color-mix(in srgb, var(--text-primary) 9%, transparent) 1px, transparent 1px)",
-							}}
-						/>
+						{/* Subtle Dynamic Grid Reticle (Single source of truth in styles.css) */}
+						<div className="absolute inset-0 bg-[size:16px_16px] opacity-40 pointer-events-none tactical-grid-reticle" />
 						<div className="absolute w-full h-[1px] bg-border-default" />
 						<div className="absolute h-full w-[1px] bg-border-default" />
 
