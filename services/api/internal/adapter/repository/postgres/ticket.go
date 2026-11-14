@@ -8,10 +8,10 @@ import (
 	"github.com/google/uuid"
 	"github.com/jackc/pgx/v5"
 	"github.com/jackc/pgx/v5/pgxpool"
+	"github.com/samSRaina/kizen/api/internal/adapter/repository/postgres/gen"
 	"github.com/samSRaina/kizen/api/internal/application/ports"
 	"github.com/samSRaina/kizen/api/internal/domain/auth"
 	"github.com/samSRaina/kizen/api/internal/domain/ticket"
-	"github.com/samSRaina/kizen/api/internal/repository/postgres/gen"
 )
 
 type TicketRepository struct {

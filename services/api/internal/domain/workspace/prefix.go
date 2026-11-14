@@ -18,9 +18,5 @@ func GeneratePrefix(name string) string {
 		}
 	}
 
-	if b.Len() == 0 {
-		return "KZ"
-	}
-
 	return b.String()
 }
