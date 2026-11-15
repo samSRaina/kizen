@@ -10,7 +10,6 @@ import (
 	"github.com/jackc/pgx/v5/pgconn"
 	"github.com/jackc/pgx/v5/pgxpool"
 	"github.com/samSRaina/kizen/api/internal/adapter/repository/postgres/gen"
-	"github.com/samSRaina/kizen/api/internal/application/ports"
 	"github.com/samSRaina/kizen/api/internal/domain/auth"
 	"github.com/samSRaina/kizen/api/internal/domain/workspace"
 )
@@ -25,7 +24,7 @@ func NewRepository(pool *pgxpool.Pool) *Repository {
 	}
 }
 
-var _ ports.WorkspaceRepository = (*Repository)(nil)
+var _ workspace.Repository = (*Repository)(nil)
 
 func (r *Repository) Create(ctx context.Context, ownerID auth.UserID, input workspace.CreateInput) (*workspace.Workspace, error) {
 	row, err := r.q.CreateWorkspace(ctx, gen.CreateWorkspaceParams{
@@ -36,10 +35,10 @@ func (r *Repository) Create(ctx context.Context, ownerID auth.UserID, input work
 	})
 
 	if err != nil {
-		// var pgErr *pgconn.PgError
-		// if errors.As(err, &pgErr) && pgErr.Code == "23505" {
-		// 	return nil, workspace.ErrDuplicateName
-		// }
+		var pgErr *pgconn.PgError
+		if errors.As(err, &pgErr) && pgErr.Code == "23505" {
+			return nil, workspace.ErrDuplicateName
+		}
 		return nil, fmt.Errorf("db create workspace: %w", err)
 	}
 	return &workspace.Workspace{
@@ -81,9 +80,9 @@ func (r *Repository) GetByID(ctx context.Context, ownerID auth.UserID, id uuid.U
 		OwnerID: ownerID.String(),
 	})
 	if err != nil {
-		// if errors.Is(err, pgx.ErrNoRows) {
-		// 	return nil, workspace.ErrNotFound
-		// }
+		if errors.Is(err, pgx.ErrNoRows) {
+			return nil, workspace.ErrNotFound
+		}
 		return nil, fmt.Errorf("db get workspace: %w", err)
 	}
 

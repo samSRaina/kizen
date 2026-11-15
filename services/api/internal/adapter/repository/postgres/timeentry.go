@@ -11,29 +11,30 @@ import (
 	"github.com/jackc/pgx/v5/pgtype"
 	"github.com/jackc/pgx/v5/pgxpool"
 	"github.com/samSRaina/kizen/api/internal/adapter/repository/postgres/gen"
-	"github.com/samSRaina/kizen/api/internal/application/ports"
 	"github.com/samSRaina/kizen/api/internal/domain/auth"
-	"github.com/samSRaina/kizen/api/internal/domain/timeentry"
+	"github.com/samSRaina/kizen/api/internal/domain/track"
 )
 
 type TimeEntryRepository struct {
-	q *gen.Queries
+	pool *pgxpool.Pool
+	q    *gen.Queries
 }
 
 func NewTimeEntryRepository(pool *pgxpool.Pool) *TimeEntryRepository {
 	return &TimeEntryRepository{
-		q: gen.New(pool),
+		pool: pool,
+		q:    gen.New(pool),
 	}
 }
 
-var _ ports.TimeEntryRepository = (*TimeEntryRepository)(nil)
+var _ track.TimeEntryRepository = (*TimeEntryRepository)(nil)
 
 func (r *TimeEntryRepository) ListByWorkspace(
 	ctx context.Context,
 	ownerID auth.UserID,
 	workspaceID uuid.UUID,
 	ticketID *uuid.UUID,
-) ([]timeentry.TimeEntry, error) {
+) ([]track.TimeEntry, error) {
 	var ticketIDUUID pgtype.UUID
 	if ticketID != nil {
 		ticketIDUUID = pgtype.UUID{Bytes: *ticketID, Valid: true}
@@ -48,7 +49,7 @@ func (r *TimeEntryRepository) ListByWorkspace(
 		return nil, fmt.Errorf("db list time entries: %w", err)
 	}
 
-	result := make([]timeentry.TimeEntry, len(rows))
+	result := make([]track.TimeEntry, len(rows))
 	for i, row := range rows {
 		result[i] = mapGenTimeEntryToDomain(row)
 	}
@@ -60,7 +61,7 @@ func (r *TimeEntryRepository) GetByID(
 	ownerID auth.UserID,
 	workspaceID uuid.UUID,
 	id uuid.UUID,
-) (*timeentry.TimeEntry, error) {
+) (*track.TimeEntry, error) {
 	row, err := r.q.GetTimeEntryByID(ctx, gen.GetTimeEntryByIDParams{
 		ID:          id,
 		WorkspaceID: workspaceID,
@@ -68,7 +69,7 @@ func (r *TimeEntryRepository) GetByID(
 	})
 	if err != nil {
 		if errors.Is(err, pgx.ErrNoRows) {
-			return nil, timeentry.ErrNotFound
+			return nil, track.ErrNotFound
 		}
 		return nil, fmt.Errorf("db get time entry: %w", err)
 	}
@@ -81,14 +82,14 @@ func (r *TimeEntryRepository) GetActive(
 	ctx context.Context,
 	ownerID auth.UserID,
 	workspaceID uuid.UUID,
-) (*timeentry.TimeEntry, error) {
+) (*track.TimeEntry, error) {
 	row, err := r.q.GetActiveTimeEntry(ctx, gen.GetActiveTimeEntryParams{
 		WorkspaceID: workspaceID,
 		OwnerID:     ownerID.String(),
 	})
 	if err != nil {
 		if errors.Is(err, pgx.ErrNoRows) {
-			return nil, timeentry.ErrNotFound
+			return nil, track.ErrNotFound
 		}
 		return nil, fmt.Errorf("db get active time entry: %w", err)
 	}
@@ -116,8 +117,8 @@ func (r *TimeEntryRepository) Create(
 	ctx context.Context,
 	ownerID auth.UserID,
 	workspaceID uuid.UUID,
-	input timeentry.CreateInput,
-) (*timeentry.TimeEntry, error) {
+	input track.CreateInput,
+) (*track.TimeEntry, error) {
 	var ticketIDUUID pgtype.UUID
 	if input.TicketID != nil {
 		ticketIDUUID = pgtype.UUID{Bytes: *input.TicketID, Valid: true}
@@ -150,6 +151,18 @@ func (r *TimeEntryRepository) Create(
 		rateI32 = &rate
 	}
 
+	isManual := false
+	if input.IsManual != nil {
+		isManual = *input.IsManual
+	}
+
+	timerState := string(track.TimerStateStopped)
+	if input.TimerState != nil {
+		timerState = string(*input.TimerState)
+	} else if !isManual && input.EndedAt == nil {
+		timerState = string(track.TimerStateRunning)
+	}
+
 	row, err := r.q.CreateTimeEntry(ctx, gen.CreateTimeEntryParams{
 		TicketID:        ticketIDUUID,
 		Description:     input.Description,
@@ -158,14 +171,60 @@ func (r *TimeEntryRepository) Create(
 		DurationSeconds: durI32,
 		Billable:        billable,
 		HourlyRate:      rateI32,
+		IsManual:        isManual,
+		TimerState:      timerState,
 		WorkspaceID:     workspaceID,
 		OwnerID:         ownerID.String(),
 	})
 	if err != nil {
 		if errors.Is(err, pgx.ErrNoRows) {
-			return nil, timeentry.ErrNotFound
+			return nil, track.ErrNotFound
 		}
 		return nil, fmt.Errorf("db create time entry: %w", err)
+	}
+
+	te := mapGenTimeEntryToDomain(row)
+	return &te, nil
+}
+
+func (r *TimeEntryRepository) Pause(
+	ctx context.Context,
+	ownerID auth.UserID,
+	workspaceID uuid.UUID,
+	id uuid.UUID,
+) (*track.TimeEntry, error) {
+	row, err := r.q.PauseTimeEntry(ctx, gen.PauseTimeEntryParams{
+		ID:          id,
+		WorkspaceID: workspaceID,
+		OwnerID:     ownerID.String(),
+	})
+	if err != nil {
+		if errors.Is(err, pgx.ErrNoRows) {
+			return nil, track.ErrNotRunning
+		}
+		return nil, fmt.Errorf("db pause time entry: %w", err)
+	}
+
+	te := mapGenTimeEntryToDomain(row)
+	return &te, nil
+}
+
+func (r *TimeEntryRepository) Resume(
+	ctx context.Context,
+	ownerID auth.UserID,
+	workspaceID uuid.UUID,
+	id uuid.UUID,
+) (*track.TimeEntry, error) {
+	row, err := r.q.ResumeTimeEntry(ctx, gen.ResumeTimeEntryParams{
+		ID:          id,
+		WorkspaceID: workspaceID,
+		OwnerID:     ownerID.String(),
+	})
+	if err != nil {
+		if errors.Is(err, pgx.ErrNoRows) {
+			return nil, track.ErrNotPaused
+		}
+		return nil, fmt.Errorf("db resume time entry: %w", err)
 	}
 
 	te := mapGenTimeEntryToDomain(row)
@@ -177,7 +236,7 @@ func (r *TimeEntryRepository) Stop(
 	ownerID auth.UserID,
 	workspaceID uuid.UUID,
 	id uuid.UUID,
-) (*timeentry.TimeEntry, error) {
+) (*track.TimeEntry, error) {
 	row, err := r.q.StopTimeEntry(ctx, gen.StopTimeEntryParams{
 		ID:          id,
 		WorkspaceID: workspaceID,
@@ -185,7 +244,7 @@ func (r *TimeEntryRepository) Stop(
 	})
 	if err != nil {
 		if errors.Is(err, pgx.ErrNoRows) {
-			return nil, timeentry.ErrAlreadyStopped
+			return nil, track.ErrAlreadyStopped
 		}
 		return nil, fmt.Errorf("db stop time entry: %w", err)
 	}
@@ -199,8 +258,8 @@ func (r *TimeEntryRepository) Update(
 	ownerID auth.UserID,
 	workspaceID uuid.UUID,
 	id uuid.UUID,
-	input timeentry.UpdateInput,
-) (*timeentry.TimeEntry, error) {
+	input track.UpdateInput,
+) (*track.TimeEntry, error) {
 	var ticketIDUUID pgtype.UUID
 	if input.TicketID != nil {
 		ticketIDUUID = pgtype.UUID{Bytes: *input.TicketID, Valid: true}
@@ -228,6 +287,12 @@ func (r *TimeEntryRepository) Update(
 		rateI32 = &rate
 	}
 
+	var timerStateStr *string
+	if input.TimerState != nil {
+		str := string(*input.TimerState)
+		timerStateStr = &str
+	}
+
 	row, err := r.q.UpdateTimeEntry(ctx, gen.UpdateTimeEntryParams{
 		TicketID:        ticketIDUUID,
 		Description:     input.Description,
@@ -236,13 +301,15 @@ func (r *TimeEntryRepository) Update(
 		DurationSeconds: durI32,
 		Billable:        input.Billable,
 		HourlyRate:      rateI32,
+		IsManual:        input.IsManual,
+		TimerState:      timerStateStr,
 		ID:              id,
 		WorkspaceID:     workspaceID,
 		OwnerID:         ownerID.String(),
 	})
 	if err != nil {
 		if errors.Is(err, pgx.ErrNoRows) {
-			return nil, timeentry.ErrNotFound
+			return nil, track.ErrNotFound
 		}
 		return nil, fmt.Errorf("db update time entry: %w", err)
 	}
@@ -266,12 +333,12 @@ func (r *TimeEntryRepository) Delete(
 		return fmt.Errorf("db delete time entry: %w", err)
 	}
 	if rowsAffected == 0 {
-		return timeentry.ErrNotFound
+		return track.ErrNotFound
 	}
 	return nil
 }
 
-func mapGenTimeEntryToDomain(row gen.TimeEntry) timeentry.TimeEntry {
+func mapGenTimeEntryToDomain(row gen.TimeEntry) track.TimeEntry {
 	var ticketID *uuid.UUID
 	if row.TicketID.Valid {
 		id := uuid.UUID(row.TicketID.Bytes)
@@ -290,7 +357,7 @@ func mapGenTimeEntryToDomain(row gen.TimeEntry) timeentry.TimeEntry {
 		durationSeconds = &dur
 	}
 
-	return timeentry.TimeEntry{
+	return track.TimeEntry{
 		ID:              row.ID,
 		WorkspaceID:     row.WorkspaceID,
 		TicketID:        ticketID,
@@ -300,6 +367,8 @@ func mapGenTimeEntryToDomain(row gen.TimeEntry) timeentry.TimeEntry {
 		DurationSeconds: durationSeconds,
 		Billable:        row.Billable,
 		HourlyRate:      int(row.HourlyRate),
+		IsManual:        row.IsManual,
+		TimerState:      track.TimerState(row.TimerState),
 		CreatedAt:       row.CreatedAt,
 		UpdatedAt:       row.UpdatedAt,
 	}

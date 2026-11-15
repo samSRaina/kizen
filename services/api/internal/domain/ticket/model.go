@@ -5,36 +5,15 @@ import (
 	"strings"
 )
 
-func (s Status) IsValid() bool {
-	switch s {
-	case StatusBacklog, StatusTodo, StatusProgress, StatusReview, StatusDone:
-		return true
-	default:
-		return false
-	}
+type CreateInput struct {
+	Title       string
+	Description *string
+	Type        Type
+	Status      *Status
+	Priority    Priority
+	Points      int
+	Tags        []string
 }
-
-func (p Priority) IsValid() bool {
-	switch p {
-	case PriorityCritical, PriorityHigh, PriorityMedium, PriorityLow:
-		return true
-	default:
-		return false
-	}
-}
-
-func (t Type) IsValid() bool {
-	switch t {
-	case TypeFeature, TypeBug, TypeTask:
-		return true
-	default:
-		return false
-	}
-}
-
-// =============================================================================
-// INPUT VALUE OBJECTS (Use Case DTOs with Invariant Validation)
-// =============================================================================
 
 func (c *CreateInput) Validate() error {
 	trimmedTitle := strings.TrimSpace(c.Title)
@@ -64,6 +43,16 @@ func (c *CreateInput) Validate() error {
 	}
 
 	return nil
+}
+
+type UpdateInput struct {
+	Title       *string
+	Description *string
+	Type        *Type
+	Status      *Status
+	Priority    *Priority
+	Points      *int
+	Tags        *[]string
 }
 
 func (u *UpdateInput) Validate() error {

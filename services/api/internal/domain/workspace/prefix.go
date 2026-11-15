@@ -6,7 +6,6 @@ import (
 )
 
 // GeneratePrefix derives a 3-character uppercase alphanumeric prefix from a workspace name.
-// If no alphanumeric characters are present, it falls back to "KZ".
 func GeneratePrefix(name string) string {
 	var b strings.Builder
 	for _, r := range name {
@@ -16,6 +15,10 @@ func GeneratePrefix(name string) string {
 				break
 			}
 		}
+	}
+
+	if b.Len() == 0 {
+		return "KZ"
 	}
 
 	return b.String()

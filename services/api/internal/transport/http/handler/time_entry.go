@@ -6,17 +6,17 @@ import (
 
 	"github.com/google/uuid"
 	openapi_types "github.com/oapi-codegen/runtime/types"
-	"github.com/samSRaina/kizen/api/internal/application/timeentry"
-	domainTimeEntry "github.com/samSRaina/kizen/api/internal/domain/timeentry"
+	"github.com/samSRaina/kizen/api/internal/application/track"
+	domainTimeEntry "github.com/samSRaina/kizen/api/internal/domain/track"
 	"github.com/samSRaina/kizen/api/internal/transport/http/gen"
 	"github.com/samSRaina/kizen/api/internal/transport/http/middleware"
 )
 
 type TimeEntryHandler struct {
-	timeEntryService *timeentry.Service
+	timeEntryService *track.Service
 }
 
-func NewTimeEntryHandler(service *timeentry.Service) *TimeEntryHandler {
+func NewTimeEntryHandler(service *track.Service) *TimeEntryHandler {
 	return &TimeEntryHandler{
 		timeEntryService: service,
 	}

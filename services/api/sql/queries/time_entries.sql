@@ -22,7 +22,7 @@ FROM time_entries te
 JOIN workspaces w ON te.workspace_id = w.id
 WHERE te.workspace_id = @workspace_id
   AND w.owner_id = @owner_id
-  AND te.ended_at IS NULL
+  AND te.timer_state IN ('running', 'paused')
 ORDER BY te.started_at DESC
 LIMIT 1;
 
@@ -30,13 +30,19 @@ LIMIT 1;
 UPDATE time_entries te
 SET
     ended_at = NOW(),
-    duration_seconds = GREATEST(0, EXTRACT(EPOCH FROM (NOW() - te.started_at))::integer),
+    timer_state = 'stopped',
+    duration_seconds = CASE 
+        WHEN te.timer_state = 'running' THEN 
+            COALESCE(te.duration_seconds, 0) + GREATEST(0, EXTRACT(EPOCH FROM (NOW() - te.updated_at))::integer)
+        ELSE 
+            COALESCE(te.duration_seconds, 0)
+    END,
     updated_at = NOW()
 FROM workspaces w
 WHERE te.workspace_id = w.id
   AND te.workspace_id = @workspace_id
   AND w.owner_id = @owner_id
-  AND te.ended_at IS NULL;
+  AND te.timer_state IN ('running', 'paused');
 
 -- name: CreateTimeEntry :one
 WITH valid_workspace AS (
@@ -52,7 +58,9 @@ INSERT INTO time_entries (
     ended_at,
     duration_seconds,
     billable,
-    hourly_rate
+    hourly_rate,
+    is_manual,
+    timer_state
 )
 SELECT
     vw.id,
@@ -62,22 +70,57 @@ SELECT
     @ended_at,
     @duration_seconds,
     @billable,
-    COALESCE(sqlc.narg('hourly_rate')::integer, vw.default_hourly_rate)
+    COALESCE(sqlc.narg('hourly_rate')::integer, vw.default_hourly_rate),
+    @is_manual,
+    @timer_state
 FROM valid_workspace vw
 RETURNING *;
 
--- name: StopTimeEntry :one
+-- name: PauseTimeEntry :one
 UPDATE time_entries te
 SET
-    ended_at = NOW(),
-    duration_seconds = GREATEST(0, EXTRACT(EPOCH FROM (NOW() - te.started_at))::integer),
+    timer_state = 'paused',
+    duration_seconds = COALESCE(te.duration_seconds, 0) + GREATEST(0, EXTRACT(EPOCH FROM (NOW() - te.updated_at))::integer),
     updated_at = NOW()
 FROM workspaces w
 WHERE te.workspace_id = w.id
   AND te.id = @id
   AND te.workspace_id = @workspace_id
   AND w.owner_id = @owner_id
-  AND te.ended_at IS NULL
+  AND te.timer_state = 'running'
+RETURNING te.*;
+
+-- name: ResumeTimeEntry :one
+UPDATE time_entries te
+SET
+    timer_state = 'running',
+    updated_at = NOW()
+FROM workspaces w
+WHERE te.workspace_id = w.id
+  AND te.id = @id
+  AND te.workspace_id = @workspace_id
+  AND w.owner_id = @owner_id
+  AND te.timer_state = 'paused'
+RETURNING te.*;
+
+-- name: StopTimeEntry :one
+UPDATE time_entries te
+SET
+    ended_at = NOW(),
+    timer_state = 'stopped',
+    duration_seconds = CASE 
+        WHEN te.timer_state = 'running' THEN 
+            COALESCE(te.duration_seconds, 0) + GREATEST(0, EXTRACT(EPOCH FROM (NOW() - te.updated_at))::integer)
+        ELSE 
+            COALESCE(te.duration_seconds, 0)
+    END,
+    updated_at = NOW()
+FROM workspaces w
+WHERE te.workspace_id = w.id
+  AND te.id = @id
+  AND te.workspace_id = @workspace_id
+  AND w.owner_id = @owner_id
+  AND te.timer_state IN ('running', 'paused')
 RETURNING te.*;
 
 -- name: UpdateTimeEntry :one
@@ -90,6 +133,8 @@ SET
     duration_seconds = COALESCE(sqlc.narg('duration_seconds'), te.duration_seconds),
     billable         = COALESCE(sqlc.narg('billable'), te.billable),
     hourly_rate      = COALESCE(sqlc.narg('hourly_rate'), te.hourly_rate),
+    is_manual        = COALESCE(sqlc.narg('is_manual'), te.is_manual),
+    timer_state      = COALESCE(sqlc.narg('timer_state'), te.timer_state),
     updated_at       = NOW()
 FROM workspaces w
 WHERE te.workspace_id = w.id

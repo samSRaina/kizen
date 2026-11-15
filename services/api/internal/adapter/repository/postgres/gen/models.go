@@ -39,6 +39,8 @@ type TimeEntry struct {
 	HourlyRate      int32              `json:"hourly_rate"`
 	CreatedAt       time.Time          `json:"created_at"`
 	UpdatedAt       time.Time          `json:"updated_at"`
+	IsManual        bool               `json:"is_manual"`
+	TimerState      string             `json:"timer_state"`
 }
 
 type Workspace struct {

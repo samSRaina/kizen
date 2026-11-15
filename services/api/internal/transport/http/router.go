@@ -5,14 +5,14 @@ import (
 
 	"github.com/go-chi/chi/v5"
 	chiMiddleware "github.com/go-chi/chi/v5/middleware"
-	"github.com/samSRaina/kizen/api/internal/application/ports"
-	"github.com/samSRaina/kizen/api/internal/platform/httpx"
+	"github.com/samSRaina/kizen/api/internal/domain/auth"
 	"github.com/samSRaina/kizen/api/internal/transport/http/gen"
+	"github.com/samSRaina/kizen/api/internal/transport/http/httpx"
 	"github.com/samSRaina/kizen/api/internal/transport/http/middleware"
 )
 
 type RouterConfig struct {
-	Authenticator ports.Authenticator
+	Authenticator auth.Authenticator
 	Server        gen.StrictServerInterface
 }
 
@@ -24,24 +24,19 @@ func NewRouter(cfg RouterConfig) *chi.Mux {
 	r.Use(chiMiddleware.RequestID)
 	r.Use(chiMiddleware.Recoverer)
 
-	// 2. Token Extraction & Auth Context Injector
-	r.Use(middleware.Authenticate(cfg.Authenticator))
-
-	// 3. Healthcheck Endpoint (Public)
-	r.Get("/api/health", func(w http.ResponseWriter, r *http.Request) {
-		httpx.JSON(w, http.StatusOK, map[string]string{"status": "ok"})
+	// 2. Public / Health endpoints
+	r.Get("/healthz", func(w http.ResponseWriter, r *http.Request) {
+		httpx.JSON(w, http.StatusOK, map[string]string{
+			"status": "healthy",
+		})
 	})
 
-	// 4. Wrap the Strict Handler
+	// 3. Authenticated API Sub-router
 	strictHandler := gen.NewStrictHandler(cfg.Server, nil)
 
-	// 5. Mount all routes generated from OpenAPI under /api/v1 onto base router r
-	gen.HandlerWithOptions(strictHandler, gen.ChiServerOptions{
-		BaseURL:    "/api/v1",
-		BaseRouter: r,
-		Middlewares: []gen.MiddlewareFunc{
-			middleware.RequireAuth(),
-		},
+	r.Route("/api/v1", func(api chi.Router) {
+		api.Use(middleware.Authenticate(cfg.Authenticator))
+		gen.HandlerFromMux(strictHandler, api)
 	})
 
 	return r

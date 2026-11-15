@@ -1,4 +1,4 @@
-package timeentry
+package track
 
 import (
 	"fmt"
@@ -34,6 +34,10 @@ func (c *CreateInput) Validate() error {
 		c.Billable = &defaultBillable
 	}
 
+	if c.TimerState != nil && !c.TimerState.IsValid() {
+		return fmt.Errorf("%w: invalid timer_state", ErrInvalidInput)
+	}
+
 	return nil
 }
 
@@ -50,6 +54,10 @@ func (u *UpdateInput) Validate() error {
 
 	if u.HourlyRate != nil && *u.HourlyRate < 0 {
 		return fmt.Errorf("%w: hourly_rate cannot be negative", ErrInvalidInput)
+	}
+
+	if u.TimerState != nil && !u.TimerState.IsValid() {
+		return fmt.Errorf("%w: invalid timer_state", ErrInvalidInput)
 	}
 
 	return nil

@@ -8,11 +8,10 @@ import (
 	"github.com/jwx-go/jwkfetch/v4"
 	"github.com/lestrrat-go/httprc/v3"
 	"github.com/lestrrat-go/jwx/v4/jwt"
-	"github.com/samSRaina/kizen/api/internal/application/ports"
 	"github.com/samSRaina/kizen/api/internal/domain/auth"
 )
 
-var _ ports.Authenticator = (*Authenticator)(nil)
+var _ auth.Authenticator = (*Authenticator)(nil)
 
 type Authenticator struct {
 	cache   *jwkfetch.Cache

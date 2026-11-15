@@ -22,6 +22,8 @@ type Querier interface {
 	ListTicketsByWorkspace(ctx context.Context, arg ListTicketsByWorkspaceParams) ([]Ticket, error)
 	ListTimeEntries(ctx context.Context, arg ListTimeEntriesParams) ([]TimeEntry, error)
 	ListWorkspaces(ctx context.Context, ownerID string) ([]Workspace, error)
+	PauseTimeEntry(ctx context.Context, arg PauseTimeEntryParams) (TimeEntry, error)
+	ResumeTimeEntry(ctx context.Context, arg ResumeTimeEntryParams) (TimeEntry, error)
 	StopActiveTimeEntries(ctx context.Context, arg StopActiveTimeEntriesParams) error
 	StopTimeEntry(ctx context.Context, arg StopTimeEntryParams) (TimeEntry, error)
 	UpdateTicket(ctx context.Context, arg UpdateTicketParams) (Ticket, error)

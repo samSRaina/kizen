@@ -17,7 +17,7 @@ const createTimeEntry = `-- name: CreateTimeEntry :one
 WITH valid_workspace AS (
     SELECT w.id, w.default_hourly_rate
     FROM workspaces w
-    WHERE w.id = $8 AND w.owner_id = $9
+    WHERE w.id = $10 AND w.owner_id = $11
 )
 INSERT INTO time_entries (
     workspace_id,
@@ -27,7 +27,9 @@ INSERT INTO time_entries (
     ended_at,
     duration_seconds,
     billable,
-    hourly_rate
+    hourly_rate,
+    is_manual,
+    timer_state
 )
 SELECT
     vw.id,
@@ -37,9 +39,11 @@ SELECT
     $4,
     $5,
     $6,
-    COALESCE($7::integer, vw.default_hourly_rate)
+    COALESCE($7::integer, vw.default_hourly_rate),
+    $8,
+    $9
 FROM valid_workspace vw
-RETURNING id, workspace_id, ticket_id, description, started_at, ended_at, duration_seconds, billable, hourly_rate, created_at, updated_at
+RETURNING id, workspace_id, ticket_id, description, started_at, ended_at, duration_seconds, billable, hourly_rate, created_at, updated_at, is_manual, timer_state
 `
 
 type CreateTimeEntryParams struct {
@@ -50,6 +54,8 @@ type CreateTimeEntryParams struct {
 	DurationSeconds *int32             `json:"duration_seconds"`
 	Billable        bool               `json:"billable"`
 	HourlyRate      *int32             `json:"hourly_rate"`
+	IsManual        bool               `json:"is_manual"`
+	TimerState      string             `json:"timer_state"`
 	WorkspaceID     uuid.UUID          `json:"workspace_id"`
 	OwnerID         string             `json:"owner_id"`
 }
@@ -63,6 +69,8 @@ func (q *Queries) CreateTimeEntry(ctx context.Context, arg CreateTimeEntryParams
 		arg.DurationSeconds,
 		arg.Billable,
 		arg.HourlyRate,
+		arg.IsManual,
+		arg.TimerState,
 		arg.WorkspaceID,
 		arg.OwnerID,
 	)
@@ -79,6 +87,8 @@ func (q *Queries) CreateTimeEntry(ctx context.Context, arg CreateTimeEntryParams
 		&i.HourlyRate,
 		&i.CreatedAt,
 		&i.UpdatedAt,
+		&i.IsManual,
+		&i.TimerState,
 	)
 	return i, err
 }
@@ -107,12 +117,12 @@ func (q *Queries) DeleteTimeEntry(ctx context.Context, arg DeleteTimeEntryParams
 }
 
 const getActiveTimeEntry = `-- name: GetActiveTimeEntry :one
-SELECT te.id, te.workspace_id, te.ticket_id, te.description, te.started_at, te.ended_at, te.duration_seconds, te.billable, te.hourly_rate, te.created_at, te.updated_at
+SELECT te.id, te.workspace_id, te.ticket_id, te.description, te.started_at, te.ended_at, te.duration_seconds, te.billable, te.hourly_rate, te.created_at, te.updated_at, te.is_manual, te.timer_state
 FROM time_entries te
 JOIN workspaces w ON te.workspace_id = w.id
 WHERE te.workspace_id = $1
   AND w.owner_id = $2
-  AND te.ended_at IS NULL
+  AND te.timer_state IN ('running', 'paused')
 ORDER BY te.started_at DESC
 LIMIT 1
 `
@@ -137,12 +147,14 @@ func (q *Queries) GetActiveTimeEntry(ctx context.Context, arg GetActiveTimeEntry
 		&i.HourlyRate,
 		&i.CreatedAt,
 		&i.UpdatedAt,
+		&i.IsManual,
+		&i.TimerState,
 	)
 	return i, err
 }
 
 const getTimeEntryByID = `-- name: GetTimeEntryByID :one
-SELECT te.id, te.workspace_id, te.ticket_id, te.description, te.started_at, te.ended_at, te.duration_seconds, te.billable, te.hourly_rate, te.created_at, te.updated_at
+SELECT te.id, te.workspace_id, te.ticket_id, te.description, te.started_at, te.ended_at, te.duration_seconds, te.billable, te.hourly_rate, te.created_at, te.updated_at, te.is_manual, te.timer_state
 FROM time_entries te
 JOIN workspaces w ON te.workspace_id = w.id
 WHERE te.id = $1
@@ -172,12 +184,14 @@ func (q *Queries) GetTimeEntryByID(ctx context.Context, arg GetTimeEntryByIDPara
 		&i.HourlyRate,
 		&i.CreatedAt,
 		&i.UpdatedAt,
+		&i.IsManual,
+		&i.TimerState,
 	)
 	return i, err
 }
 
 const listTimeEntries = `-- name: ListTimeEntries :many
-SELECT te.id, te.workspace_id, te.ticket_id, te.description, te.started_at, te.ended_at, te.duration_seconds, te.billable, te.hourly_rate, te.created_at, te.updated_at
+SELECT te.id, te.workspace_id, te.ticket_id, te.description, te.started_at, te.ended_at, te.duration_seconds, te.billable, te.hourly_rate, te.created_at, te.updated_at, te.is_manual, te.timer_state
 FROM time_entries te
 JOIN workspaces w ON te.workspace_id = w.id
 WHERE te.workspace_id = $1
@@ -213,6 +227,8 @@ func (q *Queries) ListTimeEntries(ctx context.Context, arg ListTimeEntriesParams
 			&i.HourlyRate,
 			&i.CreatedAt,
 			&i.UpdatedAt,
+			&i.IsManual,
+			&i.TimerState,
 		); err != nil {
 			return nil, err
 		}
@@ -224,17 +240,106 @@ func (q *Queries) ListTimeEntries(ctx context.Context, arg ListTimeEntriesParams
 	return items, nil
 }
 
+const pauseTimeEntry = `-- name: PauseTimeEntry :one
+UPDATE time_entries te
+SET
+    timer_state = 'paused',
+    duration_seconds = COALESCE(te.duration_seconds, 0) + GREATEST(0, EXTRACT(EPOCH FROM (NOW() - te.updated_at))::integer),
+    updated_at = NOW()
+FROM workspaces w
+WHERE te.workspace_id = w.id
+  AND te.id = $1
+  AND te.workspace_id = $2
+  AND w.owner_id = $3
+  AND te.timer_state = 'running'
+RETURNING te.id, te.workspace_id, te.ticket_id, te.description, te.started_at, te.ended_at, te.duration_seconds, te.billable, te.hourly_rate, te.created_at, te.updated_at, te.is_manual, te.timer_state
+`
+
+type PauseTimeEntryParams struct {
+	ID          uuid.UUID `json:"id"`
+	WorkspaceID uuid.UUID `json:"workspace_id"`
+	OwnerID     string    `json:"owner_id"`
+}
+
+func (q *Queries) PauseTimeEntry(ctx context.Context, arg PauseTimeEntryParams) (TimeEntry, error) {
+	row := q.db.QueryRow(ctx, pauseTimeEntry, arg.ID, arg.WorkspaceID, arg.OwnerID)
+	var i TimeEntry
+	err := row.Scan(
+		&i.ID,
+		&i.WorkspaceID,
+		&i.TicketID,
+		&i.Description,
+		&i.StartedAt,
+		&i.EndedAt,
+		&i.DurationSeconds,
+		&i.Billable,
+		&i.HourlyRate,
+		&i.CreatedAt,
+		&i.UpdatedAt,
+		&i.IsManual,
+		&i.TimerState,
+	)
+	return i, err
+}
+
+const resumeTimeEntry = `-- name: ResumeTimeEntry :one
+UPDATE time_entries te
+SET
+    timer_state = 'running',
+    updated_at = NOW()
+FROM workspaces w
+WHERE te.workspace_id = w.id
+  AND te.id = $1
+  AND te.workspace_id = $2
+  AND w.owner_id = $3
+  AND te.timer_state = 'paused'
+RETURNING te.id, te.workspace_id, te.ticket_id, te.description, te.started_at, te.ended_at, te.duration_seconds, te.billable, te.hourly_rate, te.created_at, te.updated_at, te.is_manual, te.timer_state
+`
+
+type ResumeTimeEntryParams struct {
+	ID          uuid.UUID `json:"id"`
+	WorkspaceID uuid.UUID `json:"workspace_id"`
+	OwnerID     string    `json:"owner_id"`
+}
+
+func (q *Queries) ResumeTimeEntry(ctx context.Context, arg ResumeTimeEntryParams) (TimeEntry, error) {
+	row := q.db.QueryRow(ctx, resumeTimeEntry, arg.ID, arg.WorkspaceID, arg.OwnerID)
+	var i TimeEntry
+	err := row.Scan(
+		&i.ID,
+		&i.WorkspaceID,
+		&i.TicketID,
+		&i.Description,
+		&i.StartedAt,
+		&i.EndedAt,
+		&i.DurationSeconds,
+		&i.Billable,
+		&i.HourlyRate,
+		&i.CreatedAt,
+		&i.UpdatedAt,
+		&i.IsManual,
+		&i.TimerState,
+	)
+	return i, err
+}
+
 const stopActiveTimeEntries = `-- name: StopActiveTimeEntries :exec
 UPDATE time_entries te
 SET
     ended_at = NOW(),
-    duration_seconds = GREATEST(0, EXTRACT(EPOCH FROM (NOW() - te.started_at))::integer),
+    timer_state = 'stopped',
+    duration_seconds = CASE 
+        WHEN te.timer_state = 'running' THEN 
+            COALESCE(te.duration_seconds, 0) + GREATEST(0, EXTRACT(EPOCH FROM (NOW() - te.updated_at))::integer)
+        ELSE 
+            COALESCE(te.duration_seconds, 0)
+    END,
     updated_at = NOW()
 FROM workspaces w
 WHERE te.workspace_id = w.id
   AND te.workspace_id = $1
   AND w.owner_id = $2
-  AND te.ended_at IS NULL
+  AND te.timer_state IN ('running', 'paused')
 `
 
 type StopActiveTimeEntriesParams struct {
@@ -251,15 +356,21 @@ const stopTimeEntry = `-- name: StopTimeEntry :one
 UPDATE time_entries te
 SET
     ended_at = NOW(),
-    duration_seconds = GREATEST(0, EXTRACT(EPOCH FROM (NOW() - te.started_at))::integer),
+    timer_state = 'stopped',
+    duration_seconds = CASE 
+        WHEN te.timer_state = 'running' THEN 
+            COALESCE(te.duration_seconds, 0) + GREATEST(0, EXTRACT(EPOCH FROM (NOW() - te.updated_at))::integer)
+        ELSE 
+            COALESCE(te.duration_seconds, 0)
+    END,
     updated_at = NOW()
 FROM workspaces w
 WHERE te.workspace_id = w.id
   AND te.id = $1
   AND te.workspace_id = $2
   AND w.owner_id = $3
-  AND te.ended_at IS NULL
-RETURNING te.id, te.workspace_id, te.ticket_id, te.description, te.started_at, te.ended_at, te.duration_seconds, te.billable, te.hourly_rate, te.created_at, te.updated_at
+  AND te.timer_state IN ('running', 'paused')
+RETURNING te.id, te.workspace_id, te.ticket_id, te.description, te.started_at, te.ended_at, te.duration_seconds, te.billable, te.hourly_rate, te.created_at, te.updated_at, te.is_manual, te.timer_state
 `
 
 type StopTimeEntryParams struct {
@@ -283,6 +394,8 @@ func (q *Queries) StopTimeEntry(ctx context.Context, arg StopTimeEntryParams) (T
 		&i.HourlyRate,
 		&i.CreatedAt,
 		&i.UpdatedAt,
+		&i.IsManual,
+		&i.TimerState,
 	)
 	return i, err
 }
@@ -297,13 +410,15 @@ SET
     duration_seconds = COALESCE($5, te.duration_seconds),
     billable         = COALESCE($6, te.billable),
     hourly_rate      = COALESCE($7, te.hourly_rate),
+    is_manual        = COALESCE($8, te.is_manual),
+    timer_state      = COALESCE($9, te.timer_state),
     updated_at       = NOW()
 FROM workspaces w
 WHERE te.workspace_id = w.id
-  AND te.id = $8
-  AND te.workspace_id = $9
-  AND w.owner_id = $10
-RETURNING te.id, te.workspace_id, te.ticket_id, te.description, te.started_at, te.ended_at, te.duration_seconds, te.billable, te.hourly_rate, te.created_at, te.updated_at
+  AND te.id = $10
+  AND te.workspace_id = $11
+  AND w.owner_id = $12
+RETURNING te.id, te.workspace_id, te.ticket_id, te.description, te.started_at, te.ended_at, te.duration_seconds, te.billable, te.hourly_rate, te.created_at, te.updated_at, te.is_manual, te.timer_state
 `
 
 type UpdateTimeEntryParams struct {
@@ -314,6 +429,8 @@ type UpdateTimeEntryParams struct {
 	DurationSeconds *int32             `json:"duration_seconds"`
 	Billable        *bool              `json:"billable"`
 	HourlyRate      *int32             `json:"hourly_rate"`
+	IsManual        *bool              `json:"is_manual"`
+	TimerState      *string            `json:"timer_state"`
 	ID              uuid.UUID          `json:"id"`
 	WorkspaceID     uuid.UUID          `json:"workspace_id"`
 	OwnerID         string             `json:"owner_id"`
@@ -328,6 +445,8 @@ func (q *Queries) UpdateTimeEntry(ctx context.Context, arg UpdateTimeEntryParams
 		arg.DurationSeconds,
 		arg.Billable,
 		arg.HourlyRate,
+		arg.IsManual,
+		arg.TimerState,
 		arg.ID,
 		arg.WorkspaceID,
 		arg.OwnerID,
@@ -345,6 +464,8 @@ func (q *Queries) UpdateTimeEntry(ctx context.Context, arg UpdateTimeEntryParams
 		&i.HourlyRate,
 		&i.CreatedAt,
 		&i.UpdatedAt,
+		&i.IsManual,
+		&i.TimerState,
 	)
 	return i, err
 }

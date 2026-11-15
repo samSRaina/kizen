@@ -6,19 +6,18 @@ import (
 	"log/slog"
 
 	"github.com/google/uuid"
-	"github.com/samSRaina/kizen/api/internal/application/ports"
 	"github.com/samSRaina/kizen/api/internal/domain/auth"
 	"github.com/samSRaina/kizen/api/internal/domain/workspace"
 )
 
 // Service coordinates business use cases for workspace management.
 type Service struct {
-	repo ports.WorkspaceRepository
+	repo workspace.Repository
 	log  *slog.Logger
 }
 
 // NewService constructs a WorkspaceService. It accepts the port interface and returns a concrete pointer.
-func NewService(repo ports.WorkspaceRepository, log *slog.Logger) *Service {
+func NewService(repo workspace.Repository, log *slog.Logger) *Service {
 	return &Service{
 		repo: repo,
 		log:  log,

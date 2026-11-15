@@ -11,12 +11,11 @@ import (
 	"syscall"
 	"time"
 
-	"github.com/samSRaina/kizen/api/internal/application/ports"
+	"github.com/samSRaina/kizen/api/internal/adapter/auth/jwt"
+	repoPostgres "github.com/samSRaina/kizen/api/internal/adapter/repository/postgres"
 	appTicket "github.com/samSRaina/kizen/api/internal/application/ticket"
-	appTimeEntry "github.com/samSRaina/kizen/api/internal/application/timeentry"
+	appTrack "github.com/samSRaina/kizen/api/internal/application/track"
 	appWorkspace "github.com/samSRaina/kizen/api/internal/application/workspace"
-	"github.com/samSRaina/kizen/api/internal/infrastructure/auth/jwt"
-	repoPostgres "github.com/samSRaina/kizen/api/internal/repository/postgres"
 	transportHTTP "github.com/samSRaina/kizen/api/internal/transport/http"
 	"github.com/samSRaina/kizen/api/internal/transport/http/handler"
 )
@@ -31,36 +30,44 @@ func main() {
 	defer cancel()
 
 	dbURL := os.Getenv("DATABASE_URL")
+	if dbURL == "" {
+		dbURL = "postgres://postgres:postgres@localhost:5432/kizen?sslmode=disable"
+	}
+
 	pool, err := repoPostgres.NewPool(ctx, dbURL)
 	if err != nil {
 		logger.Error("failed to connect to database", slog.Any("error", err))
 		os.Exit(1)
 	}
 	defer pool.Close()
-	logger.Info("connected to database successfully")
+	logger.Info("connected to postgresql successfully")
 
-	// Repositories
 	wsRepo := repoPostgres.NewRepository(pool)
 	ticketRepo := repoPostgres.NewTicketRepository(pool)
 	timeEntryRepo := repoPostgres.NewTimeEntryRepository(pool)
 
 	wsService := appWorkspace.NewService(wsRepo, logger)
 	ticketService := appTicket.NewService(ticketRepo, logger)
-	timeEntryService := appTimeEntry.NewService(timeEntryRepo, logger)
+	timeEntryService := appTrack.NewService(timeEntryRepo, logger)
 
 	wsHandler := handler.NewWorkspaceHandler(wsService)
 	ticketHandler := handler.NewTicketHandler(ticketService)
 	timeEntryHandler := handler.NewTimeEntryHandler(timeEntryService)
 	server := handler.NewServer(wsHandler, ticketHandler, timeEntryHandler)
 
-	// Auth
 	jwksURL := os.Getenv("AUTH_JWKS_URL")
+	if jwksURL == "" {
+		jwksURL = os.Getenv("AUTH_JKWS_URL")
+	}
+	if jwksURL == "" {
+		jwksURL = "http://web:3000/api/auth/jwks"
+	}
+
 	authProvider, err := jwt.NewAuthenticator(ctx, jwksURL)
 	if err != nil {
 		logger.Error("failed to initialize auth provider", slog.Any("error", err), slog.String("jwks_url", jwksURL))
 		os.Exit(1)
 	}
-	var _ ports.Authenticator = authProvider
 
 	router := transportHTTP.NewRouter(transportHTTP.RouterConfig{
 		Authenticator: authProvider,
@@ -68,6 +75,10 @@ func main() {
 	})
 
 	port := os.Getenv("PORT")
+	if port == "" {
+		port = "8080"
+	}
+
 	httpServer := &http.Server{
 		Addr:         ":" + port,
 		Handler:      router,
@@ -76,19 +87,19 @@ func main() {
 		IdleTimeout:  60 * time.Second,
 	}
 
-	shutdown := make(chan os.Signal, 1)
-	signal.Notify(shutdown, os.Interrupt, syscall.SIGTERM)
+	shutdownChan := make(chan os.Signal, 1)
+	signal.Notify(shutdownChan, os.Interrupt, syscall.SIGTERM)
 
 	go func() {
 		logger.Info(fmt.Sprintf("kizen api server listening on :%s", port))
 		if err := httpServer.ListenAndServe(); err != nil && !errors.Is(err, http.ErrServerClosed) {
-			logger.Error("server encountered an error", slog.Any("error", err))
+			logger.Error("http server failed", slog.Any("error", err))
 			os.Exit(1)
 		}
 	}()
 
-	<-shutdown
-	logger.Info("shutting down gracefully...")
+	<-shutdownChan
+	logger.Info("shutting down server gracefully...")
 
 	shutdownCtx, shutdownCancel := context.WithTimeout(context.Background(), 10*time.Second)
 	defer shutdownCancel()
@@ -97,5 +108,6 @@ func main() {
 		logger.Error("server forced to shutdown", slog.Any("error", err))
 		os.Exit(1)
 	}
+
 	logger.Info("server exited cleanly")
 }

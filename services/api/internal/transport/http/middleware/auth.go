@@ -5,9 +5,8 @@ import (
 	"net/http"
 	"strings"
 
-	"github.com/samSRaina/kizen/api/internal/application/ports"
 	"github.com/samSRaina/kizen/api/internal/domain/auth"
-	"github.com/samSRaina/kizen/api/internal/platform/httpx"
+	"github.com/samSRaina/kizen/api/internal/transport/http/httpx"
 )
 
 type contextKey struct{}
@@ -25,44 +24,36 @@ func IdentityFromContext(ctx context.Context) (*auth.Identity, bool) {
 	return id, ok && id != nil
 }
 
-// Authenticate middleware parses Bearer token and attaches Identity if valid.
-func Authenticate(authenticator ports.Authenticator) func(next http.Handler) http.Handler {
+// Authenticate returns middleware that validates JWT Bearer tokens and puts caller identity on context.
+func Authenticate(authProvider auth.Authenticator) func(http.Handler) http.Handler {
 	return func(next http.Handler) http.Handler {
 		return http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
 			authHeader := r.Header.Get("Authorization")
 			if authHeader == "" {
-				next.ServeHTTP(w, r)
+				httpx.Problem(w, http.StatusUnauthorized, "Unauthorized", "Missing authorization header")
 				return
 			}
 
-			parts := strings.Fields(authHeader)
-			if len(parts) != 2 || !strings.EqualFold(parts[0], "bearer") {
-				next.ServeHTTP(w, r)
+			parts := strings.SplitN(authHeader, " ", 2)
+			if len(parts) != 2 || !strings.EqualFold(parts[0], "Bearer") {
+				httpx.Problem(w, http.StatusUnauthorized, "Unauthorized", "Invalid authorization header format")
 				return
 			}
 
-			token := parts[1]
-			identity, err := authenticator.Authenticate(r.Context(), token)
+			rawToken := strings.TrimSpace(parts[1])
+			if rawToken == "" {
+				httpx.Problem(w, http.StatusUnauthorized, "Unauthorized", "Token cannot be empty")
+				return
+			}
+
+			identity, err := authProvider.Authenticate(r.Context(), rawToken)
 			if err != nil {
-				next.ServeHTTP(w, r)
+				httpx.Problem(w, http.StatusUnauthorized, "Unauthorized", "Invalid or expired token")
 				return
 			}
 
 			ctx := WithIdentity(r.Context(), identity)
 			next.ServeHTTP(w, r.WithContext(ctx))
-		})
-	}
-}
-
-// RequireAuth blocks requests that lack an Identity in context.
-func RequireAuth() func(next http.Handler) http.Handler {
-	return func(next http.Handler) http.Handler {
-		return http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
-			if _, ok := IdentityFromContext(r.Context()); !ok {
-				httpx.Unauthorized(w, "authentication credentials are required")
-				return
-			}
-			next.ServeHTTP(w, r)
 		})
 	}
 }

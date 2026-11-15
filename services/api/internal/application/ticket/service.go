@@ -6,17 +6,16 @@ import (
 	"log/slog"
 
 	"github.com/google/uuid"
-	"github.com/samSRaina/kizen/api/internal/application/ports"
 	"github.com/samSRaina/kizen/api/internal/domain/auth"
 	"github.com/samSRaina/kizen/api/internal/domain/ticket"
 )
 
 type Service struct {
-	repo ports.TicketRepository
+	repo ticket.Repository
 	log  *slog.Logger
 }
 
-func NewService(repo ports.TicketRepository, log *slog.Logger) *Service {
+func NewService(repo ticket.Repository, log *slog.Logger) *Service {
 	return &Service{repo: repo, log: log}
 }
 
@@ -125,6 +124,16 @@ func (s *Service) Update(
 
 	if err := input.Validate(); err != nil {
 		return nil, err
+	}
+
+	if input.Status != nil {
+		existing, err := s.repo.GetByIdentifier(ctx, caller.UserID, workspaceID, identifier)
+		if err != nil {
+			return nil, err
+		}
+		if err := existing.TransitionStatus(*input.Status); err != nil {
+			return nil, err
+		}
 	}
 
 	t, err := s.repo.Update(ctx, caller.UserID, workspaceID, identifier, input)

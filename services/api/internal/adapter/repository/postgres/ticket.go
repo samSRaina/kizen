@@ -9,7 +9,6 @@ import (
 	"github.com/jackc/pgx/v5"
 	"github.com/jackc/pgx/v5/pgxpool"
 	"github.com/samSRaina/kizen/api/internal/adapter/repository/postgres/gen"
-	"github.com/samSRaina/kizen/api/internal/application/ports"
 	"github.com/samSRaina/kizen/api/internal/domain/auth"
 	"github.com/samSRaina/kizen/api/internal/domain/ticket"
 )
@@ -24,7 +23,7 @@ func NewTicketRepository(pool *pgxpool.Pool) *TicketRepository {
 	}
 }
 
-var _ ports.TicketRepository = (*TicketRepository)(nil)
+var _ ticket.Repository = (*TicketRepository)(nil)
 
 func (r *TicketRepository) ListByWorkspace(
 	ctx context.Context,
