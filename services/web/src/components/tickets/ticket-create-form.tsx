@@ -61,10 +61,10 @@ export function TicketCreateForm({
 
 	return (
 		<div className="fixed inset-0 z-50 flex items-center justify-center bg-black/60 backdrop-blur-xs p-4">
-			<div className="w-full max-w-lg bg-surface-base shadow-2xl rounded-xs ring-1 ring-border-default/20">
+			<div className="w-full max-w-lg bg-surface-base shadow-2xl rounded-md border border-border-default">
 				{/* Modal Header */}
-				<div className="px-6 py-4 flex items-center justify-between bg-surface-elevated/30 border-b border-border-default/15">
-					<h2 className="font-bold text-xs uppercase tracking-wider text-text-primary font-mono">
+				<div className="px-6 py-4 flex items-center justify-between bg-surface-elevated border-b border-border-default">
+					<h2 className="font-bold text-xs uppercase tracking-wider text-text-primary">
 						Create New Ticket
 					</h2>
 					<button
@@ -101,7 +101,7 @@ export function TicketCreateForm({
 						<div className="space-y-1.5">
 							<label
 								htmlFor="ticket-type"
-								className="block font-mono text-[11px] uppercase tracking-wider font-semibold text-text-secondary"
+								className="block text-[11px] uppercase tracking-wider font-semibold text-text-secondary"
 							>
 								TYPE
 							</label>
@@ -110,7 +110,7 @@ export function TicketCreateForm({
 								value={type}
 								onChange={(e) => setType(e.target.value as TicketType)}
 								disabled={createTicketMutation.isPending}
-								className="w-full px-3 py-2 text-xs bg-surface-elevated/40 hover:bg-surface-elevated/70 text-text-primary focus:outline-hidden font-mono rounded-xs transition-colors cursor-pointer"
+								className="w-full px-3 py-2 text-xs bg-surface-base hover:bg-surface-elevated text-text-primary border border-border-default focus:border-border-strong focus:outline-hidden rounded-xs transition-colors cursor-pointer"
 							>
 								<option value="feature">Feature</option>
 								<option value="bug">Bug</option>
@@ -121,7 +121,7 @@ export function TicketCreateForm({
 						<div className="space-y-1.5">
 							<label
 								htmlFor="ticket-priority"
-								className="block font-mono text-[11px] uppercase tracking-wider font-semibold text-text-secondary"
+								className="block text-[11px] uppercase tracking-wider font-semibold text-text-secondary"
 							>
 								PRIORITY
 							</label>
@@ -130,7 +130,7 @@ export function TicketCreateForm({
 								value={priority}
 								onChange={(e) => setPriority(e.target.value as TicketPriority)}
 								disabled={createTicketMutation.isPending}
-								className="w-full px-3 py-2 text-xs bg-surface-elevated/40 hover:bg-surface-elevated/70 text-text-primary focus:outline-hidden font-mono rounded-xs transition-colors cursor-pointer"
+								className="w-full px-3 py-2 text-xs bg-surface-base hover:bg-surface-elevated text-text-primary border border-border-default focus:border-border-strong focus:outline-hidden rounded-xs transition-colors cursor-pointer"
 							>
 								<option value="Low">Low</option>
 								<option value="Medium">Medium</option>
@@ -142,7 +142,7 @@ export function TicketCreateForm({
 						<div className="space-y-1.5">
 							<label
 								htmlFor="ticket-status"
-								className="block font-mono text-[11px] uppercase tracking-wider font-semibold text-text-secondary"
+								className="block text-[11px] uppercase tracking-wider font-semibold text-text-secondary"
 							>
 								STATUS
 							</label>
@@ -151,7 +151,7 @@ export function TicketCreateForm({
 								value={status}
 								onChange={(e) => setStatus(e.target.value as TicketStatus)}
 								disabled={createTicketMutation.isPending}
-								className="w-full px-3 py-2 text-xs bg-surface-elevated/40 hover:bg-surface-elevated/70 text-text-primary focus:outline-hidden font-mono rounded-xs transition-colors cursor-pointer"
+								className="w-full px-3 py-2 text-xs bg-surface-base hover:bg-surface-elevated text-text-primary border border-border-default focus:border-border-strong focus:outline-hidden rounded-xs transition-colors cursor-pointer"
 							>
 								<option value="backlog">Backlog</option>
 								<option value="todo">Todo</option>
@@ -165,7 +165,7 @@ export function TicketCreateForm({
 					<div className="space-y-1.5">
 						<label
 							htmlFor="ticket-desc"
-							className="block font-mono text-[11px] uppercase tracking-wider font-semibold text-text-secondary"
+							className="block text-[11px] uppercase tracking-wider font-semibold text-text-secondary"
 						>
 							DESCRIPTION (OPTIONAL)
 						</label>
@@ -176,7 +176,7 @@ export function TicketCreateForm({
 							value={description}
 							onChange={(e) => setDescription(e.target.value)}
 							disabled={createTicketMutation.isPending}
-							className="w-full px-3 py-2 text-sm bg-surface-elevated/40 focus:bg-surface-elevated/70 text-text-primary focus:outline-hidden font-mono placeholder:text-text-muted/40 transition-colors rounded-xs"
+							className="w-full px-3 py-2 text-sm bg-surface-base focus:bg-surface-elevated text-text-primary border border-border-default focus:border-border-strong focus:outline-hidden placeholder:text-text-muted transition-colors rounded-xs"
 						/>
 					</div>
 
@@ -186,14 +186,14 @@ export function TicketCreateForm({
 							type="button"
 							onClick={onDone}
 							disabled={createTicketMutation.isPending}
-							className="px-4 py-2 text-xs font-mono font-semibold uppercase tracking-wider text-text-muted hover:text-text-primary hover:bg-surface-elevated/60 rounded-xs transition-colors cursor-pointer enabled:active:scale-[0.96] disabled:opacity-50"
+							className="px-4 py-2 text-xs font-semibold uppercase tracking-wider text-text-muted hover:text-text-primary hover:bg-surface-elevated/60 rounded-xs transition-colors cursor-pointer enabled:active:scale-[0.96] disabled:opacity-50"
 						>
 							Cancel
 						</button>
 						<button
 							type="submit"
 							disabled={createTicketMutation.isPending}
-							className="inline-flex items-center space-x-1.5 px-4 py-2 text-xs font-mono font-semibold uppercase tracking-wider bg-accent-primary text-accent-primary-fg hover:bg-accent-primary-hover enabled:active:scale-[0.96] transition-all cursor-pointer disabled:opacity-50 rounded-xs"
+							className="inline-flex items-center space-x-1.5 px-4 py-2 text-xs font-semibold uppercase tracking-wider bg-accent-primary text-accent-primary-fg hover:bg-accent-primary-hover enabled:active:scale-[0.96] transition-all cursor-pointer disabled:opacity-50 rounded-xs"
 						>
 							{createTicketMutation.isPending ? (
 								<Loader2 className="w-3.5 h-3.5 animate-spin" />

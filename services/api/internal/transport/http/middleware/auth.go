@@ -9,22 +9,17 @@ import (
 	"github.com/samSRaina/kizen/api/internal/transport/http/httpx"
 )
 
-type contextKey struct{}
-
-var identityContextKey = contextKey{}
-
-// WithIdentity injects an authenticated Identity into the context.
-func WithIdentity(ctx context.Context, id *auth.Identity) context.Context {
-	return context.WithValue(ctx, identityContextKey, id)
+// WithPrincipal injects an authenticated Principal into the context.
+func WithPrincipal(ctx context.Context, p *auth.Principal) context.Context {
+	return auth.WithPrincipal(ctx, p)
 }
 
-// IdentityFromContext extracts the Identity from the context.
-func IdentityFromContext(ctx context.Context) (*auth.Identity, bool) {
-	id, ok := ctx.Value(identityContextKey).(*auth.Identity)
-	return id, ok && id != nil
+// PrincipalFromContext extracts the Principal from the context.
+func PrincipalFromContext(ctx context.Context) (*auth.Principal, bool) {
+	return auth.PrincipalFrom(ctx)
 }
 
-// Authenticate returns middleware that validates JWT Bearer tokens and puts caller identity on context.
+// Authenticate returns middleware that validates JWT Bearer tokens and puts caller principal on context.
 func Authenticate(authProvider auth.Authenticator) func(http.Handler) http.Handler {
 	return func(next http.Handler) http.Handler {
 		return http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
@@ -46,13 +41,13 @@ func Authenticate(authProvider auth.Authenticator) func(http.Handler) http.Handl
 				return
 			}
 
-			identity, err := authProvider.Authenticate(r.Context(), rawToken)
+			principal, err := authProvider.Authenticate(r.Context(), rawToken)
 			if err != nil {
 				httpx.Problem(w, http.StatusUnauthorized, "Unauthorized", "Invalid or expired token")
 				return
 			}
 
-			ctx := WithIdentity(r.Context(), identity)
+			ctx := auth.WithPrincipal(r.Context(), principal)
 			next.ServeHTTP(w, r.WithContext(ctx))
 		})
 	}

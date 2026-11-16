@@ -5,5 +5,5 @@ import (
 )
 
 type Authenticator interface {
-	Authenticate(ctx context.Context, token string) (*Identity, error)
+	Authenticate(ctx context.Context, token string) (*Principal, error)
 }

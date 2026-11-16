@@ -72,7 +72,7 @@ export function AuthErrorAlert({
 								opacity: { duration: 0.28 },
 							},
 						}}
-						className="p-3 bg-red-950/40 border border-red-800/80 text-red-300 font-mono text-xs flex items-center space-x-2 mb-4"
+						className="p-3 bg-red-950/40 border border-red-800/80 text-red-300 text-xs flex items-center space-x-2 mb-4"
 					>
 						<AlertCircle className="w-4 h-4 shrink-0 text-red-400" />
 						<span>{message}</span>

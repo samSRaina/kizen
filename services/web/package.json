@@ -8,7 +8,7 @@
   },
   "scripts": {
     "generate-api": "openapi-typescript ../../contracts/openapi.yaml -o ./src/lib/api-types.gen.ts",
-    "migrate-db": "bunx --bun auth@latest migrate -y",
+    "migrate-db": "bun run ./src/lib/migrate.ts",
     "dev": "bun run migrate-db && vite dev --host --port 3000",
     "generate-routes": "tsr generate",
     "build": "vite build",
@@ -18,8 +18,11 @@
     "check": "biome check"
   },
   "dependencies": {
+    "@base-ui/react": "^1.9.0",
     "@tailwindcss/vite": "^4.1.18",
     "@tanstack/react-devtools": "0.10.13",
+    "@tanstack/react-hotkeys": "^0.25.1",
+    "@tanstack/react-pacer": "^0.24.1",
     "@tanstack/react-query": "5.104.3",
     "@tanstack/react-query-devtools": "5.104.3",
     "@tanstack/react-router": "1.170.45",

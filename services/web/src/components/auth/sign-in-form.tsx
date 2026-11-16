@@ -138,7 +138,7 @@ export function SignInForm({ onSuccess }: SignInFormProps) {
 			<motion.div
 				layout="position"
 				transition={{ duration: 0.45, ease: [0.16, 1, 0.3, 1] }}
-				className="flex items-center justify-between pt-1 font-mono text-xs text-text-secondary"
+				className="flex items-center justify-between pt-1 text-xs text-text-secondary"
 			>
 				<label className="flex items-center space-x-2.5 cursor-pointer">
 					<input
@@ -161,7 +161,7 @@ export function SignInForm({ onSuccess }: SignInFormProps) {
 				<button
 					type="submit"
 					disabled={isLoading}
-					className="w-full group bg-accent-primary text-accent-primary-fg font-mono font-bold text-xs uppercase tracking-widest py-3.5 px-5 flex items-center justify-between border border-accent-primary hover:bg-accent-primary-hover enabled:active:scale-[0.96] transition-all cursor-pointer rounded-xs disabled:opacity-50 disabled:cursor-not-allowed"
+					className="w-full group bg-accent-primary text-accent-primary-fg font-bold text-xs uppercase tracking-widest py-3.5 px-5 flex items-center justify-between border border-accent-primary hover:bg-accent-primary-hover enabled:active:scale-[0.96] transition-all cursor-pointer rounded-xs disabled:opacity-50 disabled:cursor-not-allowed"
 				>
 					<span className="flex items-center space-x-2">
 						{isLoading ? (

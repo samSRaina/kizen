@@ -11,6 +11,19 @@ import (
 	"github.com/jackc/pgx/v5/pgtype"
 )
 
+type Project struct {
+	ID                uuid.UUID          `json:"id"`
+	WorkspaceID       uuid.UUID          `json:"workspace_id"`
+	Name              string             `json:"name"`
+	TicketIDPrefix    string             `json:"ticket_id_prefix"`
+	Settings          []byte             `json:"settings"`
+	DefaultHourlyRate int32              `json:"default_hourly_rate"`
+	Description       *string            `json:"description"`
+	CreatedAt         time.Time          `json:"created_at"`
+	UpdatedAt         time.Time          `json:"updated_at"`
+	DeletedAt         pgtype.Timestamptz `json:"deleted_at"`
+}
+
 type Ticket struct {
 	ID          uuid.UUID `json:"id"`
 	WorkspaceID uuid.UUID `json:"workspace_id"`
@@ -25,6 +38,7 @@ type Ticket struct {
 	Tags        []string  `json:"tags"`
 	CreatedAt   time.Time `json:"created_at"`
 	UpdatedAt   time.Time `json:"updated_at"`
+	ProjectID   uuid.UUID `json:"project_id"`
 }
 
 type TimeEntry struct {

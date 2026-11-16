@@ -2,6 +2,7 @@ import { useMutation, useQueryClient } from "@tanstack/react-query";
 import { Clock, Loader2, Play, Save } from "lucide-react";
 import { useEffect, useState } from "react";
 import { FormInput } from "#/components/ui/form-input";
+import { ticketKeys, ticketMutations } from "#/lib/queries/tickets";
 import { timeEntryKeys, timeEntryMutations } from "#/lib/queries/time-entries";
 import type {
 	CreateTimeEntryRequest,
@@ -54,14 +55,31 @@ export function TimeEntryForm({
 		},
 	});
 
-	const handleStartTimer = (e: React.FormEvent) => {
+	const handleStartTimer = async (e: React.FormEvent) => {
 		e.preventDefault();
+		if (selectedTicketId) {
+			const ticket = tickets.find((t) => t.id === selectedTicketId);
+			if (ticket && ticket.status !== "progress") {
+				try {
+					await ticketMutations.update(workspaceId, ticket.identifier, {
+						status: "progress",
+					});
+					queryClient.invalidateQueries({
+						queryKey: ticketKeys.lists(workspaceId),
+					});
+				} catch (err) {
+					console.error("Failed to advance ticket to progress:", err);
+				}
+			}
+		}
 		createTimerMutation.mutate({
 			description: desc.trim() || undefined,
 			ticket_id: selectedTicketId || undefined,
 			started_at: new Date().toISOString(),
 			billable,
 			hourly_rate: billable ? workspace.default_hourly_rate : 0,
+			is_manual: false,
+			timer_state: "running",
 		});
 	};
 
@@ -86,15 +104,17 @@ export function TimeEntryForm({
 			duration_seconds: durationSeconds,
 			billable,
 			hourly_rate: billable ? workspace.default_hourly_rate : 0,
+			is_manual: true,
+			timer_state: "stopped",
 		});
 	};
 
 	return (
-		<div className="bg-surface-base/80 shadow-2xs hover:shadow-sm p-6 space-y-6 rounded-xs transition-all">
+		<div className="bg-surface-base border border-border-default shadow-xs p-6 space-y-6 rounded-md transition-all">
 			{/* Mode Header */}
-			<div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-3 border-b border-border-default/15 pb-4">
+			<div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-3 border-b border-border-subtle pb-4">
 				<div>
-					<h3 className="font-bold text-sm uppercase tracking-wider text-text-primary font-mono flex items-center space-x-2">
+					<h3 className="font-bold text-sm uppercase tracking-wider text-text-primary flex items-center space-x-2">
 						<Clock className="w-4 h-4 text-text-muted" />
 						<span>
 							{isManualMode
@@ -103,7 +123,7 @@ export function TimeEntryForm({
 						</span>
 					</h3>
 					{activeTimer && !isManualMode ? (
-						<p className="text-xs text-amber-500 font-mono mt-0.5">
+						<p className="text-xs text-amber-500 mt-0.5">
 							Notice: Starting a new timer will auto-finalize and archive the
 							currently active session.
 						</p>
@@ -113,7 +133,7 @@ export function TimeEntryForm({
 				<button
 					type="button"
 					onClick={() => setIsManualMode((prev) => !prev)}
-					className="px-3 py-1.5 text-xs font-mono font-semibold uppercase tracking-wider bg-surface-elevated/40 hover:bg-surface-elevated text-text-secondary hover:text-text-primary rounded-xs transition-colors cursor-pointer enabled:active:scale-[0.96] self-start sm:self-auto"
+					className="px-3 py-1.5 text-xs font-semibold uppercase tracking-wider bg-surface-elevated hover:bg-surface-hover text-text-secondary hover:text-text-primary border border-border-subtle rounded-md transition-colors cursor-pointer enabled:active:scale-[0.96] self-start sm:self-auto"
 				>
 					Switch to {isManualMode ? "Live Timer" : "Manual Log"}
 				</button>
@@ -137,7 +157,7 @@ export function TimeEntryForm({
 					<div className="space-y-1.5">
 						<label
 							htmlFor="timer-ticket"
-							className="block font-mono text-[11px] uppercase tracking-wider font-semibold text-text-secondary"
+							className="block text-[11px] uppercase tracking-wider font-semibold text-text-secondary"
 						>
 							ASSOCIATED TICKET (OPTIONAL)
 						</label>
@@ -146,9 +166,9 @@ export function TimeEntryForm({
 							value={selectedTicketId}
 							onChange={(e) => setSelectedTicketId(e.target.value)}
 							disabled={createTimerMutation.isPending}
-							className="w-full px-3 py-2 text-xs bg-surface-elevated/40 hover:bg-surface-elevated/70 text-text-primary focus:outline-hidden font-mono cursor-pointer rounded-xs transition-colors"
+							className="w-full px-3 py-2 text-xs bg-surface-base hover:bg-surface-elevated text-text-primary border border-border-default focus:border-border-strong focus:outline-hidden cursor-pointer rounded-xs transition-colors"
 						>
-							<option value="">None / General</option>
+							<option value="">No linked ticket</option>
 							{tickets.map((t) => (
 								<option key={t.id} value={t.id}>
 									[{t.identifier}] {t.title}
@@ -157,87 +177,77 @@ export function TimeEntryForm({
 						</select>
 					</div>
 
-					{isManualMode ? (
-						<div className="grid grid-cols-3 gap-2">
-							<FormInput
-								id="timer-date"
-								label="DATE"
-								type="text"
-								value={manualDate}
-								onChange={(e) => setManualDate(e.target.value)}
-								placeholder="YYYY-MM-DD"
-								disabled={createTimerMutation.isPending}
-								required
-							/>
-							<FormInput
-								id="timer-hours"
-								label="HOURS"
-								type="number"
-								min="0"
-								value={manualHours}
-								onChange={(e) => setManualHours(e.target.value)}
-								disabled={createTimerMutation.isPending}
-								required
-							/>
-							<FormInput
-								id="timer-minutes"
-								label="MINUTES"
-								type="number"
-								min="0"
-								max="59"
-								value={manualMinutes}
-								onChange={(e) => setManualMinutes(e.target.value)}
-								disabled={createTimerMutation.isPending}
-								required
-							/>
-						</div>
-					) : (
-						<div className="flex items-center pt-6">
-							<label className="flex items-center space-x-2.5 font-mono text-xs text-text-secondary cursor-pointer">
+					<div className="space-y-1.5">
+						<label
+							htmlFor="timer-billable"
+							className="block text-[11px] uppercase tracking-wider font-semibold text-text-secondary"
+						>
+							BILLABLE
+						</label>
+						<div className="flex items-center h-9">
+							<label className="flex items-center space-x-2 cursor-pointer text-xs text-text-primary">
 								<input
 									type="checkbox"
+									id="timer-billable"
 									checked={billable}
 									onChange={(e) => setBillable(e.target.checked)}
-									className="w-4 h-4 bg-surface-elevated text-accent-primary rounded-xs focus:ring-0 focus:ring-offset-0 cursor-pointer accent-accent-primary"
+									className="accent-accent-yellow rounded-xs w-4 h-4 cursor-pointer"
 								/>
-								<span className="text-[11px] tracking-wide">
-									BILLABLE (RATE: {workspace.default_hourly_rate}/HR)
-								</span>
+								<span>Mark this session as billable</span>
 							</label>
 						</div>
-					)}
+					</div>
 				</div>
 
 				{isManualMode ? (
-					<div className="pt-2">
-						<label className="flex items-center space-x-2.5 font-mono text-xs text-text-secondary cursor-pointer">
-							<input
-								type="checkbox"
-								checked={billable}
-								onChange={(e) => setBillable(e.target.checked)}
-								className="w-4 h-4 bg-surface-elevated text-accent-primary rounded-xs focus:ring-0 focus:ring-offset-0 cursor-pointer accent-accent-primary"
-							/>
-							<span className="text-[11px] tracking-wide">
-								BILLABLE AT WORKSPACE RATE ({workspace.default_hourly_rate}/HR)
-							</span>
-						</label>
+					<div className="grid grid-cols-1 sm:grid-cols-3 gap-4 pt-2 border-t border-border-default/10">
+						<FormInput
+							id="manual-date"
+							label="LOG DATE"
+							type="date"
+							value={manualDate}
+							onChange={(e) => setManualDate(e.target.value)}
+							disabled={createTimerMutation.isPending}
+						/>
+						<FormInput
+							id="manual-hours"
+							label="HOURS"
+							type="number"
+							min="0"
+							max="24"
+							value={manualHours}
+							onChange={(e) => setManualHours(e.target.value)}
+							disabled={createTimerMutation.isPending}
+						/>
+						<FormInput
+							id="manual-minutes"
+							label="MINUTES"
+							type="number"
+							min="0"
+							max="59"
+							value={manualMinutes}
+							onChange={(e) => setManualMinutes(e.target.value)}
+							disabled={createTimerMutation.isPending}
+						/>
 					</div>
 				) : null}
 
-				<div className="pt-2 flex justify-end">
+				<div className="flex justify-end pt-2">
 					<button
 						type="submit"
 						disabled={createTimerMutation.isPending}
-						className="inline-flex items-center space-x-2 px-5 py-2.5 text-xs font-mono font-bold uppercase tracking-wider bg-accent-primary text-accent-primary-fg hover:bg-accent-primary-hover enabled:active:scale-[0.96] transition-all cursor-pointer disabled:opacity-50 rounded-xs"
+						className="h-8 btn-kizen-primary"
 					>
 						{createTimerMutation.isPending ? (
 							<Loader2 className="w-3.5 h-3.5 animate-spin" />
 						) : isManualMode ? (
 							<Save className="w-3.5 h-3.5" />
 						) : (
-							<Play className="w-3.5 h-3.5 fill-current" />
+							<Play className="w-3.5 h-3.5" />
 						)}
-						<span>{isManualMode ? "Save Log Entry" : "Start Live Timer"}</span>
+						<span>
+							{isManualMode ? "Save Manual Entry" : "Start Live Timer"}
+						</span>
 					</button>
 				</div>
 			</form>

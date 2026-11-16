@@ -135,6 +135,40 @@ export interface paths {
 		patch?: never;
 		trace?: never;
 	};
+	"/workspaces/{workspace_id}/time-entries/{id}/pause": {
+		parameters: {
+			query?: never;
+			header?: never;
+			path?: never;
+			cookie?: never;
+		};
+		get?: never;
+		put?: never;
+		/** Pause an active running time entry timer */
+		post: operations["pauseTimeEntry"];
+		delete?: never;
+		options?: never;
+		head?: never;
+		patch?: never;
+		trace?: never;
+	};
+	"/workspaces/{workspace_id}/time-entries/{id}/resume": {
+		parameters: {
+			query?: never;
+			header?: never;
+			path?: never;
+			cookie?: never;
+		};
+		get?: never;
+		put?: never;
+		/** Resume a paused time entry timer */
+		post: operations["resumeTimeEntry"];
+		delete?: never;
+		options?: never;
+		head?: never;
+		patch?: never;
+		trace?: never;
+	};
 }
 export type webhooks = Record<string, never>;
 export interface components {
@@ -241,6 +275,13 @@ export interface components {
 			duration_seconds?: number | null;
 			billable: boolean;
 			hourly_rate: number;
+			/** @default false */
+			is_manual: boolean;
+			/**
+			 * @default stopped
+			 * @enum {string}
+			 */
+			timer_state: "running" | "paused" | "stopped";
 			/** Format: date-time */
 			created_at: string;
 			/** Format: date-time */
@@ -258,6 +299,9 @@ export interface components {
 			/** @default true */
 			billable: boolean;
 			hourly_rate?: number | null;
+			is_manual?: boolean | null;
+			/** @enum {string|null} */
+			timer_state?: "running" | "paused" | "stopped" | null;
 		};
 		UpdateTimeEntryRequest: {
 			/** Format: uuid */
@@ -270,6 +314,9 @@ export interface components {
 			duration_seconds?: number | null;
 			billable?: boolean;
 			hourly_rate?: number;
+			is_manual?: boolean | null;
+			/** @enum {string|null} */
+			timer_state?: "running" | "paused" | "stopped" | null;
 		};
 	};
 	responses: {
@@ -741,6 +788,60 @@ export interface operations {
 		requestBody?: never;
 		responses: {
 			/** @description Stopped time entry with calculated duration */
+			200: {
+				headers: {
+					[name: string]: unknown;
+				};
+				content: {
+					"application/json": components["schemas"]["TimeEntry"];
+				};
+			};
+			400: components["responses"]["BadRequest"];
+			401: components["responses"]["Unauthorized"];
+			404: components["responses"]["NotFound"];
+			500: components["responses"]["InternalError"];
+		};
+	};
+	pauseTimeEntry: {
+		parameters: {
+			query?: never;
+			header?: never;
+			path: {
+				workspace_id: string;
+				id: string;
+			};
+			cookie?: never;
+		};
+		requestBody?: never;
+		responses: {
+			/** @description Paused time entry with accrued duration */
+			200: {
+				headers: {
+					[name: string]: unknown;
+				};
+				content: {
+					"application/json": components["schemas"]["TimeEntry"];
+				};
+			};
+			400: components["responses"]["BadRequest"];
+			401: components["responses"]["Unauthorized"];
+			404: components["responses"]["NotFound"];
+			500: components["responses"]["InternalError"];
+		};
+	};
+	resumeTimeEntry: {
+		parameters: {
+			query?: never;
+			header?: never;
+			path: {
+				workspace_id: string;
+				id: string;
+			};
+			cookie?: never;
+		};
+		requestBody?: never;
+		responses: {
+			/** @description Resumed live running time entry */
 			200: {
 				headers: {
 					[name: string]: unknown;

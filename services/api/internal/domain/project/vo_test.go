@@ -1,9 +1,9 @@
-package workspace_test
+package project_test
 
 import (
 	"testing"
 
-	"github.com/samSRaina/kizen/api/internal/domain/workspace"
+	"github.com/samSRaina/kizen/api/internal/domain/project"
 )
 
 func TestGeneratePrefix(t *testing.T) {
@@ -21,7 +21,7 @@ func TestGeneratePrefix(t *testing.T) {
 
 	for _, tc := range tests {
 		t.Run(tc.name, func(t *testing.T) {
-			actual := workspace.GeneratePrefix(tc.input)
+			actual := project.GeneratePrefix(tc.input)
 			if actual != tc.expected {
 				t.Errorf("GeneratePrefix(%q) = %q, expected %q", tc.input, actual, tc.expected)
 			}

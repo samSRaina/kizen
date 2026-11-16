@@ -1,11 +1,11 @@
-package workspace
+package project
 
 import (
 	"strings"
 	"unicode"
 )
 
-// GeneratePrefix derives a 3-character uppercase alphanumeric prefix from a workspace name.
+// GeneratePrefix derives a 3-character uppercase alphanumeric prefix from a project name.
 func GeneratePrefix(name string) string {
 	var b strings.Builder
 	for _, r := range name {

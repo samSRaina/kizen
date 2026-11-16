@@ -12,18 +12,23 @@ import (
 )
 
 const createTicket = `-- name: CreateTicket :one
-WITH valid_workspace AS (
-    SELECT w.id, w.name
-    FROM workspaces w
-    WHERE w.id = $8 AND w.owner_id = $9
+WITH valid_project AS (
+    SELECT p.id AS project_id, p.workspace_id, p.ticket_id_prefix
+    FROM projects p
+    JOIN workspaces w ON p.workspace_id = w.id
+    WHERE p.id = $8
+      AND p.workspace_id = $9
+      AND w.owner_id = $10
+      AND p.deleted_at IS NULL
 ),
 next_ticket AS (
     SELECT COALESCE(MAX(t.ticket_num), 0) + 1 AS num
     FROM tickets t
-    WHERE t.workspace_id = $8
+    WHERE t.project_id = $8
 )
 INSERT INTO tickets (
     workspace_id,
+    project_id,
     ticket_num,
     identifier,
     title,
@@ -35,12 +40,10 @@ INSERT INTO tickets (
     tags
 )
 SELECT
-    vw.id,
+    vp.workspace_id,
+    vp.project_id,
     next_ticket.num,
-    COALESCE(
-        NULLIF(UPPER(SUBSTRING(REGEXP_REPLACE(vw.name, '[^a-zA-Z0-9]', '', 'g') FROM 1 FOR 3)), ''),
-        'KZ'
-    ) || '-' || next_ticket.num::text,
+    vp.ticket_id_prefix || '-' || next_ticket.num::text,
     $1,
     $2,
     $3,
@@ -48,9 +51,9 @@ SELECT
     $5,
     $6,
     $7
-FROM valid_workspace vw
+FROM valid_project vp
 CROSS JOIN next_ticket
-RETURNING id, workspace_id, ticket_num, identifier, title, description, type, status, priority, points, tags, created_at, updated_at
+RETURNING id, workspace_id, ticket_num, identifier, title, description, type, status, priority, points, tags, created_at, updated_at, project_id
 `
 
 type CreateTicketParams struct {
@@ -61,6 +64,7 @@ type CreateTicketParams struct {
 	Priority    string    `json:"priority"`
 	Points      int32     `json:"points"`
 	Tags        []string  `json:"tags"`
+	ProjectID   uuid.UUID `json:"project_id"`
 	WorkspaceID uuid.UUID `json:"workspace_id"`
 	OwnerID     string    `json:"owner_id"`
 }
@@ -74,6 +78,7 @@ func (q *Queries) CreateTicket(ctx context.Context, arg CreateTicketParams) (Tic
 		arg.Priority,
 		arg.Points,
 		arg.Tags,
+		arg.ProjectID,
 		arg.WorkspaceID,
 		arg.OwnerID,
 	)
@@ -92,6 +97,7 @@ func (q *Queries) CreateTicket(ctx context.Context, arg CreateTicketParams) (Tic
 		&i.Tags,
 		&i.CreatedAt,
 		&i.UpdatedAt,
+		&i.ProjectID,
 	)
 	return i, err
 }
@@ -120,7 +126,7 @@ func (q *Queries) DeleteTicket(ctx context.Context, arg DeleteTicketParams) (int
 }
 
 const getTicketByIdentifier = `-- name: GetTicketByIdentifier :one
-SELECT t.id, t.workspace_id, t.ticket_num, t.identifier, t.title, t.description, t.type, t.status, t.priority, t.points, t.tags, t.created_at, t.updated_at
+SELECT t.id, t.workspace_id, t.ticket_num, t.identifier, t.title, t.description, t.type, t.status, t.priority, t.points, t.tags, t.created_at, t.updated_at, t.project_id
 FROM tickets t
 JOIN workspaces w ON t.workspace_id = w.id
 WHERE t.workspace_id = $1 AND t.identifier = $2 AND w.owner_id = $3
@@ -150,12 +156,106 @@ func (q *Queries) GetTicketByIdentifier(ctx context.Context, arg GetTicketByIden
 		&i.Tags,
 		&i.CreatedAt,
 		&i.UpdatedAt,
+		&i.ProjectID,
 	)
 	return i, err
 }
 
+const getTicketByProjectAndIdentifier = `-- name: GetTicketByProjectAndIdentifier :one
+SELECT t.id, t.workspace_id, t.ticket_num, t.identifier, t.title, t.description, t.type, t.status, t.priority, t.points, t.tags, t.created_at, t.updated_at, t.project_id
+FROM tickets t
+JOIN projects p ON t.project_id = p.id
+JOIN workspaces w ON t.workspace_id = w.id
+WHERE t.workspace_id = $1 AND t.project_id = $2 AND t.identifier = $3 AND w.owner_id = $4 AND p.deleted_at IS NULL
+LIMIT 1
+`
+
+type GetTicketByProjectAndIdentifierParams struct {
+	WorkspaceID uuid.UUID `json:"workspace_id"`
+	ProjectID   uuid.UUID `json:"project_id"`
+	Identifier  string    `json:"identifier"`
+	OwnerID     string    `json:"owner_id"`
+}
+
+func (q *Queries) GetTicketByProjectAndIdentifier(ctx context.Context, arg GetTicketByProjectAndIdentifierParams) (Ticket, error) {
+	row := q.db.QueryRow(ctx, getTicketByProjectAndIdentifier,
+		arg.WorkspaceID,
+		arg.ProjectID,
+		arg.Identifier,
+		arg.OwnerID,
+	)
+	var i Ticket
+	err := row.Scan(
+		&i.ID,
+		&i.WorkspaceID,
+		&i.TicketNum,
+		&i.Identifier,
+		&i.Title,
+		&i.Description,
+		&i.Type,
+		&i.Status,
+		&i.Priority,
+		&i.Points,
+		&i.Tags,
+		&i.CreatedAt,
+		&i.UpdatedAt,
+		&i.ProjectID,
+	)
+	return i, err
+}
+
+const listTicketsByProject = `-- name: ListTicketsByProject :many
+SELECT t.id, t.workspace_id, t.ticket_num, t.identifier, t.title, t.description, t.type, t.status, t.priority, t.points, t.tags, t.created_at, t.updated_at, t.project_id
+FROM tickets t
+JOIN projects p ON t.project_id = p.id
+JOIN workspaces w ON t.workspace_id = w.id
+WHERE t.workspace_id = $1 AND t.project_id = $2 AND w.owner_id = $3 AND p.deleted_at IS NULL
+ORDER BY t.created_at DESC
+`
+
+type ListTicketsByProjectParams struct {
+	WorkspaceID uuid.UUID `json:"workspace_id"`
+	ProjectID   uuid.UUID `json:"project_id"`
+	OwnerID     string    `json:"owner_id"`
+}
+
+func (q *Queries) ListTicketsByProject(ctx context.Context, arg ListTicketsByProjectParams) ([]Ticket, error) {
+	rows, err := q.db.Query(ctx, listTicketsByProject, arg.WorkspaceID, arg.ProjectID, arg.OwnerID)
+	if err != nil {
+		return nil, err
+	}
+	defer rows.Close()
+	items := []Ticket{}
+	for rows.Next() {
+		var i Ticket
+		if err := rows.Scan(
+			&i.ID,
+			&i.WorkspaceID,
+			&i.TicketNum,
+			&i.Identifier,
+			&i.Title,
+			&i.Description,
+			&i.Type,
+			&i.Status,
+			&i.Priority,
+			&i.Points,
+			&i.Tags,
+			&i.CreatedAt,
+			&i.UpdatedAt,
+			&i.ProjectID,
+		); err != nil {
+			return nil, err
+		}
+		items = append(items, i)
+	}
+	if err := rows.Err(); err != nil {
+		return nil, err
+	}
+	return items, nil
+}
+
 const listTicketsByWorkspace = `-- name: ListTicketsByWorkspace :many
-SELECT t.id, t.workspace_id, t.ticket_num, t.identifier, t.title, t.description, t.type, t.status, t.priority, t.points, t.tags, t.created_at, t.updated_at
+SELECT t.id, t.workspace_id, t.ticket_num, t.identifier, t.title, t.description, t.type, t.status, t.priority, t.points, t.tags, t.created_at, t.updated_at, t.project_id
 FROM tickets t
 JOIN workspaces w ON t.workspace_id = w.id
 WHERE t.workspace_id = $1 AND w.owner_id = $2
@@ -190,6 +290,7 @@ func (q *Queries) ListTicketsByWorkspace(ctx context.Context, arg ListTicketsByW
 			&i.Tags,
 			&i.CreatedAt,
 			&i.UpdatedAt,
+			&i.ProjectID,
 		); err != nil {
 			return nil, err
 		}
@@ -217,7 +318,7 @@ WHERE t.workspace_id = w.id
   AND t.workspace_id = $8
   AND t.identifier = $9
   AND w.owner_id = $10
-RETURNING t.id, t.workspace_id, t.ticket_num, t.identifier, t.title, t.description, t.type, t.status, t.priority, t.points, t.tags, t.created_at, t.updated_at
+RETURNING t.id, t.workspace_id, t.ticket_num, t.identifier, t.title, t.description, t.type, t.status, t.priority, t.points, t.tags, t.created_at, t.updated_at, t.project_id
 `
 
 type UpdateTicketParams struct {
@@ -261,6 +362,7 @@ func (q *Queries) UpdateTicket(ctx context.Context, arg UpdateTicketParams) (Tic
 		&i.Tags,
 		&i.CreatedAt,
 		&i.UpdatedAt,
+		&i.ProjectID,
 	)
 	return i, err
 }

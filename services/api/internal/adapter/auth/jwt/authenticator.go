@@ -52,7 +52,7 @@ func NewAuthenticator(ctx context.Context, jwksURL string) (*Authenticator, erro
 }
 
 // Authenticate is called on every request
-func (a *Authenticator) Authenticate(ctx context.Context, rawToken string) (*auth.Identity, error) {
+func (a *Authenticator) Authenticate(ctx context.Context, rawToken string) (*auth.Principal, error) {
 	if rawToken == "" {
 		return nil, auth.ErrMissingToken
 	}
@@ -73,7 +73,7 @@ func (a *Authenticator) Authenticate(ctx context.Context, rawToken string) (*aut
 	sub, _ := tok.Subject()
 	email, _ := jwt.Get[string](tok, "email")
 
-	return &auth.Identity{
+	return &auth.Principal{
 		UserID: auth.UserID(sub),
 		Email:  email,
 	}, nil

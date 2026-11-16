@@ -1,38 +1,36 @@
 import { useMutation, useQueryClient } from "@tanstack/react-query";
-import { AlertCircle, Check, Loader2, Save, Trash2 } from "lucide-react";
 import { useState } from "react";
 import { useConfirm } from "#/components/ui/confirm-dialog";
-import { FormInput } from "#/components/ui/form-input";
 import { workspaceKeys, workspaceMutations } from "#/lib/queries/workspaces";
 import type { UpdateWorkspaceRequest, Workspace } from "#/lib/types";
+
+interface WorkspaceSettingsProps {
+	workspace: Workspace;
+	onDeleted?: () => void;
+}
 
 export function WorkspaceSettings({
 	workspace,
 	onDeleted,
-}: {
-	workspace: Workspace;
-	onDeleted: () => void;
-}) {
+}: WorkspaceSettingsProps) {
 	const queryClient = useQueryClient();
 	const confirm = useConfirm();
+
 	const [name, setName] = useState(workspace.name);
-	const [rate, setRate] = useState(String(workspace.default_hourly_rate));
+	const [rate, setRate] = useState(workspace.default_hourly_rate);
 	const [description, setDescription] = useState(workspace.description || "");
-	const [statusMsg, setStatusMsg] = useState<{
-		type: "success" | "error";
-		text: string;
-	} | null>(null);
+	const [statusMessage, setStatusMessage] = useState<string | null>(null);
 
 	const updateMutation = useMutation({
-		mutationFn: (body: UpdateWorkspaceRequest) =>
-			workspaceMutations.update(workspace.id, body),
+		mutationFn: (data: UpdateWorkspaceRequest) =>
+			workspaceMutations.update(workspace.id, data),
 		onSuccess: (updated) => {
 			queryClient.setQueryData(workspaceKeys.detail(workspace.id), updated);
 			queryClient.invalidateQueries({ queryKey: workspaceKeys.lists() });
-			setStatusMsg({ type: "success", text: "Settings saved successfully." });
+			setStatusMessage("Workspace updated successfully.");
 		},
 		onError: (err) => {
-			setStatusMsg({ type: "error", text: err.message });
+			setStatusMessage(err.message || "Failed to update workspace.");
 		},
 	});
 
@@ -40,16 +38,21 @@ export function WorkspaceSettings({
 		mutationFn: () => workspaceMutations.delete(workspace.id),
 		onSuccess: () => {
 			queryClient.invalidateQueries({ queryKey: workspaceKeys.lists() });
-			onDeleted();
+			onDeleted?.();
 		},
 		onError: (err) => {
-			setStatusMsg({ type: "error", text: err.message });
+			setStatusMessage(err.message || "Failed to delete workspace.");
 		},
 	});
 
-	const handleSubmit = (e: React.FormEvent) => {
+	const handleSave = (e: React.FormEvent) => {
 		e.preventDefault();
-		setStatusMsg(null);
+		if (!name.trim()) {
+			setStatusMessage("Workspace name is required.");
+			return;
+		}
+
+		setStatusMessage(null);
 		updateMutation.mutate({
 			name: name.trim(),
 			default_hourly_rate: Number(rate) || 0,
@@ -57,124 +60,109 @@ export function WorkspaceSettings({
 		});
 	};
 
+	const handleDelete = async () => {
+		const ok = await confirm({
+			title: "DELETE WORKSPACE",
+			message: `Are you sure you want to permanently delete "${workspace.name}" and all associated tickets?`,
+			confirmText: "DELETE WORKSPACE",
+			destructive: true,
+		});
+		if (ok) {
+			deleteMutation.mutate();
+		}
+	};
+
 	return (
-		<div className="space-y-8 max-w-2xl">
-			{/* Edit Workspace Settings Form */}
-			<div className="bg-surface-base/80 shadow-2xs hover:shadow-sm p-6 sm:p-8 space-y-6 rounded-xs transition-all">
-				<div className="border-b border-border-default/15 pb-4">
-					<h2 className="font-bold text-base uppercase tracking-tight text-text-primary font-sans">
-						Workspace Configuration
-					</h2>
-					<p className="text-xs text-text-secondary mt-1">
-						Update workspace details and hourly rate.
-					</p>
-				</div>
+		<div className="flex-col-gap-md max-w-xl">
+			<section className="ghost-card flex-col-gap-sm">
+				<h2 className="text-title-sm">Workspace Settings</h2>
+				<p className="text-muted-xs">
+					Manage configuration, rate, and details for this workspace.
+				</p>
 
-				{statusMsg ? (
+				{statusMessage && (
 					<div
-						className={`p-3 text-xs font-mono rounded-xs flex items-center space-x-2 ${
-							statusMsg.type === "success"
-								? "bg-emerald-500/15 text-emerald-300"
-								: "bg-red-500/15 text-red-300"
-						}`}
+						className={
+							statusMessage.includes("success")
+								? "badge-tag text-emerald-600 bg-emerald-50 dark:bg-emerald-950/40 p-2"
+								: "error-banner"
+						}
 					>
-						{statusMsg.type === "success" ? (
-							<Check className="w-4 h-4 shrink-0 text-emerald-400" />
-						) : (
-							<AlertCircle className="w-4 h-4 shrink-0 text-red-400" />
-						)}
-						<span>{statusMsg.text}</span>
+						{statusMessage}
 					</div>
-				) : null}
+				)}
 
-				<form onSubmit={handleSubmit} className="space-y-4 font-mono">
-					<FormInput
-						id="workspace-name"
-						label="WORKSPACE NAME"
-						value={name}
-						onChange={(e) => setName(e.target.value)}
-						required
-					/>
-
-					<FormInput
-						id="workspace-rate"
-						label="DEFAULT HOURLY RATE"
-						type="number"
-						value={rate}
-						onChange={(e) => setRate(e.target.value)}
-						min="0"
-						required
-					/>
-
-					<div className="space-y-1.5 text-xs font-mono">
-						<label
-							htmlFor="workspace-desc"
-							className="block text-[11px] font-bold text-text-secondary uppercase tracking-wider"
-						>
-							DESCRIPTION
+				<form onSubmit={handleSave} className="flex-col-gap-sm">
+					<div>
+						<label htmlFor="ws-edit-name" className="auth-label">
+							Workspace Name *
 						</label>
-						<textarea
-							id="workspace-desc"
-							value={description}
-							onChange={(e) => setDescription(e.target.value)}
-							rows={3}
-							className="w-full bg-surface-elevated/40 focus:bg-surface-elevated/70 px-3 py-2 text-text-primary focus:outline-hidden text-xs font-sans leading-relaxed rounded-xs transition-colors"
+						<input
+							id="ws-edit-name"
+							type="text"
+							value={name}
+							onChange={(e) => setName(e.target.value)}
+							className="ghost-input"
+							required
 						/>
 					</div>
 
-					<div className="pt-2 flex justify-end">
+					<div>
+						<label htmlFor="ws-edit-rate" className="auth-label">
+							Default Hourly Rate ($/hr)
+						</label>
+						<input
+							id="ws-edit-rate"
+							type="number"
+							min="0"
+							value={rate}
+							onChange={(e) => setRate(Number(e.target.value))}
+							className="ghost-input"
+						/>
+					</div>
+
+					<div>
+						<label htmlFor="ws-edit-desc" className="auth-label">
+							Description
+						</label>
+						<textarea
+							id="ws-edit-desc"
+							rows={3}
+							value={description}
+							onChange={(e) => setDescription(e.target.value)}
+							className="ghost-input"
+						/>
+					</div>
+
+					<div className="flex justify-end">
 						<button
 							type="submit"
 							disabled={updateMutation.isPending}
-							className="inline-flex items-center space-x-2 px-5 py-2.5 text-xs font-mono font-bold uppercase tracking-wider bg-accent-primary text-accent-primary-fg hover:bg-accent-primary-hover enabled:active:scale-[0.96] transition-all cursor-pointer disabled:opacity-50 rounded-xs"
+							className="ghost-btn font-semibold"
 						>
-							{updateMutation.isPending ? (
-								<Loader2 className="w-3.5 h-3.5 animate-spin" />
-							) : (
-								<Save className="w-3.5 h-3.5" />
-							)}
-							<span>Save Settings</span>
+							{updateMutation.isPending ? "Saving..." : "Save Settings"}
 						</button>
 					</div>
 				</form>
-			</div>
+			</section>
 
 			{/* Danger Zone */}
-			<div className="bg-red-500/10 p-6 sm:p-8 space-y-4 rounded-xs">
+			<section className="ghost-card flex-row-between flex-wrap-gap">
 				<div>
-					<h3 className="font-bold text-sm uppercase tracking-wider text-red-400 font-mono">
-						DANGER ZONE
-					</h3>
-					<p className="text-xs text-text-secondary mt-1 leading-relaxed">
-						Permanently delete this workspace and erase all associated tickets
-						and time logs. This action cannot be reversed.
+					<h3 className="text-title-sm text-red-600">Delete Workspace</h3>
+					<p className="text-muted-xs">
+						Permanently delete this workspace and all associated tickets.
 					</p>
 				</div>
-
 				<button
 					type="button"
-					onClick={async () => {
-						const ok = await confirm({
-							title: "DELETE WORKSPACE",
-							message: `Permanently delete workspace "${workspace.name}"? This deterring action cannot be undone.`,
-							confirmText: "DELETE WORKSPACE",
-							destructive: true,
-						});
-						if (ok) {
-							deleteMutation.mutate();
-						}
-					}}
+					onClick={handleDelete}
 					disabled={deleteMutation.isPending}
-					className="inline-flex items-center space-x-2 px-4 py-2 text-xs font-mono font-bold uppercase tracking-wider bg-red-500/20 hover:bg-red-500/30 text-red-300 rounded-xs enabled:active:scale-[0.96] transition-all cursor-pointer disabled:opacity-50"
+					className="ghost-btn-sm ghost-btn-danger"
 				>
-					{deleteMutation.isPending ? (
-						<Loader2 className="w-3.5 h-3.5 animate-spin" />
-					) : (
-						<Trash2 className="w-3.5 h-3.5" />
-					)}
-					<span>Delete Workspace</span>
+					{deleteMutation.isPending ? "Deleting..." : "Delete Workspace"}
 				</button>
-			</div>
+			</section>
 		</div>
 	);
 }

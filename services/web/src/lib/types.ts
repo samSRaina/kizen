@@ -17,6 +17,7 @@ export type TicketType = components["schemas"]["TicketType"];
 
 // Time Entry Types
 export type TimeEntry = components["schemas"]["TimeEntry"];
+export type TimerState = components["schemas"]["TimeEntry"]["timer_state"];
 export type CreateTimeEntryRequest =
 	components["schemas"]["CreateTimeEntryRequest"];
 export type UpdateTimeEntryRequest =

@@ -43,19 +43,20 @@ export function TicketCard({
 	onDragEnd,
 }: TicketCardProps) {
 	const isTrackingThis = activeTimer?.ticket_id === ticket.id;
+	const isTimerPaused = isTrackingThis && activeTimer?.timer_state === "paused";
 
 	const getPriorityBadgeClass = (priority: TicketPriority) => {
 		switch (priority) {
 			case "Critical":
-				return "bg-red-500/15 text-red-400";
+				return "bg-red-500/10 text-red-700 dark:text-red-300 border border-red-500/25";
 			case "High":
-				return "bg-orange-500/15 text-orange-400";
+				return "bg-orange-500/10 text-orange-700 dark:text-orange-300 border border-orange-500/25";
 			case "Medium":
-				return "bg-yellow-500/15 text-yellow-400";
+				return "bg-amber-500/10 text-amber-700 dark:text-amber-300 border border-amber-500/25";
 			case "Low":
-				return "bg-surface-elevated/70 text-text-muted";
+				return "bg-surface-elevated text-text-secondary border border-border-subtle";
 			default:
-				return "bg-surface-elevated/70 text-text-muted";
+				return "bg-surface-elevated text-text-secondary border border-border-subtle";
 		}
 	};
 
@@ -77,9 +78,12 @@ export function TicketCard({
 			onDragStart={onDragStart}
 			onDragEnd={onDragEnd}
 			className={cn(
-				"group relative bg-surface-base/90 hover:bg-surface-elevated/70 p-3 transition-all duration-150 font-mono shadow-2xs hover:shadow-md select-none cursor-grab active:cursor-grabbing rounded-xs",
+				"group relative bg-surface-base hover:bg-surface-hover/80 p-3 transition-all duration-150 border border-border-default hover:border-border-strong shadow-xs hover:shadow-sm select-none cursor-grab active:cursor-grabbing rounded-md",
 				isDragging && "opacity-30 scale-[0.98]",
-				isTrackingThis && "ring-1 ring-emerald-500/80 bg-emerald-950/20",
+				isTrackingThis &&
+					(isTimerPaused
+						? "ring-2 ring-amber-500/80 bg-amber-500/10 border-amber-500/50"
+						: "ring-2 ring-emerald-500/80 bg-emerald-500/10 border-emerald-500/50"),
 			)}
 		>
 			{/* Header: Grip, Identifier, Type Icon, Actions Menu */}
@@ -90,10 +94,17 @@ export function TicketCard({
 						{ticket.identifier}
 					</span>
 					{isTrackingThis ? (
-						<span className="inline-flex items-center gap-1 px-1.5 py-0.5 bg-emerald-500/15 text-emerald-400 text-[9px] font-bold rounded-xs">
-							<span className="w-1.5 h-1.5 rounded-full bg-emerald-500 animate-pulse" />
-							<span>LIVE</span>
-						</span>
+						isTimerPaused ? (
+							<span className="inline-flex items-center gap-1 px-1.5 py-0.5 bg-amber-500/15 text-amber-700 dark:text-amber-300 border border-amber-500/30 text-[9px] font-bold rounded-xs">
+								<span className="w-1.5 h-1.5 rounded-full bg-amber-500" />
+								<span>PAUSED</span>
+							</span>
+						) : (
+							<span className="inline-flex items-center gap-1 px-1.5 py-0.5 bg-emerald-500/15 text-emerald-700 dark:text-emerald-300 border border-emerald-500/30 text-[9px] font-bold rounded-xs">
+								<span className="w-1.5 h-1.5 rounded-full bg-emerald-500 animate-pulse" />
+								<span>LIVE</span>
+							</span>
+						)
 					) : null}
 				</div>
 
@@ -116,7 +127,7 @@ export function TicketCard({
 
 			{/* Description preview */}
 			{ticket.description ? (
-				<p className="text-[11px] text-text-muted line-clamp-2 leading-relaxed mb-2.5">
+				<p className="text-[11px] text-text-secondary line-clamp-2 leading-relaxed mb-2.5">
 					{ticket.description}
 				</p>
 			) : (
@@ -129,7 +140,7 @@ export function TicketCard({
 					{ticket.tags.map((tag) => (
 						<span
 							key={tag}
-							className="px-1.5 py-0.2 text-[9px] bg-surface-elevated/50 text-text-muted rounded-xs"
+							className="px-1.5 py-0.5 text-[9px] font-medium bg-surface-elevated text-text-secondary border border-border-subtle rounded-xs"
 						>
 							#{tag}
 						</span>
@@ -138,7 +149,7 @@ export function TicketCard({
 			) : null}
 
 			{/* Footer: Priority Badge, Points, Time Tracker Quick Action */}
-			<div className="flex items-center justify-between gap-2 pt-2 border-t border-border-default/15 text-[10px]">
+			<div className="flex items-center justify-between gap-2 pt-2 border-t border-border-subtle text-[10px]">
 				<div className="flex items-center gap-1.5">
 					<span
 						className={`px-1.5 py-0.5 uppercase font-bold rounded-xs ${getPriorityBadgeClass(
@@ -151,7 +162,7 @@ export function TicketCard({
 					{typeof ticket.points === "number" && ticket.points > 0 ? (
 						<span
 							title="Story Points"
-							className="px-1.5 py-0.5 text-text-muted bg-surface-elevated/60 rounded-xs"
+							className="px-1.5 py-0.5 text-text-secondary bg-surface-elevated border border-border-subtle rounded-xs"
 						>
 							{ticket.points} pt{ticket.points !== 1 ? "s" : ""}
 						</span>
@@ -197,3 +208,5 @@ export function TicketCard({
 		</div>
 	);
 }
+
+export default TicketCard;

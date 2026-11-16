@@ -1,144 +1,98 @@
-import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
+import { useQuery, useQueryClient } from "@tanstack/react-query";
 import { createFileRoute, useNavigate } from "@tanstack/react-router";
-import {
-	AlertCircle,
-	Calendar,
-	Hash,
-	Loader2,
-	LogOut,
-	Mail,
-	User,
-} from "lucide-react";
-import { Loader } from "#/components/layout/loader";
 import { authClient } from "#/lib/auth-client";
 import { clearCachedAuthToken } from "#/lib/goapi-client";
 import { authQueries } from "#/lib/queries/auth";
 
 export const Route = createFileRoute("/_authenticated/user")({
-	component: UserDetailsPage,
+	component: UserPage,
 });
 
-function UserDetailsPage() {
-	const queryClient = useQueryClient();
+function UserPage() {
 	const navigate = useNavigate();
+	const queryClient = useQueryClient();
+	const { data: sessionData, isLoading } = useQuery(authQueries.session());
 
-	const { data, isPending, isError, error } = useQuery(authQueries.session());
-
-	const signOut = useMutation({
-		mutationFn: async () => {
-			const { error } = await authClient.signOut();
-			if (error) throw new Error(error.message ?? "Sign out failed");
-		},
-		onSuccess: () => {
+	const handleSignOut = async () => {
+		try {
+			await authClient.signOut();
+		} catch (e) {
+			console.error("Sign out error:", e);
+		} finally {
 			clearCachedAuthToken();
 			queryClient.clear();
 			navigate({ to: "/authenticate" });
-		},
-	});
+		}
+	};
 
-	if (isPending) return <Loader size="lg" />;
-	if (isError) {
+	if (isLoading) {
+		return <div className="empty-state">Loading user profile...</div>;
+	}
+
+	const user = sessionData?.user;
+
+	if (!user) {
 		return (
-			<div className="p-8 bg-surface-base shadow-lg rounded-xs text-center space-y-4 ring-1 ring-border-default/20">
-				<AlertCircle className="w-8 h-8 text-amber-500 mx-auto" />
-				<p className="font-mono text-sm text-red-400">Error: {String(error)}</p>
+			<div className="empty-state">
+				<p>No active user session found.</p>
+				<button
+					type="button"
+					onClick={() => navigate({ to: "/authenticate" })}
+					className="ghost-btn mt-2"
+				>
+					Sign In
+				</button>
 			</div>
 		);
 	}
-	if (!data?.user) {
-		return (
-			<div className="p-8 bg-surface-base shadow-lg rounded-xs text-center font-mono text-xs text-text-muted ring-1 ring-border-default/20">
-				No active session
-			</div>
-		);
-	}
-
-	const user = data.user;
 
 	return (
-		<div className="space-y-8 max-w-2xl">
-			{/* Page Header */}
-			<div className="pb-4">
-				<h1 className="text-2xl sm:text-3xl font-black font-sans uppercase tracking-tight text-text-primary">
-					Account
-				</h1>
-				<p className="mt-1 text-sm text-text-secondary font-sans">
-					Your account profile and active session details.
+		<div className="flex-col-gap-md max-w-xl">
+			<section className="ghost-card flex-col-gap-sm">
+				<h1 className="text-title-md">Account Profile</h1>
+				<p className="text-muted-xs">
+					Manage your credentials and active authentication session.
 				</p>
-			</div>
 
-			{/* User Details Matrix - Clean Ghost Surface */}
-			<div className="bg-surface-base/80 shadow-2xs hover:shadow-sm p-6 sm:p-8 space-y-6 rounded-xs transition-all">
-				<div className="flex items-center space-x-4 border-b border-border-default/15 pb-6">
-					<div className="w-14 h-14 bg-surface-elevated/70 rounded-xs flex items-center justify-center text-text-muted">
-						<User className="w-7 h-7 text-text-primary" />
-					</div>
-					<div>
-						<h2 className="text-lg font-bold uppercase tracking-tight text-text-primary font-sans">
-							{user.name}
-						</h2>
-						<span className="font-mono text-xs text-text-muted">
-							@{(user as { username?: string }).username ?? "user"}
-						</span>
-					</div>
-				</div>
-
-				<div className="grid grid-cols-1 sm:grid-cols-2 gap-4 font-mono text-xs">
-					<div className="p-3 bg-surface-elevated/40 hover:bg-surface-elevated/70 rounded-xs space-y-1 transition-colors">
-						<span className="text-text-muted text-[11px] uppercase flex items-center space-x-1.5">
-							<Mail className="w-3.5 h-3.5" />
-							<span>Email Address</span>
-						</span>
-						<p className="font-semibold text-text-primary truncate">
-							{user.email}
-						</p>
+				<div className="flex-col-gap-xs mt-2">
+					<div className="ghost-card flex-row-between p-2">
+						<span className="text-muted-xs">Full Name</span>
+						<span className="text-title-sm">{user.name}</span>
 					</div>
 
-					<div className="p-3 bg-surface-elevated/40 hover:bg-surface-elevated/70 rounded-xs space-y-1 transition-colors">
-						<span className="text-text-muted text-[11px] uppercase flex items-center space-x-1.5">
-							<Hash className="w-3.5 h-3.5" />
-							<span>User ID</span>
-						</span>
-						<p className="font-semibold text-text-primary truncate">
-							{user.id}
-						</p>
+					<div className="ghost-card flex-row-between p-2">
+						<span className="text-muted-xs">Email Address</span>
+						<span className="text-title-sm">{user.email}</span>
 					</div>
 
-					<div className="p-3 bg-surface-elevated/40 hover:bg-surface-elevated/70 rounded-xs space-y-1 sm:col-span-2 transition-colors">
-						<span className="text-text-muted text-[11px] uppercase flex items-center space-x-1.5">
-							<Calendar className="w-3.5 h-3.5" />
-							<span>Created At</span>
-						</span>
-						<p className="font-semibold text-text-primary">
-							{new Date(user.createdAt).toLocaleString()}
-						</p>
+					{"username" in user &&
+						Boolean((user as { username?: string }).username) && (
+							<div className="ghost-card flex-row-between p-2">
+								<span className="text-muted-xs">Username</span>
+								<span className="text-title-sm">
+									@{(user as { username: string }).username}
+								</span>
+							</div>
+						)}
+
+					<div className="ghost-card flex-row-between p-2">
+						<span className="text-muted-xs">User ID</span>
+						<span className="text-muted-xs font-mono">{user.id}</span>
 					</div>
 				</div>
 
-				{signOut.isError ? (
-					<p className="font-mono text-xs text-red-400">
-						Error: {String(signOut.error)}
-					</p>
-				) : null}
-
-				<div className="pt-4 border-t border-border-default/15 flex justify-end">
+				<div className="flex justify-end mt-4">
 					<button
 						type="button"
-						onClick={() => signOut.mutate()}
-						disabled={signOut.isPending}
-						className="inline-flex items-center space-x-2 px-5 py-2.5 text-xs font-mono font-bold uppercase tracking-wider bg-red-500/15 hover:bg-red-500/25 text-red-300 rounded-xs transition-colors cursor-pointer enabled:active:scale-[0.96] disabled:opacity-50"
+						onClick={handleSignOut}
+						className="ghost-btn ghost-btn-danger"
 					>
-						{signOut.isPending ? (
-							<Loader2 className="w-3.5 h-3.5 animate-spin" />
-						) : (
-							<LogOut className="w-3.5 h-3.5" />
-						)}
-						<span>Sign Out</span>
+						Sign Out
 					</button>
 				</div>
-			</div>
+			</section>
 		</div>
 	);
 }
 
-export default UserDetailsPage;
+export default UserPage;

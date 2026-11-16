@@ -1,6 +1,7 @@
 import { useMutation, useQueryClient } from "@tanstack/react-query";
 import { CheckCircle2 } from "lucide-react";
 import { useState } from "react";
+import { useToast } from "#/components/ui/toast";
 import { ticketKeys, ticketMutations } from "#/lib/queries/tickets";
 import { timeEntryKeys, timeEntryMutations } from "#/lib/queries/time-entries";
 import type { Ticket, TicketStatus, TimeEntry } from "#/lib/types";
@@ -8,7 +9,7 @@ import { cn } from "#/lib/utils";
 import { AddTicketRow } from "./add-ticket-row";
 import { CompletedTicketsModal } from "./completed-tickets-modal";
 import { TicketCard } from "./ticket-card";
-import { TICKET_COLUMNS } from "./types";
+import { TICKET_COLUMNS, validateTicketTransition } from "./types";
 
 interface TicketBoardViewProps {
 	workspaceId: string;
@@ -24,6 +25,7 @@ export function TicketBoardView({
 	onStartTimer,
 }: TicketBoardViewProps) {
 	const queryClient = useQueryClient();
+	const toast = useToast();
 	const [draggingIdentifier, setDraggingIdentifier] = useState<string | null>(
 		null,
 	);
@@ -34,7 +36,7 @@ export function TicketBoardView({
 	const doneTickets = tickets.filter((t) => t.status === "done");
 	const activeTicketsCount = tickets.length - doneTickets.length;
 
-	// Update Ticket Status Mutation with Optimistic Cache Update
+	// Update Ticket Status Mutation with Optimistic Cache Update and Error Rollback
 	const updateStatusMutation = useMutation({
 		mutationFn: ({
 			identifier,
@@ -60,13 +62,16 @@ export function TicketBoardView({
 			);
 			return { previousTickets };
 		},
-		onError: (_err, _variables, context) => {
+		onError: (err: Error, _variables, context) => {
 			if (context?.previousTickets) {
 				queryClient.setQueryData(
 					ticketKeys.lists(workspaceId),
 					context.previousTickets,
 				);
 			}
+			toast.error(err.message || "Failed to update ticket status", {
+				title: "Transition Error",
+			});
 		},
 		onSettled: () => {
 			queryClient.invalidateQueries({
@@ -80,18 +85,42 @@ export function TicketBoardView({
 		mutationFn: (identifier: string) =>
 			ticketMutations.delete(workspaceId, identifier),
 		onSuccess: () => {
+			toast.success("Ticket deleted successfully");
 			queryClient.invalidateQueries({
 				queryKey: ticketKeys.lists(workspaceId),
 			});
 		},
+		onError: (err: Error) => {
+			toast.error(err.message || "Failed to delete ticket", {
+				title: "Delete Failed",
+			});
+		},
 	});
 
-	// Stop Timer Mutation
+	// Stop Timer Mutation - automatically advances linked in-progress ticket to review
 	const stopTimerMutation = useMutation({
-		mutationFn: (id: string) => timeEntryMutations.stop(workspaceId, id),
+		mutationFn: async (id: string) => {
+			const res = await timeEntryMutations.stop(workspaceId, id);
+			if (activeTimer?.ticket_id) {
+				const linked = tickets.find((t) => t.id === activeTimer.ticket_id);
+				if (linked && linked.status === "progress") {
+					try {
+						await ticketMutations.update(workspaceId, linked.identifier, {
+							status: "review",
+						});
+					} catch (e) {
+						console.error("Failed to advance ticket to review:", e);
+					}
+				}
+			}
+			return res;
+		},
 		onSuccess: () => {
 			queryClient.invalidateQueries({
 				queryKey: timeEntryKeys.lists(workspaceId),
+			});
+			queryClient.invalidateQueries({
+				queryKey: ticketKeys.lists(workspaceId),
 			});
 		},
 	});
@@ -124,13 +153,81 @@ export function TicketBoardView({
 		const currentTicket = tickets.find((t) => t.identifier === identifier);
 		if (!currentTicket || currentTicket.status === targetStatus) return;
 
+		const transition = validateTicketTransition(
+			currentTicket.status,
+			targetStatus,
+		);
+		if (!transition.allowed) {
+			toast.error(transition.reason || "Invalid status transition", {
+				title: "Transition Not Allowed",
+			});
+			return;
+		}
+
+		updateStatusMutation.mutate({ identifier, newStatus: targetStatus });
+	};
+
+	const handleDropOnDone = (e: React.DragEvent) => {
+		e.preventDefault();
+		setIsOverDoneBtn(false);
+		const identifier =
+			e.dataTransfer.getData("text/plain") || draggingIdentifier;
+		setDraggingIdentifier(null);
+
+		if (!identifier) return;
+
+		const currentTicket = tickets.find((t) => t.identifier === identifier);
+		if (!currentTicket || currentTicket.status === "done") return;
+
+		const transition = validateTicketTransition(currentTicket.status, "done");
+		if (!transition.allowed) {
+			toast.error(transition.reason || "Invalid status transition", {
+				title: "Transition Not Allowed",
+			});
+			return;
+		}
+
+		updateStatusMutation.mutate({
+			identifier,
+			newStatus: "done",
+		});
+	};
+
+	const handleMoveStatus = (ticket: Ticket, newStatus: TicketStatus) => {
+		const transition = validateTicketTransition(ticket.status, newStatus);
+		if (!transition.allowed) {
+			toast.error(transition.reason || "Invalid status transition", {
+				title: "Transition Not Allowed",
+			});
+			return;
+		}
+		updateStatusMutation.mutate({
+			identifier: ticket.identifier,
+			newStatus,
+		});
+	};
+
+	const handleReopen = (identifier: string, targetStatus: TicketStatus) => {
+		const currentTicket = tickets.find((t) => t.identifier === identifier);
+		if (currentTicket) {
+			const transition = validateTicketTransition(
+				currentTicket.status,
+				targetStatus,
+			);
+			if (!transition.allowed) {
+				toast.error(transition.reason || "Invalid status transition", {
+					title: "Reopen Not Allowed",
+				});
+				return;
+			}
+		}
 		updateStatusMutation.mutate({ identifier, newStatus: targetStatus });
 	};
 
 	return (
 		<div className="w-full space-y-3 select-none">
 			{/* Board Toolbar: Status Counts & Finished (DONE) Button (32px row) */}
-			<div className="h-8 flex flex-col sm:flex-row sm:items-center sm:justify-between gap-3 font-mono">
+			<div className="h-8 flex flex-col sm:flex-row sm:items-center sm:justify-between gap-3">
 				<div className="text-[11px] text-text-muted uppercase tracking-wider flex items-center space-x-2">
 					<span>Workflow Columns</span>
 					<span>•</span>
@@ -149,29 +246,18 @@ export function TicketBoardView({
 						setIsOverDoneBtn(true);
 					}}
 					onDragLeave={() => setIsOverDoneBtn(false)}
-					onDrop={(e) => {
-						e.preventDefault();
-						setIsOverDoneBtn(false);
-						const identifier =
-							e.dataTransfer.getData("text/plain") || draggingIdentifier;
-						if (identifier) {
-							updateStatusMutation.mutate({
-								identifier,
-								newStatus: "done",
-							});
-						}
-					}}
+					onDrop={handleDropOnDone}
 					className={cn(
-						"h-8 inline-flex items-center space-x-2 px-3 text-xs font-mono font-bold uppercase tracking-wider transition-all cursor-pointer rounded-xs self-start sm:self-auto",
+						"h-8 inline-flex items-center space-x-2 px-3 text-xs font-bold uppercase tracking-wider transition-all cursor-pointer rounded-md self-start sm:self-auto border border-border-default bg-surface-base hover:bg-surface-hover text-text-primary shadow-2xs",
 						isOverDoneBtn
-							? "bg-emerald-500/20 text-emerald-300 ring-1 ring-emerald-500"
-							: "bg-surface-elevated/40 hover:bg-surface-elevated/80 text-text-primary",
+							? "bg-emerald-500/15 text-emerald-700 dark:text-emerald-300 border-emerald-500 ring-2 ring-emerald-500/30"
+							: "border-border-default bg-surface-base hover:bg-surface-hover text-text-primary",
 					)}
 					title="View Finished / Completed Tickets (Drop tickets here to mark DONE)"
 				>
-					<CheckCircle2 className="w-3.5 h-3.5 text-emerald-400" />
-					<span>Completed (DONE)</span>
-					<span className="font-mono text-[10px] font-bold px-1.5 py-0.2 bg-emerald-500/15 text-emerald-400 rounded-xs">
+					<CheckCircle2 className="w-3.5 h-3.5 text-emerald-600 dark:text-emerald-400" />
+					<span>Completed</span>
+					<span className="text-[10px] font-bold px-1.5 py-0.2 bg-emerald-500/15 text-emerald-700 dark:text-emerald-300 border border-emerald-500/30 rounded-xs">
 						{doneTickets.length}
 					</span>
 				</button>
@@ -189,8 +275,9 @@ export function TicketBoardView({
 							<div
 								key={col.key}
 								className={cn(
-									"w-64 sm:w-72 shrink-0 bg-surface-elevated/25 hover:bg-surface-elevated/40 rounded-xs flex flex-col h-[calc(100vh-270px)] min-h-[480px] transition-all duration-150",
-									isOver && "ring-1 ring-accent-yellow bg-accent-yellow/5",
+									"w-64 sm:w-72 shrink-0 bg-surface-elevated border border-border-default rounded-md flex flex-col h-[calc(100vh-270px)] min-h-[480px] transition-all duration-150 shadow-2xs",
+									isOver &&
+										"ring-2 ring-accent-yellow border-accent-yellow/60 bg-accent-yellow/5",
 								)}
 								onDragOver={(e) => {
 									e.preventDefault();
@@ -204,16 +291,16 @@ export function TicketBoardView({
 								}}
 								onDrop={(e) => handleDropOnColumn(e, col.key)}
 							>
-								{/* Column Header (Pinned Top, Clean Ghost Surface - 32px height row) */}
-								<div className="h-8 flex items-center justify-between px-3 bg-transparent font-mono shrink-0">
+								{/* Column Header (Pinned Top, Clean Surface - 36px height row) */}
+								<div className="h-9 flex items-center justify-between px-3 bg-surface-base/60 border-b border-border-subtle shrink-0 rounded-t-md">
 									<div className="flex items-center gap-2">
 										<span
-											className={`w-2 h-2 rounded-full ${col.dotColor} shrink-0`}
+											className={`w-2.5 h-2.5 rounded-full ${col.dotColor} shrink-0`}
 										/>
 										<span className="text-xs font-bold uppercase tracking-wider text-text-primary">
 											{col.label}
 										</span>
-										<span className="text-[10px] font-bold text-text-muted px-1.5 py-0.5 bg-surface-elevated/70 rounded-xs">
+										<span className="text-[10px] font-bold text-text-secondary px-1.5 py-0.2 bg-surface-sunken border border-border-subtle rounded-xs">
 											{colTickets.length}
 										</span>
 									</div>
@@ -222,7 +309,7 @@ export function TicketBoardView({
 								{/* Scrollable Card Stack (Flex-1) */}
 								<div className="flex-1 p-2.5 space-y-2.5 overflow-y-auto min-h-0">
 									{colTickets.length === 0 ? (
-										<div className="py-8 px-4 bg-surface-elevated/15 text-center font-mono text-[10px] text-text-muted/60 uppercase rounded-xs">
+										<div className="py-8 px-4 border border-dashed border-border-default bg-surface-sunken/40 text-center text-[10px] font-semibold text-text-muted uppercase rounded-md">
 											Drop tickets here
 										</div>
 									) : (
@@ -238,10 +325,7 @@ export function TicketBoardView({
 												}
 												isStoppingTimer={stopTimerMutation.isPending}
 												onMoveStatus={(newStatus) =>
-													updateStatusMutation.mutate({
-														identifier: ticket.identifier,
-														newStatus,
-													})
+													handleMoveStatus(ticket, newStatus)
 												}
 												onDelete={() =>
 													deleteTicketMutation.mutate(ticket.identifier)
@@ -254,8 +338,8 @@ export function TicketBoardView({
 									)}
 								</div>
 
-								{/* Fixed Bottom Footer: Add Ticket Button pinned to bottom of entire column length */}
-								<div className="p-2 bg-transparent shrink-0">
+								{/* Add Ticket Inline Trigger at bottom of column */}
+								<div className="p-2 border-t border-border-default/15 bg-transparent shrink-0">
 									<AddTicketRow workspaceId={workspaceId} status={col.key} />
 								</div>
 							</div>
@@ -264,15 +348,13 @@ export function TicketBoardView({
 				</div>
 			</div>
 
-			{/* Modal listing all tickets that are finished working on (DONE) */}
+			{/* Modal for finished/done tickets */}
 			<CompletedTicketsModal
 				isOpen={isDoneModalOpen}
 				onClose={() => setIsDoneModalOpen(false)}
-				workspaceId={workspaceId}
 				tickets={doneTickets}
-				onReopen={(identifier, targetStatus) =>
-					updateStatusMutation.mutate({ identifier, newStatus: targetStatus })
-				}
+				workspaceId={workspaceId}
+				onReopen={handleReopen}
 				onDelete={(identifier) => deleteTicketMutation.mutate(identifier)}
 			/>
 		</div>

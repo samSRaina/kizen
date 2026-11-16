@@ -45,6 +45,27 @@ func (r *TicketRepository) ListByWorkspace(
 	return result, nil
 }
 
+func (r *TicketRepository) ListByProject(
+	ctx context.Context,
+	ownerID auth.UserID,
+	workspaceID, projectID uuid.UUID,
+) ([]ticket.Ticket, error) {
+	rows, err := r.q.ListTicketsByProject(ctx, gen.ListTicketsByProjectParams{
+		WorkspaceID: workspaceID,
+		ProjectID:   projectID,
+		OwnerID:     ownerID.String(),
+	})
+	if err != nil {
+		return nil, fmt.Errorf("db list project tickets: %w", err)
+	}
+
+	result := make([]ticket.Ticket, len(rows))
+	for i, row := range rows {
+		result[i] = mapGenTicketToDomain(row)
+	}
+	return result, nil
+}
+
 func (r *TicketRepository) GetByIdentifier(
 	ctx context.Context,
 	ownerID auth.UserID,
@@ -67,10 +88,59 @@ func (r *TicketRepository) GetByIdentifier(
 	return &t, nil
 }
 
+func (r *TicketRepository) GetByProjectAndIdentifier(
+	ctx context.Context,
+	ownerID auth.UserID,
+	workspaceID, projectID uuid.UUID,
+	identifier string,
+) (*ticket.Ticket, error) {
+	row, err := r.q.GetTicketByProjectAndIdentifier(ctx, gen.GetTicketByProjectAndIdentifierParams{
+		WorkspaceID: workspaceID,
+		ProjectID:   projectID,
+		Identifier:  identifier,
+		OwnerID:     ownerID.String(),
+	})
+	if err != nil {
+		if errors.Is(err, pgx.ErrNoRows) {
+			return nil, ticket.ErrNotFound
+		}
+		return nil, fmt.Errorf("db get project ticket: %w", err)
+	}
+
+	t := mapGenTicketToDomain(row)
+	return &t, nil
+}
+
 func (r *TicketRepository) Create(
 	ctx context.Context,
 	ownerID auth.UserID,
 	workspaceID uuid.UUID,
+	input ticket.CreateInput,
+) (*ticket.Ticket, error) {
+	var projectID uuid.UUID
+	if input.ProjectID != nil && *input.ProjectID != uuid.Nil {
+		projectID = *input.ProjectID
+	} else {
+		firstProject, err := r.q.GetFirstProjectByWorkspace(ctx, gen.GetFirstProjectByWorkspaceParams{
+			WorkspaceID: workspaceID,
+			OwnerID:     ownerID.String(),
+		})
+		if err != nil {
+			if errors.Is(err, pgx.ErrNoRows) {
+				return nil, fmt.Errorf("%w: workspace has no projects", ticket.ErrInvalidInput)
+			}
+			return nil, fmt.Errorf("db get default project: %w", err)
+		}
+		projectID = firstProject.ID
+	}
+
+	return r.CreateForProject(ctx, ownerID, workspaceID, projectID, input)
+}
+
+func (r *TicketRepository) CreateForProject(
+	ctx context.Context,
+	ownerID auth.UserID,
+	workspaceID, projectID uuid.UUID,
 	input ticket.CreateInput,
 ) (*ticket.Ticket, error) {
 	status := string(ticket.StatusBacklog)
@@ -91,6 +161,7 @@ func (r *TicketRepository) Create(
 		Priority:    string(input.Priority),
 		Points:      int32(input.Points),
 		Tags:        tags,
+		ProjectID:   projectID,
 		WorkspaceID: workspaceID,
 		OwnerID:     ownerID.String(),
 	})
@@ -192,7 +263,7 @@ func mapGenTicketToDomain(row gen.Ticket) ticket.Ticket {
 
 	return ticket.Ticket{
 		ID:          row.ID,
-		WorkspaceID: row.WorkspaceID,
+		ProjectID:   row.ProjectID,
 		Identifier:  row.Identifier,
 		Title:       row.Title,
 		Description: row.Description,

@@ -50,3 +50,93 @@ export const ALL_STATUS_OPTIONS: {
 	{ key: "review", label: "In Review", dotColor: "bg-purple-400" },
 	{ key: "done", label: "Done (Finish)", dotColor: "bg-emerald-400" },
 ];
+
+export function getStatusDisplayName(status: TicketStatus): string {
+	switch (status) {
+		case "backlog":
+			return "Backlog";
+		case "todo":
+			return "To Do";
+		case "progress":
+			return "In Progress";
+		case "review":
+			return "In Review";
+		case "done":
+			return "Done";
+		default:
+			return status;
+	}
+}
+
+export function validateTicketTransition(
+	current: TicketStatus,
+	next: TicketStatus,
+): { allowed: boolean; reason?: string } {
+	if (current === next) {
+		return { allowed: true };
+	}
+
+	switch (current) {
+		case "backlog":
+			if (next === "todo" || next === "progress") {
+				return { allowed: true };
+			}
+			return {
+				allowed: false,
+				reason: `Cannot move directly from Backlog to ${getStatusDisplayName(next)}. Move to To Do or In Progress first.`,
+			};
+
+		case "todo":
+			if (next === "progress" || next === "backlog") {
+				return { allowed: true };
+			}
+			return {
+				allowed: false,
+				reason: `Cannot move directly from To Do to ${getStatusDisplayName(next)}. Start work in In Progress first.`,
+			};
+
+		case "progress":
+			if (next === "review" || next === "todo" || next === "backlog") {
+				return { allowed: true };
+			}
+			return {
+				allowed: false,
+				reason:
+					"Tickets In Progress must pass through In Review before completion.",
+			};
+
+		case "review":
+			if (
+				next === "done" ||
+				next === "progress" ||
+				next === "todo" ||
+				next === "backlog"
+			) {
+				return { allowed: true };
+			}
+			return {
+				allowed: false,
+				reason: `Cannot move ticket from In Review to ${getStatusDisplayName(next)}.`,
+			};
+
+		case "done":
+			if (next === "todo" || next === "progress" || next === "backlog") {
+				return { allowed: true };
+			}
+			return {
+				allowed: false,
+				reason:
+					"Completed tickets cannot be moved directly to In Review. Reopen to To Do or In Progress first.",
+			};
+
+		default:
+			return { allowed: false, reason: `Unknown ticket status: ${current}` };
+	}
+}
+
+export function canTransition(
+	current: TicketStatus,
+	next: TicketStatus,
+): boolean {
+	return validateTicketTransition(current, next).allowed;
+}

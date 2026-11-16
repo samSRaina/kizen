@@ -1,37 +1,94 @@
 import { useMutation, useQueryClient } from "@tanstack/react-query";
-import { Loader2, Square, Tag } from "lucide-react";
 import { useEffect, useState } from "react";
 import { formatSeconds } from "#/lib/format-duration";
+import { ticketKeys, ticketMutations } from "#/lib/queries/tickets";
 import { timeEntryKeys, timeEntryMutations } from "#/lib/queries/time-entries";
 import type { Ticket, TimeEntry } from "#/lib/types";
+
+interface ActiveTimerBarProps {
+	workspaceId: string;
+	entry: TimeEntry;
+	tickets: Ticket[];
+}
 
 export function ActiveTimerBar({
 	workspaceId,
 	entry,
 	tickets,
-}: {
-	workspaceId: string;
-	entry: TimeEntry;
-	tickets: Ticket[];
-}) {
+}: ActiveTimerBarProps) {
 	const queryClient = useQueryClient();
-	const [elapsedSeconds, setElapsedSeconds] = useState(0);
+	const isPaused = entry.timer_state === "paused";
+	const isRunning =
+		entry.timer_state === "running" || (!entry.ended_at && !isPaused);
+
+	const [elapsedSeconds, setElapsedSeconds] = useState(() => {
+		const accrued = entry.duration_seconds || 0;
+		if (isPaused) return accrued;
+		const startMs = new Date(entry.updated_at || entry.started_at).getTime();
+		const currentRun = Math.max(0, Math.floor((Date.now() - startMs) / 1000));
+		return accrued + currentRun;
+	});
 
 	useEffect(() => {
-		const startMs = new Date(entry.started_at).getTime();
+		if (isPaused) {
+			setElapsedSeconds(entry.duration_seconds || 0);
+			return;
+		}
+
+		const accrued = entry.duration_seconds || 0;
+		const startMs = new Date(entry.updated_at || entry.started_at).getTime();
+
 		const update = () => {
-			setElapsedSeconds(Math.max(0, Math.floor((Date.now() - startMs) / 1000)));
+			const currentRun = Math.max(0, Math.floor((Date.now() - startMs) / 1000));
+			setElapsedSeconds(accrued + currentRun);
 		};
+
 		update();
 		const interval = setInterval(update, 1000);
 		return () => clearInterval(interval);
-	}, [entry.started_at]);
+	}, [entry.started_at, entry.updated_at, entry.duration_seconds, isPaused]);
 
-	const stopMutation = useMutation({
-		mutationFn: () => timeEntryMutations.stop(workspaceId, entry.id),
+	const pauseMutation = useMutation({
+		mutationFn: () => timeEntryMutations.pause(workspaceId, entry.id),
 		onSuccess: () => {
 			queryClient.invalidateQueries({
 				queryKey: timeEntryKeys.lists(workspaceId),
+			});
+		},
+	});
+
+	const resumeMutation = useMutation({
+		mutationFn: () => timeEntryMutations.resume(workspaceId, entry.id),
+		onSuccess: () => {
+			queryClient.invalidateQueries({
+				queryKey: timeEntryKeys.lists(workspaceId),
+			});
+		},
+	});
+
+	const stopMutation = useMutation({
+		mutationFn: async () => {
+			const stopped = await timeEntryMutations.stop(workspaceId, entry.id);
+			if (entry.ticket_id) {
+				const linked = tickets.find((t) => t.id === entry.ticket_id);
+				if (linked && linked.status === "progress") {
+					try {
+						await ticketMutations.update(workspaceId, linked.identifier, {
+							status: "review",
+						});
+					} catch (e) {
+						console.error("Failed to advance ticket to review:", e);
+					}
+				}
+			}
+			return stopped;
+		},
+		onSuccess: () => {
+			queryClient.invalidateQueries({
+				queryKey: timeEntryKeys.lists(workspaceId),
+			});
+			queryClient.invalidateQueries({
+				queryKey: ticketKeys.lists(workspaceId),
 			});
 		},
 	});
@@ -40,58 +97,69 @@ export function ActiveTimerBar({
 	const { digital } = formatSeconds(elapsedSeconds);
 
 	return (
-		<div className="bg-surface-elevated/50 hover:bg-surface-elevated/75 shadow-sm p-4 flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4 font-mono text-xs rounded-xs transition-colors">
-			<div className="flex items-center space-x-3.5">
-				<div className="relative flex items-center justify-center shrink-0">
-					<span className="w-2.5 h-2.5 bg-emerald-500 rounded-full animate-ping absolute opacity-75" />
-					<span className="w-2.5 h-2.5 bg-emerald-500 rounded-full shrink-0" />
-				</div>
-
-				<div className="space-y-0.5">
-					<div className="flex items-center space-x-2">
-						<span className="px-1.5 py-0.5 text-[10px] font-bold uppercase tracking-wider bg-emerald-500/15 text-emerald-400 rounded-xs">
-							ACTIVE SESSION
+		<div className="ghost-card flex-row-between flex-wrap-gap">
+			<div className="flex-row-center">
+				<span className="badge-tag flex-row-center font-bold">
+					{isRunning && (
+						<span className="w-1.5 h-1.5 rounded-full bg-emerald-500 animate-pulse mr-1" />
+					)}
+					{isRunning ? "Running" : "❚❚ Paused"}
+				</span>
+				<span className="text-title-md font-mono">{digital}</span>
+				{linkedTicket ? (
+					<div className="flex-row-center">
+						<span className="badge-tag font-mono">
+							{linkedTicket.identifier}
 						</span>
-						<span className="font-bold text-text-primary text-base tracking-wider font-mono">
-							{digital}
+						<span className="text-muted-sm truncate-text max-w-xs">
+							{linkedTicket.title}
 						</span>
 					</div>
-
-					<div className="flex items-center space-x-2 text-text-muted text-[11px]">
-						{linkedTicket ? (
-							<span className="inline-flex items-center space-x-1 text-text-secondary">
-								<Tag className="w-3 h-3" />
-								<span className="font-bold">{linkedTicket.identifier}</span>
-								<span>—</span>
-								<span className="truncate max-w-xs">{linkedTicket.title}</span>
-							</span>
-						) : (
-							<span>{entry.description || "General session"}</span>
-						)}
-
-						{entry.hourly_rate ? (
-							<>
-								<span>•</span>
-								<span>Rate: {entry.hourly_rate}</span>
-							</>
-						) : null}
-					</div>
-				</div>
+				) : (
+					<span className="text-muted-sm">
+						{entry.description || "General timer"}
+					</span>
+				)}
+				{entry.hourly_rate ? (
+					<span className="badge-tag">${entry.hourly_rate}/hr</span>
+				) : null}
 			</div>
 
-			<button
-				type="button"
-				disabled={stopMutation.isPending}
-				onClick={() => stopMutation.mutate()}
-				className="h-8 inline-flex items-center justify-center space-x-1.5 px-3.5 text-xs font-bold uppercase tracking-wider bg-red-500/15 hover:bg-red-500/25 text-red-300 rounded-xs transition-colors cursor-pointer enabled:active:scale-[0.96] disabled:opacity-50 self-start sm:self-auto"
-			>
-				{stopMutation.isPending ? (
-					<Loader2 className="w-3.5 h-3.5 animate-spin" />
-				) : (
-					<Square className="w-3.5 h-3.5 fill-current" />
+			<div className="flex-row-center">
+				{isRunning && (
+					<button
+						type="button"
+						disabled={pauseMutation.isPending}
+						onClick={() => pauseMutation.mutate()}
+						className="ghost-btn-sm"
+						title="Pause timer"
+					>
+						{pauseMutation.isPending ? "Pausing..." : "❚❚ Pause"}
+					</button>
 				)}
-				<span>Stop Timer</span>
-			</button>
+
+				{isPaused && (
+					<button
+						type="button"
+						disabled={resumeMutation.isPending}
+						onClick={() => resumeMutation.mutate()}
+						className="ghost-btn-sm font-semibold text-emerald-600"
+						title="Resume timer"
+					>
+						{resumeMutation.isPending ? "Resuming..." : "▶ Resume"}
+					</button>
+				)}
+
+				<button
+					type="button"
+					disabled={stopMutation.isPending}
+					onClick={() => stopMutation.mutate()}
+					className="ghost-btn-sm ghost-btn-danger font-semibold"
+					title="Stop timer (moves ticket to In Review)"
+				>
+					{stopMutation.isPending ? "Stopping..." : "■ Stop"}
+				</button>
+			</div>
 		</div>
 	);
 }

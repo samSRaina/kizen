@@ -20,6 +20,12 @@ import { Route as AuthenticatedUserRouteImport } from './routes/_authenticated/u
 import { Route as AuthenticatedWorkspacesIndexRouteImport } from './routes/_authenticated/workspaces/index'
 import { Route as AuthenticatedWorkspacesWorkspaceIdRouteImport } from './routes/_authenticated/workspaces/$workspaceId'
 import { Route as ApiAuthSplatRouteImport } from './routes/api/auth/$'
+import { Route as AuthenticatedWorkspacesWorkspaceIdIndexRouteImport } from './routes/_authenticated/workspaces/$workspaceId/index'
+import { Route as AuthenticatedWorkspacesWorkspaceIdSettingsRouteImport } from './routes/_authenticated/workspaces/$workspaceId/settings'
+import { Route as AuthenticatedWorkspacesWorkspaceIdTimeRouteImport } from './routes/_authenticated/workspaces/$workspaceId/time'
+import { Route as AuthenticatedWorkspacesWorkspaceIdInteractionsBoardRouteImport } from './routes/_authenticated/workspaces/$workspaceId/interactions/board'
+import { Route as AuthenticatedWorkspacesWorkspaceIdInteractionsListRouteImport } from './routes/_authenticated/workspaces/$workspaceId/interactions/list'
+import { Route as AuthenticatedWorkspacesWorkspaceIdInteractionsTimelineRouteImport } from './routes/_authenticated/workspaces/$workspaceId/interactions/timeline'
 
 const IndexRoute = IndexRouteImport.update({
   id: '/',
@@ -77,6 +83,42 @@ const ApiAuthSplatRoute = ApiAuthSplatRouteImport.update({
   path: '/api/auth/$',
   getParentRoute: () => rootRouteImport,
 } as any)
+const AuthenticatedWorkspacesWorkspaceIdIndexRoute =
+  AuthenticatedWorkspacesWorkspaceIdIndexRouteImport.update({
+    id: '/',
+    path: '/',
+    getParentRoute: () => AuthenticatedWorkspacesWorkspaceIdRoute,
+  } as any)
+const AuthenticatedWorkspacesWorkspaceIdSettingsRoute =
+  AuthenticatedWorkspacesWorkspaceIdSettingsRouteImport.update({
+    id: '/settings',
+    path: '/settings',
+    getParentRoute: () => AuthenticatedWorkspacesWorkspaceIdRoute,
+  } as any)
+const AuthenticatedWorkspacesWorkspaceIdTimeRoute =
+  AuthenticatedWorkspacesWorkspaceIdTimeRouteImport.update({
+    id: '/time',
+    path: '/time',
+    getParentRoute: () => AuthenticatedWorkspacesWorkspaceIdRoute,
+  } as any)
+const AuthenticatedWorkspacesWorkspaceIdInteractionsBoardRoute =
+  AuthenticatedWorkspacesWorkspaceIdInteractionsBoardRouteImport.update({
+    id: '/interactions/board',
+    path: '/interactions/board',
+    getParentRoute: () => AuthenticatedWorkspacesWorkspaceIdRoute,
+  } as any)
+const AuthenticatedWorkspacesWorkspaceIdInteractionsListRoute =
+  AuthenticatedWorkspacesWorkspaceIdInteractionsListRouteImport.update({
+    id: '/interactions/list',
+    path: '/interactions/list',
+    getParentRoute: () => AuthenticatedWorkspacesWorkspaceIdRoute,
+  } as any)
+const AuthenticatedWorkspacesWorkspaceIdInteractionsTimelineRoute =
+  AuthenticatedWorkspacesWorkspaceIdInteractionsTimelineRouteImport.update({
+    id: '/interactions/timeline',
+    path: '/interactions/timeline',
+    getParentRoute: () => AuthenticatedWorkspacesWorkspaceIdRoute,
+  } as any)
 
 export interface FileRoutesByFullPath {
   '/': typeof IndexRoute
@@ -86,9 +128,15 @@ export interface FileRoutesByFullPath {
   '/sign-in': typeof SignInRoute
   '/sign-up': typeof SignUpRoute
   '/user': typeof AuthenticatedUserRoute
-  '/workspaces/$workspaceId': typeof AuthenticatedWorkspacesWorkspaceIdRoute
+  '/workspaces/$workspaceId': typeof AuthenticatedWorkspacesWorkspaceIdRouteWithChildren
   '/api/auth/$': typeof ApiAuthSplatRoute
   '/workspaces/': typeof AuthenticatedWorkspacesIndexRoute
+  '/workspaces/$workspaceId/settings': typeof AuthenticatedWorkspacesWorkspaceIdSettingsRoute
+  '/workspaces/$workspaceId/time': typeof AuthenticatedWorkspacesWorkspaceIdTimeRoute
+  '/workspaces/$workspaceId/': typeof AuthenticatedWorkspacesWorkspaceIdIndexRoute
+  '/workspaces/$workspaceId/interactions/board': typeof AuthenticatedWorkspacesWorkspaceIdInteractionsBoardRoute
+  '/workspaces/$workspaceId/interactions/list': typeof AuthenticatedWorkspacesWorkspaceIdInteractionsListRoute
+  '/workspaces/$workspaceId/interactions/timeline': typeof AuthenticatedWorkspacesWorkspaceIdInteractionsTimelineRoute
 }
 export interface FileRoutesByTo {
   '/': typeof IndexRoute
@@ -98,9 +146,14 @@ export interface FileRoutesByTo {
   '/sign-in': typeof SignInRoute
   '/sign-up': typeof SignUpRoute
   '/user': typeof AuthenticatedUserRoute
-  '/workspaces/$workspaceId': typeof AuthenticatedWorkspacesWorkspaceIdRoute
   '/api/auth/$': typeof ApiAuthSplatRoute
   '/workspaces': typeof AuthenticatedWorkspacesIndexRoute
+  '/workspaces/$workspaceId/settings': typeof AuthenticatedWorkspacesWorkspaceIdSettingsRoute
+  '/workspaces/$workspaceId/time': typeof AuthenticatedWorkspacesWorkspaceIdTimeRoute
+  '/workspaces/$workspaceId': typeof AuthenticatedWorkspacesWorkspaceIdIndexRoute
+  '/workspaces/$workspaceId/interactions/board': typeof AuthenticatedWorkspacesWorkspaceIdInteractionsBoardRoute
+  '/workspaces/$workspaceId/interactions/list': typeof AuthenticatedWorkspacesWorkspaceIdInteractionsListRoute
+  '/workspaces/$workspaceId/interactions/timeline': typeof AuthenticatedWorkspacesWorkspaceIdInteractionsTimelineRoute
 }
 export interface FileRoutesById {
   __root__: typeof rootRouteImport
@@ -112,9 +165,15 @@ export interface FileRoutesById {
   '/sign-in': typeof SignInRoute
   '/sign-up': typeof SignUpRoute
   '/_authenticated/user': typeof AuthenticatedUserRoute
-  '/_authenticated/workspaces/$workspaceId': typeof AuthenticatedWorkspacesWorkspaceIdRoute
+  '/_authenticated/workspaces/$workspaceId': typeof AuthenticatedWorkspacesWorkspaceIdRouteWithChildren
   '/api/auth/$': typeof ApiAuthSplatRoute
   '/_authenticated/workspaces/': typeof AuthenticatedWorkspacesIndexRoute
+  '/_authenticated/workspaces/$workspaceId/settings': typeof AuthenticatedWorkspacesWorkspaceIdSettingsRoute
+  '/_authenticated/workspaces/$workspaceId/time': typeof AuthenticatedWorkspacesWorkspaceIdTimeRoute
+  '/_authenticated/workspaces/$workspaceId/': typeof AuthenticatedWorkspacesWorkspaceIdIndexRoute
+  '/_authenticated/workspaces/$workspaceId/interactions/board': typeof AuthenticatedWorkspacesWorkspaceIdInteractionsBoardRoute
+  '/_authenticated/workspaces/$workspaceId/interactions/list': typeof AuthenticatedWorkspacesWorkspaceIdInteractionsListRoute
+  '/_authenticated/workspaces/$workspaceId/interactions/timeline': typeof AuthenticatedWorkspacesWorkspaceIdInteractionsTimelineRoute
 }
 export interface FileRouteTypes {
   fileRoutesByFullPath: FileRoutesByFullPath
@@ -129,6 +188,12 @@ export interface FileRouteTypes {
     | '/workspaces/$workspaceId'
     | '/api/auth/$'
     | '/workspaces/'
+    | '/workspaces/$workspaceId/settings'
+    | '/workspaces/$workspaceId/time'
+    | '/workspaces/$workspaceId/'
+    | '/workspaces/$workspaceId/interactions/board'
+    | '/workspaces/$workspaceId/interactions/list'
+    | '/workspaces/$workspaceId/interactions/timeline'
   fileRoutesByTo: FileRoutesByTo
   to:
     | '/'
@@ -138,9 +203,14 @@ export interface FileRouteTypes {
     | '/sign-in'
     | '/sign-up'
     | '/user'
-    | '/workspaces/$workspaceId'
     | '/api/auth/$'
     | '/workspaces'
+    | '/workspaces/$workspaceId/settings'
+    | '/workspaces/$workspaceId/time'
+    | '/workspaces/$workspaceId'
+    | '/workspaces/$workspaceId/interactions/board'
+    | '/workspaces/$workspaceId/interactions/list'
+    | '/workspaces/$workspaceId/interactions/timeline'
   id:
     | '__root__'
     | '/'
@@ -154,6 +224,12 @@ export interface FileRouteTypes {
     | '/_authenticated/workspaces/$workspaceId'
     | '/api/auth/$'
     | '/_authenticated/workspaces/'
+    | '/_authenticated/workspaces/$workspaceId/settings'
+    | '/_authenticated/workspaces/$workspaceId/time'
+    | '/_authenticated/workspaces/$workspaceId/'
+    | '/_authenticated/workspaces/$workspaceId/interactions/board'
+    | '/_authenticated/workspaces/$workspaceId/interactions/list'
+    | '/_authenticated/workspaces/$workspaceId/interactions/timeline'
   fileRoutesById: FileRoutesById
 }
 export interface RootRouteChildren {
@@ -246,19 +322,91 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof ApiAuthSplatRouteImport
       parentRoute: typeof rootRouteImport
     }
+    '/_authenticated/workspaces/$workspaceId/': {
+      id: '/_authenticated/workspaces/$workspaceId/'
+      path: '/'
+      fullPath: '/workspaces/$workspaceId/'
+      preLoaderRoute: typeof AuthenticatedWorkspacesWorkspaceIdIndexRouteImport
+      parentRoute: typeof AuthenticatedWorkspacesWorkspaceIdRoute
+    }
+    '/_authenticated/workspaces/$workspaceId/settings': {
+      id: '/_authenticated/workspaces/$workspaceId/settings'
+      path: '/settings'
+      fullPath: '/workspaces/$workspaceId/settings'
+      preLoaderRoute: typeof AuthenticatedWorkspacesWorkspaceIdSettingsRouteImport
+      parentRoute: typeof AuthenticatedWorkspacesWorkspaceIdRoute
+    }
+    '/_authenticated/workspaces/$workspaceId/time': {
+      id: '/_authenticated/workspaces/$workspaceId/time'
+      path: '/time'
+      fullPath: '/workspaces/$workspaceId/time'
+      preLoaderRoute: typeof AuthenticatedWorkspacesWorkspaceIdTimeRouteImport
+      parentRoute: typeof AuthenticatedWorkspacesWorkspaceIdRoute
+    }
+    '/_authenticated/workspaces/$workspaceId/interactions/board': {
+      id: '/_authenticated/workspaces/$workspaceId/interactions/board'
+      path: '/interactions/board'
+      fullPath: '/workspaces/$workspaceId/interactions/board'
+      preLoaderRoute: typeof AuthenticatedWorkspacesWorkspaceIdInteractionsBoardRouteImport
+      parentRoute: typeof AuthenticatedWorkspacesWorkspaceIdRoute
+    }
+    '/_authenticated/workspaces/$workspaceId/interactions/list': {
+      id: '/_authenticated/workspaces/$workspaceId/interactions/list'
+      path: '/interactions/list'
+      fullPath: '/workspaces/$workspaceId/interactions/list'
+      preLoaderRoute: typeof AuthenticatedWorkspacesWorkspaceIdInteractionsListRouteImport
+      parentRoute: typeof AuthenticatedWorkspacesWorkspaceIdRoute
+    }
+    '/_authenticated/workspaces/$workspaceId/interactions/timeline': {
+      id: '/_authenticated/workspaces/$workspaceId/interactions/timeline'
+      path: '/interactions/timeline'
+      fullPath: '/workspaces/$workspaceId/interactions/timeline'
+      preLoaderRoute: typeof AuthenticatedWorkspacesWorkspaceIdInteractionsTimelineRouteImport
+      parentRoute: typeof AuthenticatedWorkspacesWorkspaceIdRoute
+    }
   }
 }
 
+interface AuthenticatedWorkspacesWorkspaceIdRouteChildren {
+  AuthenticatedWorkspacesWorkspaceIdSettingsRoute: typeof AuthenticatedWorkspacesWorkspaceIdSettingsRoute
+  AuthenticatedWorkspacesWorkspaceIdTimeRoute: typeof AuthenticatedWorkspacesWorkspaceIdTimeRoute
+  AuthenticatedWorkspacesWorkspaceIdIndexRoute: typeof AuthenticatedWorkspacesWorkspaceIdIndexRoute
+  AuthenticatedWorkspacesWorkspaceIdInteractionsBoardRoute: typeof AuthenticatedWorkspacesWorkspaceIdInteractionsBoardRoute
+  AuthenticatedWorkspacesWorkspaceIdInteractionsListRoute: typeof AuthenticatedWorkspacesWorkspaceIdInteractionsListRoute
+  AuthenticatedWorkspacesWorkspaceIdInteractionsTimelineRoute: typeof AuthenticatedWorkspacesWorkspaceIdInteractionsTimelineRoute
+}
+
+const AuthenticatedWorkspacesWorkspaceIdRouteChildren: AuthenticatedWorkspacesWorkspaceIdRouteChildren =
+  {
+    AuthenticatedWorkspacesWorkspaceIdSettingsRoute:
+      AuthenticatedWorkspacesWorkspaceIdSettingsRoute,
+    AuthenticatedWorkspacesWorkspaceIdTimeRoute:
+      AuthenticatedWorkspacesWorkspaceIdTimeRoute,
+    AuthenticatedWorkspacesWorkspaceIdIndexRoute:
+      AuthenticatedWorkspacesWorkspaceIdIndexRoute,
+    AuthenticatedWorkspacesWorkspaceIdInteractionsBoardRoute:
+      AuthenticatedWorkspacesWorkspaceIdInteractionsBoardRoute,
+    AuthenticatedWorkspacesWorkspaceIdInteractionsListRoute:
+      AuthenticatedWorkspacesWorkspaceIdInteractionsListRoute,
+    AuthenticatedWorkspacesWorkspaceIdInteractionsTimelineRoute:
+      AuthenticatedWorkspacesWorkspaceIdInteractionsTimelineRoute,
+  }
+
+const AuthenticatedWorkspacesWorkspaceIdRouteWithChildren =
+  AuthenticatedWorkspacesWorkspaceIdRoute._addFileChildren(
+    AuthenticatedWorkspacesWorkspaceIdRouteChildren,
+  )
+
 interface AuthenticatedRouteChildren {
   AuthenticatedUserRoute: typeof AuthenticatedUserRoute
-  AuthenticatedWorkspacesWorkspaceIdRoute: typeof AuthenticatedWorkspacesWorkspaceIdRoute
+  AuthenticatedWorkspacesWorkspaceIdRoute: typeof AuthenticatedWorkspacesWorkspaceIdRouteWithChildren
   AuthenticatedWorkspacesIndexRoute: typeof AuthenticatedWorkspacesIndexRoute
 }
 
 const AuthenticatedRouteChildren: AuthenticatedRouteChildren = {
   AuthenticatedUserRoute: AuthenticatedUserRoute,
   AuthenticatedWorkspacesWorkspaceIdRoute:
-    AuthenticatedWorkspacesWorkspaceIdRoute,
+    AuthenticatedWorkspacesWorkspaceIdRouteWithChildren,
   AuthenticatedWorkspacesIndexRoute: AuthenticatedWorkspacesIndexRoute,
 }
 

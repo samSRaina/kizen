@@ -1,5 +1,7 @@
 package ticket
 
+import "fmt"
+
 type Status string
 
 const (
@@ -19,26 +21,69 @@ func (s Status) IsValid() bool {
 	}
 }
 
-func (s Status) CanTransitionTo(next Status) bool {
+func (s Status) Display() string {
 	switch s {
 	case StatusBacklog:
-		return next == StatusTodo || next == StatusProgress
+		return "Backlog"
+	case StatusTodo:
+		return "To Do"
+	case StatusProgress:
+		return "In Progress"
+	case StatusReview:
+		return "In Review"
+	case StatusDone:
+		return "Done"
+	default:
+		return string(s)
+	}
+}
+
+func (s Status) ValidateTransition(next Status) error {
+	if s == next {
+		return nil
+	}
+	if !next.IsValid() {
+		return fmt.Errorf("%w: invalid ticket status %q", ErrInvalidInput, next)
+	}
+
+	switch s {
+	case StatusBacklog:
+		if next == StatusTodo || next == StatusProgress {
+			return nil
+		}
+		return fmt.Errorf("%w: cannot transition ticket directly from Backlog to %s (tickets must be moved to To Do or In Progress first)", ErrInvalidTransition, next.Display())
 
 	case StatusTodo:
-		return next == StatusProgress || next == StatusBacklog
+		if next == StatusProgress || next == StatusBacklog {
+			return nil
+		}
+		return fmt.Errorf("%w: cannot transition ticket directly from To Do to %s (work must be started in In Progress first)", ErrInvalidTransition, next.Display())
 
 	case StatusProgress:
-		return next == StatusReview || next == StatusTodo || next == StatusBacklog
+		if next == StatusReview || next == StatusTodo || next == StatusBacklog {
+			return nil
+		}
+		return fmt.Errorf("%w: cannot transition ticket directly from In Progress to Done (tickets must pass through In Review before completion)", ErrInvalidTransition)
 
 	case StatusReview:
-		return next == StatusDone || next == StatusProgress
+		if next == StatusDone || next == StatusProgress || next == StatusTodo || next == StatusBacklog {
+			return nil
+		}
+		return fmt.Errorf("%w: cannot transition ticket from In Review to %s", ErrInvalidTransition, next.Display())
 
 	case StatusDone:
-		return next == StatusTodo || next == StatusProgress
+		if next == StatusTodo || next == StatusProgress || next == StatusBacklog {
+			return nil
+		}
+		return fmt.Errorf("%w: cannot transition completed ticket directly to In Review (reopen ticket to To Do or In Progress first)", ErrInvalidTransition)
 
 	default:
-		return false
+		return fmt.Errorf("%w: unknown ticket status %q", ErrInvalidInput, s)
 	}
+}
+
+func (s Status) CanTransitionTo(next Status) bool {
+	return s.ValidateTransition(next) == nil
 }
 
 type Priority string

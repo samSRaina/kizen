@@ -6,9 +6,9 @@ import (
 
 	"github.com/google/uuid"
 	"github.com/samSRaina/kizen/api/internal/application/workspace"
-	domainWorkspace "github.com/samSRaina/kizen/api/internal/domain/workspace"
+	"github.com/samSRaina/kizen/api/internal/domain/auth"
+	domainWs "github.com/samSRaina/kizen/api/internal/domain/ws"
 	"github.com/samSRaina/kizen/api/internal/transport/http/gen"
-	"github.com/samSRaina/kizen/api/internal/transport/http/middleware"
 )
 
 type WorkspaceHandler struct {
@@ -21,24 +21,22 @@ func NewWorkspaceHandler(wsService *workspace.Service) *WorkspaceHandler {
 	}
 }
 
-// ListWorkspaces handles GET /workspaces
+// ListWorkspaces handles GET /ws
 func (h *WorkspaceHandler) ListWorkspaces(
 	ctx context.Context,
 	request gen.ListWorkspacesRequestObject,
 ) (gen.ListWorkspacesResponseObject, error) {
-	caller, ok := middleware.IdentityFromContext(ctx)
-	if !ok {
-		return gen.ListWorkspaces401ApplicationProblemPlusJSONResponse{
-			UnauthorizedApplicationProblemPlusJSONResponse: gen.UnauthorizedApplicationProblemPlusJSONResponse{
-				Status: 401,
-				Title:  "Unauthorized",
-				Detail: new("Authentication credentials are required"),
-			},
-		}, nil
-	}
-
-	workspaces, err := h.workspaceService.List(ctx, *caller)
+	workspaces, err := h.workspaceService.List(ctx)
 	if err != nil {
+		if errors.Is(err, auth.ErrUnauthenticated) {
+			return gen.ListWorkspaces401ApplicationProblemPlusJSONResponse{
+				UnauthorizedApplicationProblemPlusJSONResponse: gen.UnauthorizedApplicationProblemPlusJSONResponse{
+					Status: 401,
+					Title:  "Unauthorized",
+					Detail: new("Authentication credentials are required"),
+				},
+			}, nil
+		}
 		return gen.ListWorkspaces500ApplicationProblemPlusJSONResponse{
 			InternalErrorApplicationProblemPlusJSONResponse: gen.InternalErrorApplicationProblemPlusJSONResponse{
 				Status: 500,
@@ -64,29 +62,27 @@ func (h *WorkspaceHandler) ListWorkspaces(
 	return gen.ListWorkspaces200JSONResponse(items), nil
 }
 
-// CreateWorkspace handles POST /workspaces
+// CreateWorkspace handles POST /ws
 func (h *WorkspaceHandler) CreateWorkspace(
 	ctx context.Context,
 	request gen.CreateWorkspaceRequestObject,
 ) (gen.CreateWorkspaceResponseObject, error) {
-	caller, ok := middleware.IdentityFromContext(ctx)
-	if !ok {
-		return gen.CreateWorkspace401ApplicationProblemPlusJSONResponse{
-			UnauthorizedApplicationProblemPlusJSONResponse: gen.UnauthorizedApplicationProblemPlusJSONResponse{
-				Status: 401,
-				Title:  "Unauthorized",
-				Detail: new("Authentication credentials are required"),
-			},
-		}, nil
-	}
-
-	ws, err := h.workspaceService.Create(ctx, *caller, domainWorkspace.CreateInput{
+	ws, err := h.workspaceService.Create(ctx, domainWs.CreateInput{
 		Name:              request.Body.Name,
 		DefaultHourlyRate: request.Body.DefaultHourlyRate,
 		Description:       request.Body.Description,
 	})
 	if err != nil {
-		if errors.Is(err, domainWorkspace.ErrInvalidInput) {
+		if errors.Is(err, auth.ErrUnauthenticated) {
+			return gen.CreateWorkspace401ApplicationProblemPlusJSONResponse{
+				UnauthorizedApplicationProblemPlusJSONResponse: gen.UnauthorizedApplicationProblemPlusJSONResponse{
+					Status: 401,
+					Title:  "Unauthorized",
+					Detail: new("Authentication credentials are required"),
+				},
+			}, nil
+		}
+		if errors.Is(err, domainWs.ErrInvalidInput) {
 			return gen.CreateWorkspace400ApplicationProblemPlusJSONResponse{
 				BadRequestApplicationProblemPlusJSONResponse: gen.BadRequestApplicationProblemPlusJSONResponse{
 					Status: 400,
@@ -95,7 +91,7 @@ func (h *WorkspaceHandler) CreateWorkspace(
 				},
 			}, nil
 		}
-		if errors.Is(err, domainWorkspace.ErrDuplicateName) {
+		if errors.Is(err, domainWs.ErrDuplicateName) {
 			return gen.CreateWorkspace409ApplicationProblemPlusJSONResponse{
 				ConflictApplicationProblemPlusJSONResponse: gen.ConflictApplicationProblemPlusJSONResponse{
 					Status: 409,
@@ -124,26 +120,24 @@ func (h *WorkspaceHandler) CreateWorkspace(
 	}, nil
 }
 
-// GetWorkspace handles GET /workspaces/{id}
+// GetWorkspace handles GET /ws/{id}
 func (h *WorkspaceHandler) GetWorkspace(
 	ctx context.Context,
 	request gen.GetWorkspaceRequestObject,
 ) (gen.GetWorkspaceResponseObject, error) {
-	caller, ok := middleware.IdentityFromContext(ctx)
-	if !ok {
-		return gen.GetWorkspace401ApplicationProblemPlusJSONResponse{
-			UnauthorizedApplicationProblemPlusJSONResponse: gen.UnauthorizedApplicationProblemPlusJSONResponse{
-				Status: 401,
-				Title:  "Unauthorized",
-				Detail: new("Authentication credentials are required"),
-			},
-		}, nil
-	}
-
 	wsID := uuid.UUID(request.Id)
-	ws, err := h.workspaceService.GetByID(ctx, *caller, wsID)
+	ws, err := h.workspaceService.GetByID(ctx, wsID)
 	if err != nil {
-		if errors.Is(err, domainWorkspace.ErrNotFound) || errors.Is(err, domainWorkspace.ErrInvalidInput) {
+		if errors.Is(err, auth.ErrUnauthenticated) {
+			return gen.GetWorkspace401ApplicationProblemPlusJSONResponse{
+				UnauthorizedApplicationProblemPlusJSONResponse: gen.UnauthorizedApplicationProblemPlusJSONResponse{
+					Status: 401,
+					Title:  "Unauthorized",
+					Detail: new("Authentication credentials are required"),
+				},
+			}, nil
+		}
+		if errors.Is(err, domainWs.ErrNotFound) || errors.Is(err, domainWs.ErrInvalidInput) {
 			return gen.GetWorkspace404ApplicationProblemPlusJSONResponse{
 				NotFoundApplicationProblemPlusJSONResponse: gen.NotFoundApplicationProblemPlusJSONResponse{
 					Status: 404,
@@ -172,22 +166,11 @@ func (h *WorkspaceHandler) GetWorkspace(
 	}, nil
 }
 
-// UpdateWorkspace handles PATCH /workspaces/{id}
+// UpdateWorkspace handles PATCH /ws/{id}
 func (h *WorkspaceHandler) UpdateWorkspace(
 	ctx context.Context,
 	request gen.UpdateWorkspaceRequestObject,
 ) (gen.UpdateWorkspaceResponseObject, error) {
-	caller, ok := middleware.IdentityFromContext(ctx)
-	if !ok {
-		return gen.UpdateWorkspace401ApplicationProblemPlusJSONResponse{
-			UnauthorizedApplicationProblemPlusJSONResponse: gen.UnauthorizedApplicationProblemPlusJSONResponse{
-				Status: 401,
-				Title:  "Unauthorized",
-				Detail: new("Authentication credentials are required"),
-			},
-		}, nil
-	}
-
 	if request.Body == nil {
 		return gen.UpdateWorkspace400ApplicationProblemPlusJSONResponse{
 			BadRequestApplicationProblemPlusJSONResponse: gen.BadRequestApplicationProblemPlusJSONResponse{
@@ -199,15 +182,24 @@ func (h *WorkspaceHandler) UpdateWorkspace(
 	}
 
 	wsID := uuid.UUID(request.Id)
-	input := domainWorkspace.UpdateInput{
+	input := domainWs.UpdateInput{
 		Name:              request.Body.Name,
 		DefaultHourlyRate: request.Body.DefaultHourlyRate,
 		Description:       request.Body.Description,
 	}
 
-	ws, err := h.workspaceService.Update(ctx, *caller, wsID, input)
+	ws, err := h.workspaceService.Update(ctx, wsID, input)
 	if err != nil {
-		if errors.Is(err, domainWorkspace.ErrInvalidInput) {
+		if errors.Is(err, auth.ErrUnauthenticated) {
+			return gen.UpdateWorkspace401ApplicationProblemPlusJSONResponse{
+				UnauthorizedApplicationProblemPlusJSONResponse: gen.UnauthorizedApplicationProblemPlusJSONResponse{
+					Status: 401,
+					Title:  "Unauthorized",
+					Detail: new("Authentication credentials are required"),
+				},
+			}, nil
+		}
+		if errors.Is(err, domainWs.ErrInvalidInput) {
 			return gen.UpdateWorkspace400ApplicationProblemPlusJSONResponse{
 				BadRequestApplicationProblemPlusJSONResponse: gen.BadRequestApplicationProblemPlusJSONResponse{
 					Status: 400,
@@ -216,7 +208,7 @@ func (h *WorkspaceHandler) UpdateWorkspace(
 				},
 			}, nil
 		}
-		if errors.Is(err, domainWorkspace.ErrNotFound) {
+		if errors.Is(err, domainWs.ErrNotFound) {
 			return gen.UpdateWorkspace404ApplicationProblemPlusJSONResponse{
 				NotFoundApplicationProblemPlusJSONResponse: gen.NotFoundApplicationProblemPlusJSONResponse{
 					Status: 404,
@@ -225,7 +217,7 @@ func (h *WorkspaceHandler) UpdateWorkspace(
 				},
 			}, nil
 		}
-		if errors.Is(err, domainWorkspace.ErrDuplicateName) {
+		if errors.Is(err, domainWs.ErrDuplicateName) {
 			return gen.UpdateWorkspace409ApplicationProblemPlusJSONResponse{
 				ConflictApplicationProblemPlusJSONResponse: gen.ConflictApplicationProblemPlusJSONResponse{
 					Status: 409,
@@ -254,25 +246,23 @@ func (h *WorkspaceHandler) UpdateWorkspace(
 	}, nil
 }
 
-// DeleteWorkspace handles DELETE /workspaces/{id}
+// DeleteWorkspace handles DELETE /ws/{id}
 func (h *WorkspaceHandler) DeleteWorkspace(
 	ctx context.Context,
 	request gen.DeleteWorkspaceRequestObject,
 ) (gen.DeleteWorkspaceResponseObject, error) {
-	caller, ok := middleware.IdentityFromContext(ctx)
-	if !ok {
-		return gen.DeleteWorkspace401ApplicationProblemPlusJSONResponse{
-			UnauthorizedApplicationProblemPlusJSONResponse: gen.UnauthorizedApplicationProblemPlusJSONResponse{
-				Status: 401,
-				Title:  "Unauthorized",
-				Detail: new("Authentication credentials are required"),
-			},
-		}, nil
-	}
-
 	wsID := uuid.UUID(request.Id)
-	if err := h.workspaceService.Delete(ctx, *caller, wsID); err != nil {
-		if errors.Is(err, domainWorkspace.ErrNotFound) {
+	if err := h.workspaceService.Delete(ctx, wsID); err != nil {
+		if errors.Is(err, auth.ErrUnauthenticated) {
+			return gen.DeleteWorkspace401ApplicationProblemPlusJSONResponse{
+				UnauthorizedApplicationProblemPlusJSONResponse: gen.UnauthorizedApplicationProblemPlusJSONResponse{
+					Status: 401,
+					Title:  "Unauthorized",
+					Detail: new("Authentication credentials are required"),
+				},
+			}, nil
+		}
+		if errors.Is(err, domainWs.ErrNotFound) {
 			return gen.DeleteWorkspace404ApplicationProblemPlusJSONResponse{
 				NotFoundApplicationProblemPlusJSONResponse: gen.NotFoundApplicationProblemPlusJSONResponse{
 					Status: 404,

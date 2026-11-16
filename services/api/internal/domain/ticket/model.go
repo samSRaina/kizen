@@ -3,9 +3,12 @@ package ticket
 import (
 	"fmt"
 	"strings"
+
+	"github.com/google/uuid"
 )
 
 type CreateInput struct {
+	ProjectID   *uuid.UUID
 	Title       string
 	Description *string
 	Type        Type

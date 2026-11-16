@@ -10,7 +10,9 @@ import {
 } from "lucide-react";
 import { useEffect, useState } from "react";
 import { useConfirm } from "#/components/ui/confirm-dialog";
+import { useToast } from "#/components/ui/toast";
 import type { Ticket, TicketPriority, TicketStatus } from "#/lib/types";
+import { validateTicketTransition } from "./types";
 
 interface CompletedTicketsModalProps {
 	isOpen: boolean;
@@ -29,6 +31,7 @@ export function CompletedTicketsModal({
 	onDelete,
 }: CompletedTicketsModalProps) {
 	const confirm = useConfirm();
+	const toast = useToast();
 	const [copiedId, setCopiedId] = useState<string | null>(null);
 
 	// Close on Escape key
@@ -47,6 +50,7 @@ export function CompletedTicketsModal({
 		try {
 			await navigator.clipboard.writeText(identifier);
 			setCopiedId(identifier);
+			toast.info(`Copied ${identifier} to clipboard`);
 			setTimeout(() => setCopiedId(null), 800);
 		} catch {
 			// fallback
@@ -65,16 +69,33 @@ export function CompletedTicketsModal({
 		}
 	};
 
+	const handleReopenTicket = (
+		identifier: string,
+		targetStatus: TicketStatus,
+	) => {
+		const ticket = tickets.find((t) => t.identifier === identifier);
+		if (ticket) {
+			const transition = validateTicketTransition(ticket.status, targetStatus);
+			if (!transition.allowed) {
+				toast.error(transition.reason || "Cannot reopen ticket", {
+					title: "Reopen Error",
+				});
+				return;
+			}
+		}
+		onReopen(identifier, targetStatus);
+	};
+
 	const getPriorityBadgeClass = (priority: TicketPriority) => {
 		switch (priority) {
 			case "Critical":
-				return "bg-red-500/15 text-red-400";
+				return "bg-red-500/10 text-red-700 dark:text-red-300 border border-red-500/25";
 			case "High":
-				return "bg-orange-500/15 text-orange-400";
+				return "bg-orange-500/10 text-orange-700 dark:text-orange-300 border border-orange-500/25";
 			case "Medium":
-				return "bg-yellow-500/15 text-yellow-400";
+				return "bg-amber-500/10 text-amber-700 dark:text-amber-300 border border-amber-500/25";
 			default:
-				return "bg-surface-elevated/70 text-text-muted";
+				return "bg-surface-elevated text-text-secondary border border-border-subtle";
 		}
 	};
 
@@ -91,15 +112,15 @@ export function CompletedTicketsModal({
 
 	return (
 		<div className="fixed inset-0 z-50 flex items-center justify-center bg-black/60 backdrop-blur-xs p-4">
-			<div className="w-full max-w-3xl bg-surface-base shadow-2xl rounded-xs flex flex-col max-h-[85vh] ring-1 ring-border-default/20">
+			<div className="w-full max-w-3xl bg-surface-base shadow-2xl rounded-md flex flex-col max-h-[85vh] border border-border-default">
 				{/* Modal Header */}
-				<div className="px-6 py-4 flex items-center justify-between bg-surface-elevated/30 border-b border-border-default/15">
+				<div className="px-6 py-4 flex items-center justify-between bg-surface-elevated border-b border-border-default">
 					<div className="flex items-center space-x-3">
-						<span className="w-2.5 h-2.5 rounded-full bg-emerald-400" />
-						<h2 className="font-bold text-xs uppercase tracking-wider text-text-primary font-mono">
+						<span className="w-2.5 h-2.5 rounded-full bg-emerald-500" />
+						<h2 className="font-bold text-xs uppercase tracking-wider text-text-primary">
 							Completed Tickets (DONE)
 						</h2>
-						<span className="font-mono text-[10px] font-bold px-2 py-0.5 bg-emerald-500/15 text-emerald-400 rounded-xs">
+						<span className="text-[10px] font-bold px-2 py-0.5 bg-emerald-500/15 text-emerald-700 dark:text-emerald-300 border border-emerald-500/30 rounded-xs">
 							{tickets.length}
 						</span>
 					</div>
@@ -115,9 +136,9 @@ export function CompletedTicketsModal({
 				</div>
 
 				{/* Modal Content / Ticket List */}
-				<div className="p-6 overflow-y-auto space-y-2.5 font-mono">
+				<div className="p-6 overflow-y-auto space-y-2.5">
 					{tickets.length === 0 ? (
-						<div className="py-16 px-6 bg-surface-elevated/15 text-center text-text-muted font-mono text-xs space-y-2 rounded-xs">
+						<div className="py-16 px-6 bg-surface-elevated/15 text-center text-text-muted text-xs space-y-2 rounded-xs">
 							<AlertCircle className="w-5 h-5 mx-auto text-text-muted/60" />
 							<p className="uppercase">No completed tickets found</p>
 							<p className="text-[11px] text-text-muted/70">
@@ -129,7 +150,7 @@ export function CompletedTicketsModal({
 						tickets.map((t) => (
 							<div
 								key={t.id}
-								className="bg-surface-elevated/30 hover:bg-surface-elevated/60 p-4 flex flex-col sm:flex-row sm:items-center sm:justify-between gap-3 rounded-xs transition-colors"
+								className="bg-surface-base hover:bg-surface-hover/70 border border-border-default p-4 flex flex-col sm:flex-row sm:items-center sm:justify-between gap-3 rounded-md transition-colors shadow-2xs"
 							>
 								{/* Left: Info */}
 								<div className="space-y-1.5 min-w-0 flex-1">
@@ -170,15 +191,25 @@ export function CompletedTicketsModal({
 
 								{/* Right: Actions */}
 								<div className="flex items-center space-x-1.5 self-start sm:self-center shrink-0">
-									{/* Reopen Action */}
+									{/* Reopen Action to To Do */}
 									<button
 										type="button"
-										onClick={() => onReopen(t.identifier, "review")}
+										onClick={() => handleReopenTicket(t.identifier, "todo")}
 										className="inline-flex items-center space-x-1 px-2.5 py-1 text-[11px] font-bold uppercase tracking-wider bg-surface-elevated/60 hover:bg-surface-elevated text-text-primary rounded-xs transition-colors cursor-pointer"
-										title="Reopen ticket to IN REVIEW"
+										title="Reopen ticket to TO DO"
 									>
 										<RotateCcw className="w-3 h-3 text-amber-400" />
-										<span>Reopen</span>
+										<span>Reopen (To Do)</span>
+									</button>
+
+									{/* Reopen Action to In Progress */}
+									<button
+										type="button"
+										onClick={() => handleReopenTicket(t.identifier, "progress")}
+										className="inline-flex items-center space-x-1 px-2.5 py-1 text-[11px] font-bold uppercase tracking-wider bg-surface-elevated/60 hover:bg-surface-elevated text-amber-300 rounded-xs transition-colors cursor-pointer"
+										title="Reopen ticket directly to IN PROGRESS"
+									>
+										<span>Start Work</span>
 									</button>
 
 									{/* Copy ID */}
@@ -210,7 +241,7 @@ export function CompletedTicketsModal({
 				</div>
 
 				{/* Modal Footer */}
-				<div className="border-t border-border-default/15 px-6 py-3 flex items-center justify-between bg-surface-elevated/30 font-mono text-[11px] text-text-muted">
+				<div className="border-t border-border-default px-6 py-3 flex items-center justify-between bg-surface-elevated text-[11px] text-text-secondary">
 					<span>FINISHED TICKETS ARCHIVE</span>
 					<button
 						type="button"

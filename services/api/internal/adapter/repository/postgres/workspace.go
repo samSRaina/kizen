@@ -11,7 +11,7 @@ import (
 	"github.com/jackc/pgx/v5/pgxpool"
 	"github.com/samSRaina/kizen/api/internal/adapter/repository/postgres/gen"
 	"github.com/samSRaina/kizen/api/internal/domain/auth"
-	"github.com/samSRaina/kizen/api/internal/domain/workspace"
+	"github.com/samSRaina/kizen/api/internal/domain/ws"
 )
 
 type Repository struct {
@@ -24,9 +24,9 @@ func NewRepository(pool *pgxpool.Pool) *Repository {
 	}
 }
 
-var _ workspace.Repository = (*Repository)(nil)
+var _ ws.Repository = (*Repository)(nil)
 
-func (r *Repository) Create(ctx context.Context, ownerID auth.UserID, input workspace.CreateInput) (*workspace.Workspace, error) {
+func (r *Repository) Create(ctx context.Context, ownerID auth.UserID, input ws.CreateInput) (*ws.Workspace, error) {
 	row, err := r.q.CreateWorkspace(ctx, gen.CreateWorkspaceParams{
 		OwnerID:           ownerID.String(),
 		Name:              input.Name,
@@ -37,11 +37,11 @@ func (r *Repository) Create(ctx context.Context, ownerID auth.UserID, input work
 	if err != nil {
 		var pgErr *pgconn.PgError
 		if errors.As(err, &pgErr) && pgErr.Code == "23505" {
-			return nil, workspace.ErrDuplicateName
+			return nil, ws.ErrDuplicateName
 		}
 		return nil, fmt.Errorf("db create workspace: %w", err)
 	}
-	return &workspace.Workspace{
+	return &ws.Workspace{
 		ID:                row.ID,
 		OwnerID:           auth.UserID(row.OwnerID),
 		Name:              row.Name,
@@ -52,15 +52,15 @@ func (r *Repository) Create(ctx context.Context, ownerID auth.UserID, input work
 	}, nil
 }
 
-func (r *Repository) ListByUser(ctx context.Context, ownerID auth.UserID) ([]workspace.Workspace, error) {
+func (r *Repository) ListByUser(ctx context.Context, ownerID auth.UserID) ([]ws.Workspace, error) {
 	rows, err := r.q.ListWorkspaces(ctx, ownerID.String())
 	if err != nil {
 		return nil, fmt.Errorf("db list workspaces: %w", err)
 	}
 
-	result := make([]workspace.Workspace, len(rows))
+	result := make([]ws.Workspace, len(rows))
 	for i, row := range rows {
-		result[i] = workspace.Workspace{
+		result[i] = ws.Workspace{
 			ID:                row.ID,
 			OwnerID:           auth.UserID(row.OwnerID),
 			Name:              row.Name,
@@ -74,19 +74,19 @@ func (r *Repository) ListByUser(ctx context.Context, ownerID auth.UserID) ([]wor
 	return result, nil
 }
 
-func (r *Repository) GetByID(ctx context.Context, ownerID auth.UserID, id uuid.UUID) (*workspace.Workspace, error) {
+func (r *Repository) GetByID(ctx context.Context, ownerID auth.UserID, id uuid.UUID) (*ws.Workspace, error) {
 	row, err := r.q.GetWorkspaceByID(ctx, gen.GetWorkspaceByIDParams{
 		ID:      id,
 		OwnerID: ownerID.String(),
 	})
 	if err != nil {
 		if errors.Is(err, pgx.ErrNoRows) {
-			return nil, workspace.ErrNotFound
+			return nil, ws.ErrNotFound
 		}
 		return nil, fmt.Errorf("db get workspace: %w", err)
 	}
 
-	return &workspace.Workspace{
+	return &ws.Workspace{
 		ID:                row.ID,
 		OwnerID:           auth.UserID(row.OwnerID),
 		Name:              row.Name,
@@ -101,8 +101,8 @@ func (r *Repository) Update(
 	ctx context.Context,
 	ownerID auth.UserID,
 	id uuid.UUID,
-	input workspace.UpdateInput,
-) (*workspace.Workspace, error) {
+	input ws.UpdateInput,
+) (*ws.Workspace, error) {
 	var hourlyRate *int32
 	if input.DefaultHourlyRate != nil {
 		rate := int32(*input.DefaultHourlyRate)
@@ -118,16 +118,16 @@ func (r *Repository) Update(
 	})
 	if err != nil {
 		if errors.Is(err, pgx.ErrNoRows) {
-			return nil, workspace.ErrNotFound
+			return nil, ws.ErrNotFound
 		}
 		var pgErr *pgconn.PgError
 		if errors.As(err, &pgErr) && pgErr.Code == "23505" {
-			return nil, workspace.ErrDuplicateName
+			return nil, ws.ErrDuplicateName
 		}
 		return nil, fmt.Errorf("db update workspace: %w", err)
 	}
 
-	return &workspace.Workspace{
+	return &ws.Workspace{
 		ID:                row.ID,
 		OwnerID:           auth.UserID(row.OwnerID),
 		Name:              row.Name,
@@ -148,7 +148,7 @@ func (r *Repository) Delete(ctx context.Context, ownerID auth.UserID, id uuid.UU
 	}
 
 	if rowsAffected == 0 {
-		return workspace.ErrNotFound
+		return ws.ErrNotFound
 	}
 	return nil
 }

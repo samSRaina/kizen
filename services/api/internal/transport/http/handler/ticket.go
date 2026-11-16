@@ -6,9 +6,9 @@ import (
 
 	"github.com/google/uuid"
 	appTicket "github.com/samSRaina/kizen/api/internal/application/ticket"
+	"github.com/samSRaina/kizen/api/internal/domain/auth"
 	domainTicket "github.com/samSRaina/kizen/api/internal/domain/ticket"
 	"github.com/samSRaina/kizen/api/internal/transport/http/gen"
-	"github.com/samSRaina/kizen/api/internal/transport/http/middleware"
 )
 
 type TicketHandler struct {
@@ -21,31 +21,31 @@ func NewTicketHandler(ticketService *appTicket.Service) *TicketHandler {
 	}
 }
 
-// ListTickets handles GET /workspaces/{workspace_id}/tickets
+// ListTickets handles GET /ws/{workspace_id}/p/{project_id}/tickets
 func (h *TicketHandler) ListTickets(
 	ctx context.Context,
 	req gen.ListTicketsRequestObject,
 ) (gen.ListTicketsResponseObject, error) {
-	caller, ok := middleware.IdentityFromContext(ctx)
-	if !ok {
-		return gen.ListTickets401ApplicationProblemPlusJSONResponse{
-			UnauthorizedApplicationProblemPlusJSONResponse: gen.UnauthorizedApplicationProblemPlusJSONResponse{
-				Status: 401,
-				Title:  "Unauthorized",
-				Detail: new("Authentication credentials are required"),
-			},
-		}, nil
-	}
-
 	wsID := uuid.UUID(req.WorkspaceId)
-	tickets, err := h.ticketService.List(ctx, *caller, wsID)
+	projectID := uuid.UUID(req.ProjectId)
+
+	tickets, err := h.ticketService.ListByProject(ctx, wsID, projectID)
 	if err != nil {
+		if errors.Is(err, auth.ErrUnauthenticated) {
+			return gen.ListTickets401ApplicationProblemPlusJSONResponse{
+				UnauthorizedApplicationProblemPlusJSONResponse: gen.UnauthorizedApplicationProblemPlusJSONResponse{
+					Status: 401,
+					Title:  "Unauthorized",
+					Detail: new("Authentication credentials are required"),
+				},
+			}, nil
+		}
 		if errors.Is(err, domainTicket.ErrInvalidInput) {
 			return gen.ListTickets404ApplicationProblemPlusJSONResponse{
 				NotFoundApplicationProblemPlusJSONResponse: gen.NotFoundApplicationProblemPlusJSONResponse{
 					Status: 404,
 					Title:  "Not Found",
-					Detail: new("Workspace not found"),
+					Detail: new("Project not found"),
 				},
 			}, nil
 		}
@@ -66,23 +66,13 @@ func (h *TicketHandler) ListTickets(
 	return gen.ListTickets200JSONResponse(items), nil
 }
 
-// CreateTicket handles POST /workspaces/{workspace_id}/tickets
+// CreateTicket handles POST /ws/{workspace_id}/p/{project_id}/tickets
 func (h *TicketHandler) CreateTicket(
 	ctx context.Context,
 	req gen.CreateTicketRequestObject,
 ) (gen.CreateTicketResponseObject, error) {
-	caller, ok := middleware.IdentityFromContext(ctx)
-	if !ok {
-		return gen.CreateTicket401ApplicationProblemPlusJSONResponse{
-			UnauthorizedApplicationProblemPlusJSONResponse: gen.UnauthorizedApplicationProblemPlusJSONResponse{
-				Status: 401,
-				Title:  "Unauthorized",
-				Detail: new("Authentication credentials are required"),
-			},
-		}, nil
-	}
-
 	wsID := uuid.UUID(req.WorkspaceId)
+	projectID := uuid.UUID(req.ProjectId)
 
 	var status *domainTicket.Status
 	if req.Body.Status != nil {
@@ -100,7 +90,8 @@ func (h *TicketHandler) CreateTicket(
 		tags = *req.Body.Tags
 	}
 
-	created, err := h.ticketService.Create(ctx, *caller, wsID, domainTicket.CreateInput{
+	created, err := h.ticketService.CreateForProject(ctx, wsID, projectID, domainTicket.CreateInput{
+		ProjectID:   &projectID,
 		Title:       req.Body.Title,
 		Description: req.Body.Description,
 		Type:        domainTicket.Type(req.Body.Type),
@@ -110,7 +101,16 @@ func (h *TicketHandler) CreateTicket(
 		Tags:        tags,
 	})
 	if err != nil {
-		if errors.Is(err, domainTicket.ErrInvalidInput) {
+		if errors.Is(err, auth.ErrUnauthenticated) {
+			return gen.CreateTicket401ApplicationProblemPlusJSONResponse{
+				UnauthorizedApplicationProblemPlusJSONResponse: gen.UnauthorizedApplicationProblemPlusJSONResponse{
+					Status: 401,
+					Title:  "Unauthorized",
+					Detail: new("Authentication credentials are required"),
+				},
+			}, nil
+		}
+		if errors.Is(err, domainTicket.ErrInvalidInput) || errors.Is(err, domainTicket.ErrInvalidTransition) {
 			return gen.CreateTicket400ApplicationProblemPlusJSONResponse{
 				BadRequestApplicationProblemPlusJSONResponse: gen.BadRequestApplicationProblemPlusJSONResponse{
 					Status: 400,
@@ -131,25 +131,25 @@ func (h *TicketHandler) CreateTicket(
 	return gen.CreateTicket201JSONResponse(mapDomainTicketToGen(*created)), nil
 }
 
-// GetTicket handles GET /workspaces/{workspace_id}/tickets/{identifier}
+// GetTicket handles GET /ws/{workspace_id}/p/{project_id}/tickets/{identifier}
 func (h *TicketHandler) GetTicket(
 	ctx context.Context,
 	req gen.GetTicketRequestObject,
 ) (gen.GetTicketResponseObject, error) {
-	caller, ok := middleware.IdentityFromContext(ctx)
-	if !ok {
-		return gen.GetTicket401ApplicationProblemPlusJSONResponse{
-			UnauthorizedApplicationProblemPlusJSONResponse: gen.UnauthorizedApplicationProblemPlusJSONResponse{
-				Status: 401,
-				Title:  "Unauthorized",
-				Detail: new("Authentication credentials are required"),
-			},
-		}, nil
-	}
-
 	wsID := uuid.UUID(req.WorkspaceId)
-	t, err := h.ticketService.Get(ctx, *caller, wsID, req.Identifier)
+	projectID := uuid.UUID(req.ProjectId)
+
+	t, err := h.ticketService.GetByProject(ctx, wsID, projectID, req.Identifier)
 	if err != nil {
+		if errors.Is(err, auth.ErrUnauthenticated) {
+			return gen.GetTicket401ApplicationProblemPlusJSONResponse{
+				UnauthorizedApplicationProblemPlusJSONResponse: gen.UnauthorizedApplicationProblemPlusJSONResponse{
+					Status: 401,
+					Title:  "Unauthorized",
+					Detail: new("Authentication credentials are required"),
+				},
+			}, nil
+		}
 		if errors.Is(err, domainTicket.ErrNotFound) {
 			return gen.GetTicket404ApplicationProblemPlusJSONResponse{
 				NotFoundApplicationProblemPlusJSONResponse: gen.NotFoundApplicationProblemPlusJSONResponse{
@@ -171,22 +171,11 @@ func (h *TicketHandler) GetTicket(
 	return gen.GetTicket200JSONResponse(mapDomainTicketToGen(*t)), nil
 }
 
-// UpdateTicket handles PATCH /workspaces/{workspace_id}/tickets/{identifier}
+// UpdateTicket handles PATCH /ws/{workspace_id}/p/{project_id}/tickets/{identifier}
 func (h *TicketHandler) UpdateTicket(
 	ctx context.Context,
 	req gen.UpdateTicketRequestObject,
 ) (gen.UpdateTicketResponseObject, error) {
-	caller, ok := middleware.IdentityFromContext(ctx)
-	if !ok {
-		return gen.UpdateTicket401ApplicationProblemPlusJSONResponse{
-			UnauthorizedApplicationProblemPlusJSONResponse: gen.UnauthorizedApplicationProblemPlusJSONResponse{
-				Status: 401,
-				Title:  "Unauthorized",
-				Detail: new("Authentication credentials are required"),
-			},
-		}, nil
-	}
-
 	wsID := uuid.UUID(req.WorkspaceId)
 
 	var typePtr *domainTicket.Type
@@ -219,7 +208,7 @@ func (h *TicketHandler) UpdateTicket(
 		tags = req.Body.Tags
 	}
 
-	updated, err := h.ticketService.Update(ctx, *caller, wsID, req.Identifier, domainTicket.UpdateInput{
+	updated, err := h.ticketService.Update(ctx, wsID, req.Identifier, domainTicket.UpdateInput{
 		Title:       title,
 		Description: desc,
 		Type:        typePtr,
@@ -229,6 +218,15 @@ func (h *TicketHandler) UpdateTicket(
 		Tags:        tags,
 	})
 	if err != nil {
+		if errors.Is(err, auth.ErrUnauthenticated) {
+			return gen.UpdateTicket401ApplicationProblemPlusJSONResponse{
+				UnauthorizedApplicationProblemPlusJSONResponse: gen.UnauthorizedApplicationProblemPlusJSONResponse{
+					Status: 401,
+					Title:  "Unauthorized",
+					Detail: new("Authentication credentials are required"),
+				},
+			}, nil
+		}
 		if errors.Is(err, domainTicket.ErrNotFound) {
 			return gen.UpdateTicket404ApplicationProblemPlusJSONResponse{
 				NotFoundApplicationProblemPlusJSONResponse: gen.NotFoundApplicationProblemPlusJSONResponse{
@@ -238,7 +236,7 @@ func (h *TicketHandler) UpdateTicket(
 				},
 			}, nil
 		}
-		if errors.Is(err, domainTicket.ErrInvalidInput) {
+		if errors.Is(err, domainTicket.ErrInvalidInput) || errors.Is(err, domainTicket.ErrInvalidTransition) {
 			return gen.UpdateTicket400ApplicationProblemPlusJSONResponse{
 				BadRequestApplicationProblemPlusJSONResponse: gen.BadRequestApplicationProblemPlusJSONResponse{
 					Status: 400,
@@ -259,24 +257,22 @@ func (h *TicketHandler) UpdateTicket(
 	return gen.UpdateTicket200JSONResponse(mapDomainTicketToGen(*updated)), nil
 }
 
-// DeleteTicket handles DELETE /workspaces/{workspace_id}/tickets/{identifier}
+// DeleteTicket handles DELETE /ws/{workspace_id}/p/{project_id}/tickets/{identifier}
 func (h *TicketHandler) DeleteTicket(
 	ctx context.Context,
 	req gen.DeleteTicketRequestObject,
 ) (gen.DeleteTicketResponseObject, error) {
-	caller, ok := middleware.IdentityFromContext(ctx)
-	if !ok {
-		return gen.DeleteTicket401ApplicationProblemPlusJSONResponse{
-			UnauthorizedApplicationProblemPlusJSONResponse: gen.UnauthorizedApplicationProblemPlusJSONResponse{
-				Status: 401,
-				Title:  "Unauthorized",
-				Detail: new("Authentication credentials are required"),
-			},
-		}, nil
-	}
-
 	wsID := uuid.UUID(req.WorkspaceId)
-	if err := h.ticketService.Delete(ctx, *caller, wsID, req.Identifier); err != nil {
+	if err := h.ticketService.Delete(ctx, wsID, req.Identifier); err != nil {
+		if errors.Is(err, auth.ErrUnauthenticated) {
+			return gen.DeleteTicket401ApplicationProblemPlusJSONResponse{
+				UnauthorizedApplicationProblemPlusJSONResponse: gen.UnauthorizedApplicationProblemPlusJSONResponse{
+					Status: 401,
+					Title:  "Unauthorized",
+					Detail: new("Authentication credentials are required"),
+				},
+			}, nil
+		}
 		if errors.Is(err, domainTicket.ErrNotFound) {
 			return gen.DeleteTicket404ApplicationProblemPlusJSONResponse{
 				NotFoundApplicationProblemPlusJSONResponse: gen.NotFoundApplicationProblemPlusJSONResponse{
@@ -302,7 +298,7 @@ func mapDomainTicketToGen(t domainTicket.Ticket) gen.Ticket {
 	tags := t.Tags
 	return gen.Ticket{
 		Id:          t.ID,
-		WorkspaceId: t.WorkspaceID,
+		ProjectId:   t.ProjectID,
 		Identifier:  t.Identifier,
 		Title:       t.Title,
 		Description: t.Description,

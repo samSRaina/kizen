@@ -9,7 +9,7 @@ servers:
 - url: http://localhost/api/v1
   description: Localhost developement
 paths:
-  /workspaces:
+  /ws:
     get:
       tags:
       - Workspaces
@@ -58,7 +58,7 @@ paths:
           $ref: '#/components/responses/Conflict'
         '500':
           $ref: '#/components/responses/InternalError'
-  /workspaces/{id}:
+  /ws/{id}:
     get:
       tags:
       - Workspaces
@@ -146,12 +146,12 @@ paths:
           $ref: '#/components/responses/NotFound'
         '500':
           $ref: '#/components/responses/InternalError'
-  /workspaces/{workspace_id}/tickets:
+  /ws/{workspace_id}/p:
     get:
       tags:
-      - Tickets
-      summary: List tickets for a workspace
-      operationId: listTickets
+      - Projects
+      summary: List projects for a workspace
+      operationId: listProjects
       security:
       - bearerAuth: []
       parameters:
@@ -163,7 +163,184 @@ paths:
           format: uuid
       responses:
         '200':
-          description: A list of tickets
+          description: A list of projects
+          content:
+            application/json:
+              schema:
+                type: array
+                items:
+                  $ref: '#/components/schemas/Project'
+        '401':
+          $ref: '#/components/responses/Unauthorized'
+        '404':
+          $ref: '#/components/responses/NotFound'
+        '500':
+          $ref: '#/components/responses/InternalError'
+    post:
+      tags:
+      - Projects
+      summary: Create a new project
+      operationId: createProject
+      security:
+      - bearerAuth: []
+      parameters:
+      - name: workspace_id
+        in: path
+        required: true
+        schema:
+          type: string
+          format: uuid
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/CreateProjectRequest'
+      responses:
+        '201':
+          description: Created project
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Project'
+        '400':
+          $ref: '#/components/responses/BadRequest'
+        '401':
+          $ref: '#/components/responses/Unauthorized'
+        '409':
+          $ref: '#/components/responses/Conflict'
+        '500':
+          $ref: '#/components/responses/InternalError'
+  /ws/{workspace_id}/p/{project_id}:
+    get:
+      tags:
+      - Projects
+      summary: Get a project by id
+      operationId: getProject
+      security:
+      - bearerAuth: []
+      parameters:
+      - name: workspace_id
+        in: path
+        required: true
+        schema:
+          type: string
+          format: uuid
+      - name: project_id
+        in: path
+        required: true
+        schema:
+          type: string
+          format: uuid
+      responses:
+        '200':
+          description: The project details
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Project'
+        '401':
+          $ref: '#/components/responses/Unauthorized'
+        '404':
+          $ref: '#/components/responses/NotFound'
+        '500':
+          $ref: '#/components/responses/InternalError'
+    patch:
+      tags:
+      - Projects
+      summary: Update a project
+      operationId: updateProject
+      security:
+      - bearerAuth: []
+      parameters:
+      - name: workspace_id
+        in: path
+        required: true
+        schema:
+          type: string
+          format: uuid
+      - name: project_id
+        in: path
+        required: true
+        schema:
+          type: string
+          format: uuid
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/UpdateProjectRequest'
+      responses:
+        '200':
+          description: Updated project
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Project'
+        '400':
+          $ref: '#/components/responses/BadRequest'
+        '401':
+          $ref: '#/components/responses/Unauthorized'
+        '404':
+          $ref: '#/components/responses/NotFound'
+        '409':
+          $ref: '#/components/responses/Conflict'
+        '500':
+          $ref: '#/components/responses/InternalError'
+    delete:
+      tags:
+      - Projects
+      summary: Delete a project
+      operationId: deleteProject
+      security:
+      - bearerAuth: []
+      parameters:
+      - name: workspace_id
+        in: path
+        required: true
+        schema:
+          type: string
+          format: uuid
+      - name: project_id
+        in: path
+        required: true
+        schema:
+          type: string
+          format: uuid
+      responses:
+        '204':
+          description: The project was successfully deleted.
+        '401':
+          $ref: '#/components/responses/Unauthorized'
+        '404':
+          $ref: '#/components/responses/NotFound'
+        '500':
+          $ref: '#/components/responses/InternalError'
+  /ws/{workspace_id}/p/{project_id}/tickets:
+    get:
+      tags:
+      - Tickets
+      summary: List tickets for a project
+      operationId: listTickets
+      security:
+      - bearerAuth: []
+      parameters:
+      - name: workspace_id
+        in: path
+        required: true
+        schema:
+          type: string
+          format: uuid
+      - name: project_id
+        in: path
+        required: true
+        schema:
+          type: string
+          format: uuid
+      responses:
+        '200':
+          description: A list of tickets for the project
           content:
             application/json:
               schema:
@@ -179,12 +356,18 @@ paths:
     post:
       tags:
       - Tickets
-      summary: Create a new ticket
+      summary: Create a new ticket under a project
       operationId: createTicket
       security:
       - bearerAuth: []
       parameters:
       - name: workspace_id
+        in: path
+        required: true
+        schema:
+          type: string
+          format: uuid
+      - name: project_id
         in: path
         required: true
         schema:
@@ -209,16 +392,22 @@ paths:
           $ref: '#/components/responses/Unauthorized'
         '500':
           $ref: '#/components/responses/InternalError'
-  /workspaces/{workspace_id}/tickets/{identifier}:
+  /ws/{workspace_id}/p/{project_id}/tickets/{identifier}:
     get:
       tags:
       - Tickets
-      summary: Get a ticket by identifier
+      summary: Get a ticket by identifier in a project
       operationId: getTicket
       security:
       - bearerAuth: []
       parameters:
       - name: workspace_id
+        in: path
+        required: true
+        schema:
+          type: string
+          format: uuid
+      - name: project_id
         in: path
         required: true
         schema:
@@ -245,12 +434,18 @@ paths:
     patch:
       tags:
       - Tickets
-      summary: Update a ticket
+      summary: Update a ticket in a project
       operationId: updateTicket
       security:
       - bearerAuth: []
       parameters:
       - name: workspace_id
+        in: path
+        required: true
+        schema:
+          type: string
+          format: uuid
+      - name: project_id
         in: path
         required: true
         schema:
@@ -285,12 +480,18 @@ paths:
     delete:
       tags:
       - Tickets
-      summary: Delete a ticket
+      summary: Delete a ticket in a project
       operationId: deleteTicket
       security:
       - bearerAuth: []
       parameters:
       - name: workspace_id
+        in: path
+        required: true
+        schema:
+          type: string
+          format: uuid
+      - name: project_id
         in: path
         required: true
         schema:
@@ -310,12 +511,12 @@ paths:
           $ref: '#/components/responses/NotFound'
         '500':
           $ref: '#/components/responses/InternalError'
-  /workspaces/{workspace_id}/time-entries:
+  /ws/{workspace_id}/track:
     get:
       tags:
-      - TimeEntries
+      - Track
       summary: List time entries for a workspace
-      operationId: listTimeEntries
+      operationId: listTracks
       security:
       - bearerAuth: []
       parameters:
@@ -339,7 +540,7 @@ paths:
               schema:
                 type: array
                 items:
-                  $ref: '#/components/schemas/TimeEntry'
+                  $ref: '#/components/schemas/Track'
         '401':
           $ref: '#/components/responses/Unauthorized'
         '404':
@@ -348,10 +549,10 @@ paths:
           $ref: '#/components/responses/InternalError'
     post:
       tags:
-      - TimeEntries
+      - Track
       summary: Create or start a time entry
       description: Create a completed time entry with duration or start an active timer (ended_at omitted). Starting a new timer automatically stops any existing active timer.
-      operationId: createTimeEntry
+      operationId: createTrack
       security:
       - bearerAuth: []
       parameters:
@@ -366,14 +567,14 @@ paths:
         content:
           application/json:
             schema:
-              $ref: '#/components/schemas/CreateTimeEntryRequest'
+              $ref: '#/components/schemas/CreateTrackRequest'
       responses:
         '201':
           description: Created time entry
           content:
             application/json:
               schema:
-                $ref: '#/components/schemas/TimeEntry'
+                $ref: '#/components/schemas/Track'
         '400':
           $ref: '#/components/responses/BadRequest'
         '401':
@@ -382,12 +583,12 @@ paths:
           $ref: '#/components/responses/NotFound'
         '500':
           $ref: '#/components/responses/InternalError'
-  /workspaces/{workspace_id}/time-entries/{id}:
+  /ws/{workspace_id}/track/{id}:
     get:
       tags:
-      - TimeEntries
+      - Track
       summary: Get a time entry by id
-      operationId: getTimeEntry
+      operationId: getTrack
       security:
       - bearerAuth: []
       parameters:
@@ -409,7 +610,7 @@ paths:
           content:
             application/json:
               schema:
-                $ref: '#/components/schemas/TimeEntry'
+                $ref: '#/components/schemas/Track'
         '401':
           $ref: '#/components/responses/Unauthorized'
         '404':
@@ -418,9 +619,9 @@ paths:
           $ref: '#/components/responses/InternalError'
     patch:
       tags:
-      - TimeEntries
+      - Track
       summary: Update a time entry
-      operationId: updateTimeEntry
+      operationId: updateTrack
       security:
       - bearerAuth: []
       parameters:
@@ -441,14 +642,14 @@ paths:
         content:
           application/json:
             schema:
-              $ref: '#/components/schemas/UpdateTimeEntryRequest'
+              $ref: '#/components/schemas/UpdateTrackRequest'
       responses:
         '200':
           description: Updated time entry
           content:
             application/json:
               schema:
-                $ref: '#/components/schemas/TimeEntry'
+                $ref: '#/components/schemas/Track'
         '400':
           $ref: '#/components/responses/BadRequest'
         '401':
@@ -459,9 +660,9 @@ paths:
           $ref: '#/components/responses/InternalError'
     delete:
       tags:
-      - TimeEntries
+      - Track
       summary: Delete a time entry
-      operationId: deleteTimeEntry
+      operationId: deleteTrack
       security:
       - bearerAuth: []
       parameters:
@@ -486,12 +687,12 @@ paths:
           $ref: '#/components/responses/NotFound'
         '500':
           $ref: '#/components/responses/InternalError'
-  /workspaces/{workspace_id}/time-entries/{id}/stop:
+  /ws/{workspace_id}/track/{id}/stop:
     post:
       tags:
-      - TimeEntries
+      - Track
       summary: Stop an active time entry timer
-      operationId: stopTimeEntry
+      operationId: stopTrack
       security:
       - bearerAuth: []
       parameters:
@@ -513,7 +714,79 @@ paths:
           content:
             application/json:
               schema:
-                $ref: '#/components/schemas/TimeEntry'
+                $ref: '#/components/schemas/Track'
+        '400':
+          $ref: '#/components/responses/BadRequest'
+        '401':
+          $ref: '#/components/responses/Unauthorized'
+        '404':
+          $ref: '#/components/responses/NotFound'
+        '500':
+          $ref: '#/components/responses/InternalError'
+  /ws/{workspace_id}/track/{id}/pause:
+    post:
+      tags:
+      - Track
+      summary: Pause an active running time entry timer
+      operationId: pauseTrack
+      security:
+      - bearerAuth: []
+      parameters:
+      - name: workspace_id
+        in: path
+        required: true
+        schema:
+          type: string
+          format: uuid
+      - name: id
+        in: path
+        required: true
+        schema:
+          type: string
+          format: uuid
+      responses:
+        '200':
+          description: Paused time entry with accrued duration
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Track'
+        '400':
+          $ref: '#/components/responses/BadRequest'
+        '401':
+          $ref: '#/components/responses/Unauthorized'
+        '404':
+          $ref: '#/components/responses/NotFound'
+        '500':
+          $ref: '#/components/responses/InternalError'
+  /ws/{workspace_id}/track/{id}/resume:
+    post:
+      tags:
+      - Track
+      summary: Resume a paused time entry timer
+      operationId: resumeTrack
+      security:
+      - bearerAuth: []
+      parameters:
+      - name: workspace_id
+        in: path
+        required: true
+        schema:
+          type: string
+          format: uuid
+      - name: id
+        in: path
+        required: true
+        schema:
+          type: string
+          format: uuid
+      responses:
+        '200':
+          description: Resumed live running time entry
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Track'
         '400':
           $ref: '#/components/responses/BadRequest'
         '401':
@@ -585,6 +858,81 @@ components:
         description:
           type: string
           nullable: true
+    Project:
+      type: object
+      required:
+      - id
+      - workspace_id
+      - name
+      - ticket_id_prefix
+      - settings
+      - default_hourly_rate
+      - created_at
+      - updated_at
+      properties:
+        id:
+          type: string
+          format: uuid
+        workspace_id:
+          type: string
+          format: uuid
+        name:
+          type: string
+          example: Frontend App
+        ticket_id_prefix:
+          type: string
+          example: FRONT
+        settings:
+          type: object
+          additionalProperties: true
+        default_hourly_rate:
+          type: integer
+          example: 85
+        description:
+          type: string
+          nullable: true
+          example: Client project description
+        created_at:
+          type: string
+          format: date-time
+        updated_at:
+          type: string
+          format: date-time
+    CreateProjectRequest:
+      type: object
+      required:
+      - name
+      properties:
+        name:
+          type: string
+          example: Frontend App
+        ticket_id_prefix:
+          type: string
+          example: FRONT
+        default_hourly_rate:
+          type: integer
+          example: 85
+        description:
+          type: string
+          nullable: true
+        settings:
+          type: object
+          additionalProperties: true
+    UpdateProjectRequest:
+      type: object
+      properties:
+        name:
+          type: string
+        ticket_id_prefix:
+          type: string
+        default_hourly_rate:
+          type: integer
+        description:
+          type: string
+          nullable: true
+        settings:
+          type: object
+          additionalProperties: true
     ProblemDetail:
       type: object
       description: 'RFC 7807 Problem Details. The error shape for every non-2xx response in the API. `type` names the error class; `errors` (validation only) maps field names to human-readable messages.'
@@ -636,7 +984,7 @@ components:
       type: object
       required:
       - id
-      - workspace_id
+      - project_id
       - identifier
       - title
       - type
@@ -649,7 +997,7 @@ components:
         id:
           type: string
           format: uuid
-        workspace_id:
+        project_id:
           type: string
           format: uuid
         identifier:
@@ -683,6 +1031,9 @@ components:
       - type
       - priority
       properties:
+        project_id:
+          type: string
+          format: uuid
         title:
           type: string
           minLength: 1
@@ -704,6 +1055,9 @@ components:
     UpdateTicketRequest:
       type: object
       properties:
+        project_id:
+          type: string
+          format: uuid
         title:
           type: string
           minLength: 1
@@ -722,7 +1076,7 @@ components:
           type: array
           items:
             type: string
-    TimeEntry:
+    Track:
       type: object
       required:
       - id
@@ -762,13 +1116,23 @@ components:
         hourly_rate:
           type: integer
           minimum: 0
+        is_manual:
+          type: boolean
+          default: false
+        timer_state:
+          type: string
+          enum:
+          - running
+          - paused
+          - stopped
+          default: stopped
         created_at:
           type: string
           format: date-time
         updated_at:
           type: string
           format: date-time
-    CreateTimeEntryRequest:
+    CreateTrackRequest:
       type: object
       properties:
         ticket_id:
@@ -796,7 +1160,17 @@ components:
           type: integer
           minimum: 0
           nullable: true
-    UpdateTimeEntryRequest:
+        is_manual:
+          type: boolean
+          nullable: true
+        timer_state:
+          type: string
+          enum:
+          - running
+          - paused
+          - stopped
+          nullable: true
+    UpdateTrackRequest:
       type: object
       properties:
         ticket_id:
@@ -822,6 +1196,16 @@ components:
         hourly_rate:
           type: integer
           minimum: 0
+        is_manual:
+          type: boolean
+          nullable: true
+        timer_state:
+          type: string
+          enum:
+          - running
+          - paused
+          - stopped
+          nullable: true
   responses:
     BadRequest:
       description: 'Malformed request or validation failure. Malformed JSON, unknown fields, invalid enum values, bad UUIDs, and rule violations (e.g. an empty PATCH) all land here. Field-level detail in `Problem.errors`.'

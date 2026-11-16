@@ -15,26 +15,26 @@ import (
 	"github.com/samSRaina/kizen/api/internal/domain/track"
 )
 
-type TimeEntryRepository struct {
+type TrackRepository struct {
 	pool *pgxpool.Pool
 	q    *gen.Queries
 }
 
-func NewTimeEntryRepository(pool *pgxpool.Pool) *TimeEntryRepository {
-	return &TimeEntryRepository{
+func NewTrackRepository(pool *pgxpool.Pool) *TrackRepository {
+	return &TrackRepository{
 		pool: pool,
 		q:    gen.New(pool),
 	}
 }
 
-var _ track.TimeEntryRepository = (*TimeEntryRepository)(nil)
+var _ track.Repository = (*TrackRepository)(nil)
 
-func (r *TimeEntryRepository) ListByWorkspace(
+func (r *TrackRepository) ListByWorkspace(
 	ctx context.Context,
 	ownerID auth.UserID,
 	workspaceID uuid.UUID,
 	ticketID *uuid.UUID,
-) ([]track.TimeEntry, error) {
+) ([]track.Track, error) {
 	var ticketIDUUID pgtype.UUID
 	if ticketID != nil {
 		ticketIDUUID = pgtype.UUID{Bytes: *ticketID, Valid: true}
@@ -46,22 +46,22 @@ func (r *TimeEntryRepository) ListByWorkspace(
 		TicketID:    ticketIDUUID,
 	})
 	if err != nil {
-		return nil, fmt.Errorf("db list time entries: %w", err)
+		return nil, fmt.Errorf("db list track entries: %w", err)
 	}
 
-	result := make([]track.TimeEntry, len(rows))
+	result := make([]track.Track, len(rows))
 	for i, row := range rows {
-		result[i] = mapGenTimeEntryToDomain(row)
+		result[i] = mapGenTrackToDomain(row)
 	}
 	return result, nil
 }
 
-func (r *TimeEntryRepository) GetByID(
+func (r *TrackRepository) GetByID(
 	ctx context.Context,
 	ownerID auth.UserID,
 	workspaceID uuid.UUID,
 	id uuid.UUID,
-) (*track.TimeEntry, error) {
+) (*track.Track, error) {
 	row, err := r.q.GetTimeEntryByID(ctx, gen.GetTimeEntryByIDParams{
 		ID:          id,
 		WorkspaceID: workspaceID,
@@ -71,18 +71,18 @@ func (r *TimeEntryRepository) GetByID(
 		if errors.Is(err, pgx.ErrNoRows) {
 			return nil, track.ErrNotFound
 		}
-		return nil, fmt.Errorf("db get time entry: %w", err)
+		return nil, fmt.Errorf("db get track entry: %w", err)
 	}
 
-	te := mapGenTimeEntryToDomain(row)
+	te := mapGenTrackToDomain(row)
 	return &te, nil
 }
 
-func (r *TimeEntryRepository) GetActive(
+func (r *TrackRepository) GetActive(
 	ctx context.Context,
 	ownerID auth.UserID,
 	workspaceID uuid.UUID,
-) (*track.TimeEntry, error) {
+) (*track.Track, error) {
 	row, err := r.q.GetActiveTimeEntry(ctx, gen.GetActiveTimeEntryParams{
 		WorkspaceID: workspaceID,
 		OwnerID:     ownerID.String(),
@@ -91,14 +91,14 @@ func (r *TimeEntryRepository) GetActive(
 		if errors.Is(err, pgx.ErrNoRows) {
 			return nil, track.ErrNotFound
 		}
-		return nil, fmt.Errorf("db get active time entry: %w", err)
+		return nil, fmt.Errorf("db get active track entry: %w", err)
 	}
 
-	te := mapGenTimeEntryToDomain(row)
+	te := mapGenTrackToDomain(row)
 	return &te, nil
 }
 
-func (r *TimeEntryRepository) StopActive(
+func (r *TrackRepository) StopActive(
 	ctx context.Context,
 	ownerID auth.UserID,
 	workspaceID uuid.UUID,
@@ -108,17 +108,17 @@ func (r *TimeEntryRepository) StopActive(
 		OwnerID:     ownerID.String(),
 	})
 	if err != nil {
-		return fmt.Errorf("db stop active time entries: %w", err)
+		return fmt.Errorf("db stop active track entries: %w", err)
 	}
 	return nil
 }
 
-func (r *TimeEntryRepository) Create(
+func (r *TrackRepository) Create(
 	ctx context.Context,
 	ownerID auth.UserID,
 	workspaceID uuid.UUID,
 	input track.CreateInput,
-) (*track.TimeEntry, error) {
+) (*track.Track, error) {
 	var ticketIDUUID pgtype.UUID
 	if input.TicketID != nil {
 		ticketIDUUID = pgtype.UUID{Bytes: *input.TicketID, Valid: true}
@@ -180,19 +180,19 @@ func (r *TimeEntryRepository) Create(
 		if errors.Is(err, pgx.ErrNoRows) {
 			return nil, track.ErrNotFound
 		}
-		return nil, fmt.Errorf("db create time entry: %w", err)
+		return nil, fmt.Errorf("db create track entry: %w", err)
 	}
 
-	te := mapGenTimeEntryToDomain(row)
+	te := mapGenTrackToDomain(row)
 	return &te, nil
 }
 
-func (r *TimeEntryRepository) Pause(
+func (r *TrackRepository) Pause(
 	ctx context.Context,
 	ownerID auth.UserID,
 	workspaceID uuid.UUID,
 	id uuid.UUID,
-) (*track.TimeEntry, error) {
+) (*track.Track, error) {
 	row, err := r.q.PauseTimeEntry(ctx, gen.PauseTimeEntryParams{
 		ID:          id,
 		WorkspaceID: workspaceID,
@@ -202,19 +202,19 @@ func (r *TimeEntryRepository) Pause(
 		if errors.Is(err, pgx.ErrNoRows) {
 			return nil, track.ErrNotRunning
 		}
-		return nil, fmt.Errorf("db pause time entry: %w", err)
+		return nil, fmt.Errorf("db pause track entry: %w", err)
 	}
 
-	te := mapGenTimeEntryToDomain(row)
+	te := mapGenTrackToDomain(row)
 	return &te, nil
 }
 
-func (r *TimeEntryRepository) Resume(
+func (r *TrackRepository) Resume(
 	ctx context.Context,
 	ownerID auth.UserID,
 	workspaceID uuid.UUID,
 	id uuid.UUID,
-) (*track.TimeEntry, error) {
+) (*track.Track, error) {
 	row, err := r.q.ResumeTimeEntry(ctx, gen.ResumeTimeEntryParams{
 		ID:          id,
 		WorkspaceID: workspaceID,
@@ -224,19 +224,19 @@ func (r *TimeEntryRepository) Resume(
 		if errors.Is(err, pgx.ErrNoRows) {
 			return nil, track.ErrNotPaused
 		}
-		return nil, fmt.Errorf("db resume time entry: %w", err)
+		return nil, fmt.Errorf("db resume track entry: %w", err)
 	}
 
-	te := mapGenTimeEntryToDomain(row)
+	te := mapGenTrackToDomain(row)
 	return &te, nil
 }
 
-func (r *TimeEntryRepository) Stop(
+func (r *TrackRepository) Stop(
 	ctx context.Context,
 	ownerID auth.UserID,
 	workspaceID uuid.UUID,
 	id uuid.UUID,
-) (*track.TimeEntry, error) {
+) (*track.Track, error) {
 	row, err := r.q.StopTimeEntry(ctx, gen.StopTimeEntryParams{
 		ID:          id,
 		WorkspaceID: workspaceID,
@@ -246,20 +246,20 @@ func (r *TimeEntryRepository) Stop(
 		if errors.Is(err, pgx.ErrNoRows) {
 			return nil, track.ErrAlreadyStopped
 		}
-		return nil, fmt.Errorf("db stop time entry: %w", err)
+		return nil, fmt.Errorf("db stop track entry: %w", err)
 	}
 
-	te := mapGenTimeEntryToDomain(row)
+	te := mapGenTrackToDomain(row)
 	return &te, nil
 }
 
-func (r *TimeEntryRepository) Update(
+func (r *TrackRepository) Update(
 	ctx context.Context,
 	ownerID auth.UserID,
 	workspaceID uuid.UUID,
 	id uuid.UUID,
 	input track.UpdateInput,
-) (*track.TimeEntry, error) {
+) (*track.Track, error) {
 	var ticketIDUUID pgtype.UUID
 	if input.TicketID != nil {
 		ticketIDUUID = pgtype.UUID{Bytes: *input.TicketID, Valid: true}
@@ -311,14 +311,14 @@ func (r *TimeEntryRepository) Update(
 		if errors.Is(err, pgx.ErrNoRows) {
 			return nil, track.ErrNotFound
 		}
-		return nil, fmt.Errorf("db update time entry: %w", err)
+		return nil, fmt.Errorf("db update track entry: %w", err)
 	}
 
-	te := mapGenTimeEntryToDomain(row)
+	te := mapGenTrackToDomain(row)
 	return &te, nil
 }
 
-func (r *TimeEntryRepository) Delete(
+func (r *TrackRepository) Delete(
 	ctx context.Context,
 	ownerID auth.UserID,
 	workspaceID uuid.UUID,
@@ -330,7 +330,7 @@ func (r *TimeEntryRepository) Delete(
 		OwnerID:     ownerID.String(),
 	})
 	if err != nil {
-		return fmt.Errorf("db delete time entry: %w", err)
+		return fmt.Errorf("db delete track entry: %w", err)
 	}
 	if rowsAffected == 0 {
 		return track.ErrNotFound
@@ -338,7 +338,7 @@ func (r *TimeEntryRepository) Delete(
 	return nil
 }
 
-func mapGenTimeEntryToDomain(row gen.TimeEntry) track.TimeEntry {
+func mapGenTrackToDomain(row gen.TimeEntry) track.Track {
 	var ticketID *uuid.UUID
 	if row.TicketID.Valid {
 		id := uuid.UUID(row.TicketID.Bytes)
@@ -357,7 +357,7 @@ func mapGenTimeEntryToDomain(row gen.TimeEntry) track.TimeEntry {
 		durationSeconds = &dur
 	}
 
-	return track.TimeEntry{
+	return track.Track{
 		ID:              row.ID,
 		WorkspaceID:     row.WorkspaceID,
 		TicketID:        ticketID,

@@ -1,35 +1,35 @@
-package workspace_test
+package ws_test
 
 import (
 	"errors"
 	"testing"
 
-	"github.com/samSRaina/kizen/api/internal/domain/workspace"
+	"github.com/samSRaina/kizen/api/internal/domain/ws"
 )
 
 func TestCreateInput_Validate(t *testing.T) {
 	tests := []struct {
 		name        string
-		input       workspace.CreateInput
+		input       ws.CreateInput
 		expectErr   bool
 		errSentinel error
 	}{
 		{
 			name:      "valid input",
-			input:     workspace.CreateInput{Name: "Acme Corp", DefaultHourlyRate: 100},
+			input:     ws.CreateInput{Name: "Acme Corp", DefaultHourlyRate: 100},
 			expectErr: false,
 		},
 		{
 			name:        "empty name",
-			input:       workspace.CreateInput{Name: "   ", DefaultHourlyRate: 100},
+			input:       ws.CreateInput{Name: "   ", DefaultHourlyRate: 100},
 			expectErr:   true,
-			errSentinel: workspace.ErrInvalidInput,
+			errSentinel: ws.ErrInvalidInput,
 		},
 		{
 			name:        "negative hourly rate",
-			input:       workspace.CreateInput{Name: "Acme", DefaultHourlyRate: -10},
+			input:       ws.CreateInput{Name: "Acme", DefaultHourlyRate: -10},
 			expectErr:   true,
-			errSentinel: workspace.ErrInvalidInput,
+			errSentinel: ws.ErrInvalidInput,
 		},
 	}
 
@@ -60,31 +60,31 @@ func TestUpdateInput_Validate(t *testing.T) {
 
 	tests := []struct {
 		name        string
-		input       workspace.UpdateInput
+		input       ws.UpdateInput
 		expectErr   bool
 		errSentinel error
 	}{
 		{
 			name:      "valid update with all fields",
-			input:     workspace.UpdateInput{Name: &validName, DefaultHourlyRate: &validRate},
+			input:     ws.UpdateInput{Name: &validName, DefaultHourlyRate: &validRate},
 			expectErr: false,
 		},
 		{
 			name:      "valid empty update (patch nothing)",
-			input:     workspace.UpdateInput{},
+			input:     ws.UpdateInput{},
 			expectErr: false,
 		},
 		{
 			name:        "invalid empty name",
-			input:       workspace.UpdateInput{Name: &emptyName},
+			input:       ws.UpdateInput{Name: &emptyName},
 			expectErr:   true,
-			errSentinel: workspace.ErrInvalidInput,
+			errSentinel: ws.ErrInvalidInput,
 		},
 		{
 			name:        "invalid negative rate",
-			input:       workspace.UpdateInput{DefaultHourlyRate: &negativeRate},
+			input:       ws.UpdateInput{DefaultHourlyRate: &negativeRate},
 			expectErr:   true,
-			errSentinel: workspace.ErrInvalidInput,
+			errSentinel: ws.ErrInvalidInput,
 		},
 	}
 

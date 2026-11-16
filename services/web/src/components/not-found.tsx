@@ -20,9 +20,9 @@ export function NotFoundComponent() {
 
 			{/* Main Content */}
 			<main className="flex-1 w-full max-w-xl mx-auto px-4 py-16 sm:py-24 flex items-center justify-center">
-				<div className="w-full bg-surface-base/80 p-8 sm:p-12 shadow-sm space-y-8 rounded-xs ring-1 ring-border-default/20">
+				<div className="w-full bg-surface-base p-8 sm:p-12 shadow-sm space-y-8 rounded-md border border-border-default">
 					<div className="space-y-3">
-						<div className="inline-block px-2.5 py-1 text-xs font-mono font-bold bg-surface-elevated/70 text-text-muted uppercase tracking-wider rounded-xs">
+						<div className="inline-block px-2.5 py-1 text-xs font-bold bg-surface-elevated/70 text-text-muted uppercase tracking-wider rounded-xs">
 							404 / NOT FOUND
 						</div>
 
@@ -40,7 +40,7 @@ export function NotFoundComponent() {
 					<div className="pt-2 flex flex-col sm:flex-row gap-3">
 						<Link
 							to="/workspaces"
-							className="inline-flex items-center justify-center space-x-2 px-5 py-3 text-xs font-mono font-bold uppercase tracking-wider bg-accent-primary text-accent-primary-fg hover:bg-accent-primary-hover enabled:active:scale-[0.96] transition-all cursor-pointer rounded-xs"
+							className="inline-flex items-center justify-center space-x-2 px-5 py-3 text-xs font-bold uppercase tracking-wider bg-accent-primary text-accent-primary-fg hover:bg-accent-primary-hover enabled:active:scale-[0.96] transition-all cursor-pointer rounded-xs"
 						>
 							<Home className="w-4 h-4" />
 							<span>Workspaces Dashboard</span>
@@ -49,7 +49,7 @@ export function NotFoundComponent() {
 						<button
 							type="button"
 							onClick={() => window.history.back()}
-							className="inline-flex items-center justify-center space-x-2 px-5 py-3 text-xs font-mono font-bold uppercase tracking-wider bg-surface-elevated/60 hover:bg-surface-elevated text-text-secondary hover:text-text-primary transition-colors cursor-pointer rounded-xs"
+							className="inline-flex items-center justify-center space-x-2 px-5 py-3 text-xs font-bold uppercase tracking-wider bg-surface-elevated/60 hover:bg-surface-elevated text-text-secondary hover:text-text-primary transition-colors cursor-pointer rounded-xs"
 						>
 							<ArrowLeft className="w-4 h-4" />
 							<span>Go Back</span>

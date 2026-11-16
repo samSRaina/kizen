@@ -1,8 +1,16 @@
-import { ArrowRight, Check, Copy, MoreHorizontal, Trash2 } from "lucide-react";
+import {
+	ArrowRight,
+	Ban,
+	Check,
+	Copy,
+	MoreHorizontal,
+	Trash2,
+} from "lucide-react";
 import { useEffect, useRef, useState } from "react";
 import { useConfirm } from "#/components/ui/confirm-dialog";
+import { useToast } from "#/components/ui/toast";
 import type { Ticket, TicketStatus } from "#/lib/types";
-import { ALL_STATUS_OPTIONS } from "./types";
+import { ALL_STATUS_OPTIONS, validateTicketTransition } from "./types";
 
 interface TicketContextMenuProps {
 	ticket: Ticket;
@@ -23,6 +31,7 @@ export function TicketContextMenu({
 	const [copied, setCopied] = useState(false);
 	const menuRef = useRef<HTMLDivElement>(null);
 	const confirm = useConfirm();
+	const toast = useToast();
 
 	// Close on outside click
 	useEffect(() => {
@@ -120,12 +129,12 @@ export function TicketContextMenu({
 								}
 							: undefined
 					}
-					className={`z-50 w-48 bg-surface-base font-mono text-xs shadow-2xl py-1 rounded-xs ring-1 ring-border-default/20 ${
+					className={`z-50 w-48 bg-surface-base text-xs shadow-xl py-1 rounded-md border border-border-default ${
 						!menuPos ? "absolute right-0 top-full mt-1" : ""
 					}`}
 				>
 					{/* Header with ticket identifier */}
-					<div className="px-3 py-1.5 border-b border-border-default/15 text-[10px] text-text-muted font-bold uppercase tracking-wider flex items-center justify-between">
+					<div className="px-3 py-1.5 border-b border-border-subtle text-[10px] text-text-muted font-bold uppercase tracking-wider flex items-center justify-between">
 						<span>{ticket.identifier}</span>
 						<span className="text-[9px] uppercase px-1.5 py-0.5 bg-surface-elevated/60 rounded-xs">
 							{ticket.status}
@@ -153,23 +162,47 @@ export function TicketContextMenu({
 
 						{/* Submenu of statuses */}
 						{showMoveSubmenu ? (
-							<div className="absolute left-full top-0 -ml-1 w-44 bg-surface-base font-mono text-xs shadow-2xl py-1 rounded-xs ring-1 ring-border-default/20">
+							<div className="absolute left-full top-0 -ml-1 w-48 bg-surface-base text-xs shadow-xl py-1 rounded-md border border-border-default">
 								{ALL_STATUS_OPTIONS.map((col) => {
 									const isCurrent = ticket.status === col.key;
+									const transition = validateTicketTransition(
+										ticket.status,
+										col.key,
+									);
+									const isDisallowed = !isCurrent && !transition.allowed;
+
 									return (
 										<button
 											key={col.key}
 											type="button"
 											disabled={isCurrent}
+											title={
+												isCurrent
+													? "Current status"
+													: !transition.allowed
+														? transition.reason
+														: `Move to ${col.label}`
+											}
 											onClick={(e) => {
 												e.stopPropagation();
+												if (isDisallowed) {
+													toast.error(
+														transition.reason || "Invalid status transition",
+														{
+															title: "Transition Not Allowed",
+														},
+													);
+													return;
+												}
 												onMoveStatus(col.key);
 												setIsOpen(false);
 											}}
 											className={`w-full flex items-center justify-between px-3 py-1.5 text-left transition-colors cursor-pointer ${
 												isCurrent
 													? "opacity-40 cursor-default bg-surface-elevated/30"
-													: "hover:bg-surface-elevated/70 text-text-primary"
+													: isDisallowed
+														? "opacity-35 hover:opacity-60 cursor-not-allowed text-text-muted hover:bg-red-500/10"
+														: "hover:bg-surface-elevated/70 text-text-primary"
 											}`}
 										>
 											<div className="flex items-center gap-2">
@@ -180,6 +213,8 @@ export function TicketContextMenu({
 											</div>
 											{isCurrent ? (
 												<Check className="w-3 h-3 text-text-muted" />
+											) : isDisallowed ? (
+												<Ban className="w-3 h-3 text-red-400/60" />
 											) : null}
 										</button>
 									);

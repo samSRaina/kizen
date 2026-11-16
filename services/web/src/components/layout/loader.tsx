@@ -23,7 +23,7 @@ export function Loader({ className, size = "md", message }: LoaderProps) {
 		>
 			<Loader2 className={cn("animate-spin text-text-primary", iconSizes)} />
 			{message ? (
-				<span className="text-xs font-mono tracking-wider uppercase text-text-secondary">
+				<span className="text-xs tracking-wider uppercase text-text-secondary">
 					{message}
 				</span>
 			) : null}

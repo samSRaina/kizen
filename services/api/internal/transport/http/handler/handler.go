@@ -6,14 +6,16 @@ var _ gen.StrictServerInterface = (*Server)(nil)
 
 type Server struct {
 	*WorkspaceHandler
+	*ProjectHandler
 	*TicketHandler
-	*TimeEntryHandler
+	*TrackHandler
 }
 
-func NewServer(wh *WorkspaceHandler, th *TicketHandler, teh *TimeEntryHandler) *Server {
+func NewServer(wh *WorkspaceHandler, ph *ProjectHandler, th *TicketHandler, trh *TrackHandler) *Server {
 	return &Server{
 		WorkspaceHandler: wh,
+		ProjectHandler:   ph,
 		TicketHandler:    th,
-		TimeEntryHandler: teh,
+		TrackHandler:     trh,
 	}
 }

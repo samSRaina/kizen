@@ -90,6 +90,42 @@ export const timeEntryMutations = {
 		return data;
 	},
 
+	pause: async (workspaceId: string, id: string): Promise<TimeEntry> => {
+		const { data, error } = await api.POST(
+			"/workspaces/{workspace_id}/time-entries/{id}/pause",
+			{
+				params: { path: { workspace_id: workspaceId, id } },
+			},
+		);
+		if (error) {
+			const message =
+				typeof error === "object" && error && "detail" in error
+					? (error as { detail?: string }).detail
+					: "Failed to pause time entry";
+			throw new Error(message || "Failed to pause time entry");
+		}
+		if (!data) throw new Error("No data returned from pause time entry");
+		return data;
+	},
+
+	resume: async (workspaceId: string, id: string): Promise<TimeEntry> => {
+		const { data, error } = await api.POST(
+			"/workspaces/{workspace_id}/time-entries/{id}/resume",
+			{
+				params: { path: { workspace_id: workspaceId, id } },
+			},
+		);
+		if (error) {
+			const message =
+				typeof error === "object" && error && "detail" in error
+					? (error as { detail?: string }).detail
+					: "Failed to resume time entry";
+			throw new Error(message || "Failed to resume time entry");
+		}
+		if (!data) throw new Error("No data returned from resume time entry");
+		return data;
+	},
+
 	stop: async (workspaceId: string, id: string): Promise<TimeEntry> => {
 		const { data, error } = await api.POST(
 			"/workspaces/{workspace_id}/time-entries/{id}/stop",

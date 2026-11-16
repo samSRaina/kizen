@@ -2,6 +2,7 @@ import { useMutation, useQueryClient } from "@tanstack/react-query";
 import { Loader2, Plus, X } from "lucide-react";
 import { useEffect, useRef, useState } from "react";
 import { SmoothInput } from "#/components/ui/smooth-input";
+import { useToast } from "#/components/ui/toast";
 import { ticketKeys, ticketMutations } from "#/lib/queries/tickets";
 import type {
 	Ticket,
@@ -22,6 +23,7 @@ export function AddTicketRow({
 	onCreated,
 }: AddTicketRowProps) {
 	const queryClient = useQueryClient();
+	const toast = useToast();
 	const [isOpen, setIsOpen] = useState(false);
 	const [title, setTitle] = useState("");
 	const [type, setType] = useState<TicketType>("task");
@@ -44,6 +46,7 @@ export function AddTicketRow({
 				status,
 			}),
 		onSuccess: (newTicket) => {
+			toast.success(`Created ticket ${newTicket.identifier}`);
 			queryClient.invalidateQueries({
 				queryKey: ticketKeys.lists(workspaceId),
 			});
@@ -53,7 +56,10 @@ export function AddTicketRow({
 			onCreated?.(newTicket);
 		},
 		onError: (err) => {
-			setError(err instanceof Error ? err.message : "Failed to create ticket");
+			const msg =
+				err instanceof Error ? err.message : "Failed to create ticket";
+			setError(msg);
+			toast.error(msg, { title: "Creation Failed" });
 		},
 	});
 
@@ -77,7 +83,7 @@ export function AddTicketRow({
 			<button
 				type="button"
 				onClick={() => setIsOpen(true)}
-				className="w-full h-8 flex items-center justify-center gap-1.5 px-3 text-[11px] font-mono font-bold uppercase tracking-wider text-text-muted hover:text-text-primary hover:bg-surface-elevated/70 rounded-xs transition-all cursor-pointer group"
+				className="w-full h-8 flex items-center justify-center gap-1.5 px-3 text-[11px] font-bold uppercase tracking-wider text-text-secondary hover:text-text-primary bg-surface-base/60 hover:bg-surface-base border border-dashed border-border-default hover:border-border-strong rounded-md transition-all cursor-pointer group shadow-2xs"
 			>
 				<Plus className="w-3.5 h-3.5 text-text-muted group-hover:text-text-primary transition-colors" />
 				<span>Add Ticket</span>
@@ -88,7 +94,7 @@ export function AddTicketRow({
 	return (
 		<form
 			onSubmit={handleSubmit}
-			className="bg-surface-base shadow-lg p-2.5 space-y-2.5 font-mono text-xs rounded-xs"
+			className="bg-surface-base border border-border-default shadow-sm p-2.5 space-y-2.5 text-xs rounded-md"
 		>
 			<div className="flex items-center justify-between gap-2">
 				<span className="text-[10px] uppercase font-bold tracking-wider text-text-muted">
@@ -123,7 +129,7 @@ export function AddTicketRow({
 				}}
 				placeholder="Ticket title..."
 				disabled={createMutation.isPending}
-				wrapperClassName="h-8 bg-surface-elevated/40 focus-within:bg-surface-elevated/80 px-2.5 rounded-xs transition-colors flex items-center"
+				wrapperClassName="h-8 bg-surface-base border border-border-default focus-within:border-border-strong px-2.5 rounded-xs transition-colors flex items-center"
 				className="text-xs"
 			/>
 
@@ -137,7 +143,7 @@ export function AddTicketRow({
 						value={type}
 						onChange={(e) => setType(e.target.value as TicketType)}
 						disabled={createMutation.isPending}
-						className="h-6 bg-surface-elevated/40 hover:bg-surface-elevated/70 px-2 text-[10px] uppercase font-mono cursor-pointer focus:outline-hidden rounded-xs transition-colors inline-flex items-center"
+						className="h-6 bg-surface-elevated hover:bg-surface-hover border border-border-subtle px-2 text-[10px] uppercase cursor-pointer focus:outline-hidden rounded-xs transition-colors inline-flex items-center text-text-primary"
 					>
 						<option value="task">Task</option>
 						<option value="feature">Feature</option>
@@ -148,7 +154,7 @@ export function AddTicketRow({
 						value={priority}
 						onChange={(e) => setPriority(e.target.value as TicketPriority)}
 						disabled={createMutation.isPending}
-						className="h-6 bg-surface-elevated/40 hover:bg-surface-elevated/70 px-2 text-[10px] uppercase font-mono cursor-pointer focus:outline-hidden rounded-xs transition-colors inline-flex items-center"
+						className="h-6 bg-surface-elevated hover:bg-surface-hover border border-border-subtle px-2 text-[10px] uppercase cursor-pointer focus:outline-hidden rounded-xs transition-colors inline-flex items-center text-text-primary"
 					>
 						<option value="Low">Low</option>
 						<option value="Medium">Medium</option>

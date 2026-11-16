@@ -3,7 +3,6 @@ package main
 import (
 	"context"
 	"errors"
-	"fmt"
 	"log/slog"
 	"net/http"
 	"os"
@@ -11,8 +10,10 @@ import (
 	"syscall"
 	"time"
 
+	"github.com/jackc/pgx/v5/pgxpool"
 	"github.com/samSRaina/kizen/api/internal/adapter/auth/jwt"
 	repoPostgres "github.com/samSRaina/kizen/api/internal/adapter/repository/postgres"
+	appProject "github.com/samSRaina/kizen/api/internal/application/project"
 	appTicket "github.com/samSRaina/kizen/api/internal/application/ticket"
 	appTrack "github.com/samSRaina/kizen/api/internal/application/track"
 	appWorkspace "github.com/samSRaina/kizen/api/internal/application/workspace"
@@ -21,10 +22,7 @@ import (
 )
 
 func main() {
-	logger := slog.New(slog.NewJSONHandler(os.Stdout, &slog.HandlerOptions{
-		Level: slog.LevelInfo,
-	}))
-	slog.SetDefault(logger)
+	logger := slog.New(slog.NewJSONHandler(os.Stdout, nil))
 
 	ctx, cancel := context.WithCancel(context.Background())
 	defer cancel()
@@ -34,26 +32,40 @@ func main() {
 		dbURL = "postgres://postgres:postgres@localhost:5432/kizen?sslmode=disable"
 	}
 
-	pool, err := repoPostgres.NewPool(ctx, dbURL)
+	poolConfig, err := pgxpool.ParseConfig(dbURL)
 	if err != nil {
-		logger.Error("failed to connect to database", slog.Any("error", err))
+		logger.Error("failed to parse database url", slog.Any("error", err))
+		os.Exit(1)
+	}
+
+	pool, err := pgxpool.NewWithConfig(ctx, poolConfig)
+	if err != nil {
+		logger.Error("failed to create connection pool", slog.Any("error", err))
 		os.Exit(1)
 	}
 	defer pool.Close()
+
+	if err := pool.Ping(ctx); err != nil {
+		logger.Error("failed to ping postgresql database", slog.Any("error", err))
+		os.Exit(1)
+	}
 	logger.Info("connected to postgresql successfully")
 
 	wsRepo := repoPostgres.NewRepository(pool)
+	projectRepo := repoPostgres.NewProjectRepository(pool)
 	ticketRepo := repoPostgres.NewTicketRepository(pool)
-	timeEntryRepo := repoPostgres.NewTimeEntryRepository(pool)
+	trackRepo := repoPostgres.NewTrackRepository(pool)
 
 	wsService := appWorkspace.NewService(wsRepo, logger)
+	projectService := appProject.NewService(projectRepo, logger)
 	ticketService := appTicket.NewService(ticketRepo, logger)
-	timeEntryService := appTrack.NewService(timeEntryRepo, logger)
+	trackService := appTrack.NewService(trackRepo, logger)
 
 	wsHandler := handler.NewWorkspaceHandler(wsService)
+	projectHandler := handler.NewProjectHandler(projectService)
 	ticketHandler := handler.NewTicketHandler(ticketService)
-	timeEntryHandler := handler.NewTimeEntryHandler(timeEntryService)
-	server := handler.NewServer(wsHandler, ticketHandler, timeEntryHandler)
+	trackHandler := handler.NewTrackHandler(trackService)
+	server := handler.NewServer(wsHandler, projectHandler, ticketHandler, trackHandler)
 
 	jwksURL := os.Getenv("AUTH_JWKS_URL")
 	if jwksURL == "" {
@@ -87,20 +99,19 @@ func main() {
 		IdleTimeout:  60 * time.Second,
 	}
 
-	shutdownChan := make(chan os.Signal, 1)
-	signal.Notify(shutdownChan, os.Interrupt, syscall.SIGTERM)
-
 	go func() {
-		logger.Info(fmt.Sprintf("kizen api server listening on :%s", port))
+		logger.Info("starting HTTP server", slog.String("addr", httpServer.Addr))
 		if err := httpServer.ListenAndServe(); err != nil && !errors.Is(err, http.ErrServerClosed) {
-			logger.Error("http server failed", slog.Any("error", err))
+			logger.Error("server encountered fatal error", slog.Any("error", err))
 			os.Exit(1)
 		}
 	}()
 
-	<-shutdownChan
-	logger.Info("shutting down server gracefully...")
+	sigChan := make(chan os.Signal, 1)
+	signal.Notify(sigChan, syscall.SIGINT, syscall.SIGTERM)
+	<-sigChan
 
+	logger.Info("shutdown signal received, draining active connections")
 	shutdownCtx, shutdownCancel := context.WithTimeout(context.Background(), 10*time.Second)
 	defer shutdownCancel()
 

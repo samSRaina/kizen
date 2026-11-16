@@ -7,17 +7,17 @@ import (
 
 	"github.com/google/uuid"
 	"github.com/samSRaina/kizen/api/internal/domain/auth"
-	"github.com/samSRaina/kizen/api/internal/domain/workspace"
+	"github.com/samSRaina/kizen/api/internal/domain/ws"
 )
 
 // Service coordinates business use cases for workspace management.
 type Service struct {
-	repo workspace.Repository
+	repo ws.Repository
 	log  *slog.Logger
 }
 
 // NewService constructs a WorkspaceService. It accepts the port interface and returns a concrete pointer.
-func NewService(repo workspace.Repository, log *slog.Logger) *Service {
+func NewService(repo ws.Repository, log *slog.Logger) *Service {
 	return &Service{
 		repo: repo,
 		log:  log,
@@ -25,15 +25,16 @@ func NewService(repo workspace.Repository, log *slog.Logger) *Service {
 }
 
 // List retrieves all workspaces owned by the authenticated caller.
-func (s *Service) List(ctx context.Context, caller auth.Identity) ([]workspace.Workspace, error) {
-	if caller.UserID == "" {
-		return nil, auth.ErrUnauthenticated
+func (s *Service) List(ctx context.Context) ([]ws.Workspace, error) {
+	userID, err := auth.MustUserIDFrom(ctx)
+	if err != nil {
+		return nil, err
 	}
 
-	workspaces, err := s.repo.ListByUser(ctx, caller.UserID)
+	workspaces, err := s.repo.ListByUser(ctx, userID)
 	if err != nil {
 		s.log.ErrorContext(ctx, "failed to list workspaces",
-			slog.String("user_id", caller.UserID.String()),
+			slog.String("user_id", userID.String()),
 			slog.Any("error", err),
 		)
 		return nil, fmt.Errorf("listing workspaces: %w", err)
@@ -43,26 +44,28 @@ func (s *Service) List(ctx context.Context, caller auth.Identity) ([]workspace.W
 }
 
 // GetByID retrieves a single workspace if owned by the caller.
-func (s *Service) GetByID(ctx context.Context, caller auth.Identity, id uuid.UUID) (*workspace.Workspace, error) {
-	if caller.UserID == "" {
-		return nil, auth.ErrUnauthenticated
+func (s *Service) GetByID(ctx context.Context, id uuid.UUID) (*ws.Workspace, error) {
+	userID, err := auth.MustUserIDFrom(ctx)
+	if err != nil {
+		return nil, err
 	}
 	if id == uuid.Nil {
-		return nil, fmt.Errorf("%w: invalid workspace uuid", workspace.ErrInvalidInput)
+		return nil, fmt.Errorf("%w: invalid workspace uuid", ws.ErrInvalidInput)
 	}
 
-	ws, err := s.repo.GetByID(ctx, caller.UserID, id)
+	workspace, err := s.repo.GetByID(ctx, userID, id)
 	if err != nil {
 		return nil, err
 	}
 
-	return ws, nil
+	return workspace, nil
 }
 
 // Create validates business invariants and persists a new workspace.
-func (s *Service) Create(ctx context.Context, caller auth.Identity, input workspace.CreateInput) (*workspace.Workspace, error) {
-	if caller.UserID == "" {
-		return nil, auth.ErrUnauthenticated
+func (s *Service) Create(ctx context.Context, input ws.CreateInput) (*ws.Workspace, error) {
+	userID, err := auth.MustUserIDFrom(ctx)
+	if err != nil {
+		return nil, err
 	}
 
 	// Pure domain validation
@@ -70,10 +73,10 @@ func (s *Service) Create(ctx context.Context, caller auth.Identity, input worksp
 		return nil, err
 	}
 
-	ws, err := s.repo.Create(ctx, caller.UserID, input)
+	workspace, err := s.repo.Create(ctx, userID, input)
 	if err != nil {
 		s.log.ErrorContext(ctx, "failed to create workspace",
-			slog.String("user_id", caller.UserID.String()),
+			slog.String("user_id", userID.String()),
 			slog.String("name", input.Name),
 			slog.Any("error", err),
 		)
@@ -81,62 +84,63 @@ func (s *Service) Create(ctx context.Context, caller auth.Identity, input worksp
 	}
 
 	s.log.InfoContext(ctx, "workspace created successfully",
-		slog.String("workspace_id", ws.ID.String()),
-		slog.String("user_id", caller.UserID.String()),
+		slog.String("workspace_id", workspace.ID.String()),
+		slog.String("user_id", userID.String()),
 	)
 
-	return ws, nil
+	return workspace, nil
 }
 
 // Update validates business invariants and updates a workspace owned by the caller.
 func (s *Service) Update(
 	ctx context.Context,
-	caller auth.Identity,
 	id uuid.UUID,
-	input workspace.UpdateInput,
-) (*workspace.Workspace, error) {
-	if caller.UserID == "" {
-		return nil, auth.ErrUnauthenticated
+	input ws.UpdateInput,
+) (*ws.Workspace, error) {
+	userID, err := auth.MustUserIDFrom(ctx)
+	if err != nil {
+		return nil, err
 	}
 	if id == uuid.Nil {
-		return nil, fmt.Errorf("%w: invalid workspace uuid", workspace.ErrInvalidInput)
+		return nil, fmt.Errorf("%w: invalid workspace uuid", ws.ErrInvalidInput)
 	}
 
 	if err := input.Validate(); err != nil {
 		return nil, err
 	}
 
-	ws, err := s.repo.Update(ctx, caller.UserID, id, input)
+	workspace, err := s.repo.Update(ctx, userID, id, input)
 	if err != nil {
 		s.log.ErrorContext(ctx, "failed to update workspace",
 			slog.String("workspace_id", id.String()),
-			slog.String("user_id", caller.UserID.String()),
+			slog.String("user_id", userID.String()),
 			slog.Any("error", err),
 		)
 		return nil, err
 	}
 
 	s.log.InfoContext(ctx, "workspace updated successfully",
-		slog.String("workspace_id", ws.ID.String()),
-		slog.String("user_id", caller.UserID.String()),
+		slog.String("workspace_id", workspace.ID.String()),
+		slog.String("user_id", userID.String()),
 	)
 
-	return ws, nil
+	return workspace, nil
 }
 
 // Delete removes a workspace owned by the caller.
-func (s *Service) Delete(ctx context.Context, caller auth.Identity, id uuid.UUID) error {
-	if caller.UserID == "" {
-		return auth.ErrUnauthenticated
+func (s *Service) Delete(ctx context.Context, id uuid.UUID) error {
+	userID, err := auth.MustUserIDFrom(ctx)
+	if err != nil {
+		return err
 	}
 	if id == uuid.Nil {
-		return fmt.Errorf("%w: invalid workspace uuid", workspace.ErrInvalidInput)
+		return fmt.Errorf("%w: invalid workspace uuid", ws.ErrInvalidInput)
 	}
 
-	if err := s.repo.Delete(ctx, caller.UserID, id); err != nil {
+	if err := s.repo.Delete(ctx, userID, id); err != nil {
 		s.log.ErrorContext(ctx, "failed to delete workspace",
 			slog.String("workspace_id", id.String()),
-			slog.String("user_id", caller.UserID.String()),
+			slog.String("user_id", userID.String()),
 			slog.Any("error", err),
 		)
 		return err
@@ -144,7 +148,7 @@ func (s *Service) Delete(ctx context.Context, caller auth.Identity, id uuid.UUID
 
 	s.log.InfoContext(ctx, "workspace deleted successfully",
 		slog.String("workspace_id", id.String()),
-		slog.String("user_id", caller.UserID.String()),
+		slog.String("user_id", userID.String()),
 	)
 
 	return nil

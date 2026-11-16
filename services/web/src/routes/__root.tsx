@@ -9,6 +9,7 @@ import { TanStackRouterDevtoolsPanel } from "@tanstack/react-router-devtools";
 import { ThemeProvider } from "next-themes";
 import { NotFoundComponent } from "#/components/not-found";
 import { ConfirmProvider } from "#/components/ui/confirm-dialog";
+import { ToastProvider } from "#/components/ui/toast";
 import TanStackQueryDevtools from "../integrations/tanstack-query/devtools";
 import appCss from "../styles.css?url";
 
@@ -47,13 +48,15 @@ function RootDocument({ children }: { children: React.ReactNode }) {
 			<head>
 				<HeadContent />
 			</head>
-			<body>
+			<body className="app-body">
 				<ThemeProvider
 					attribute="class"
 					defaultTheme="dark"
 					enableSystem={false}
 				>
-					<ConfirmProvider>{children}</ConfirmProvider>
+					<ConfirmProvider>
+						<ToastProvider>{children}</ToastProvider>
+					</ConfirmProvider>
 				</ThemeProvider>
 				<TanStackDevtools
 					config={{
