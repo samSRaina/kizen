@@ -43,7 +43,7 @@ func (s *Service) List(
 		return nil, fmt.Errorf("%w: invalid workspace uuid", track.ErrInvalidInput)
 	}
 
-	entries, err := s.repo.ListByWorkspace(ctx, userID, workspaceID, ticketID)
+	entries, err := s.repo.ListByWorkspace(ctx, workspaceID, ticketID)
 	if err != nil {
 		s.log.ErrorContext(ctx, "failed to list tracks",
 			slog.String("workspace_id", workspaceID.String()),
@@ -61,8 +61,7 @@ func (s *Service) Get(
 	workspaceID uuid.UUID,
 	id uuid.UUID,
 ) (*track.Track, error) {
-	userID, err := auth.MustUserIDFrom(ctx)
-	if err != nil {
+	if _, err := auth.MustUserIDFrom(ctx); err != nil {
 		return nil, err
 	}
 	if workspaceID == uuid.Nil {
@@ -72,7 +71,7 @@ func (s *Service) Get(
 		return nil, fmt.Errorf("%w: invalid track uuid", track.ErrInvalidInput)
 	}
 
-	te, err := s.repo.GetByID(ctx, userID, workspaceID, id)
+	te, err := s.repo.GetByID(ctx, workspaceID, id)
 	if err != nil {
 		return nil, err
 	}
@@ -97,7 +96,7 @@ func (s *Service) StartTimer(
 	}
 
 	// 1. Automatically stop any active running/paused timer in this workspace
-	if err := s.repo.StopActive(ctx, userID, workspaceID); err != nil {
+	if err := s.repo.StopActive(ctx, workspaceID); err != nil {
 		s.log.ErrorContext(ctx, "failed to auto-stop existing timer",
 			slog.String("workspace_id", workspaceID.String()),
 			slog.String("user_id", userID.String()),
@@ -118,7 +117,7 @@ func (s *Service) StartTimer(
 		TimerState:  &timerState,
 	}
 
-	te, err := s.repo.Create(ctx, userID, workspaceID, input)
+	te, err := s.repo.Create(ctx, workspaceID, input)
 	if err != nil {
 		s.log.ErrorContext(ctx, "failed to start live timer",
 			slog.String("workspace_id", workspaceID.String()),
@@ -143,8 +142,7 @@ func (s *Service) Pause(
 	workspaceID uuid.UUID,
 	id uuid.UUID,
 ) (*track.Track, error) {
-	userID, err := auth.MustUserIDFrom(ctx)
-	if err != nil {
+	if _, err := auth.MustUserIDFrom(ctx); err != nil {
 		return nil, err
 	}
 	if workspaceID == uuid.Nil {
@@ -154,7 +152,7 @@ func (s *Service) Pause(
 		return nil, fmt.Errorf("%w: invalid track uuid", track.ErrInvalidInput)
 	}
 
-	existing, err := s.repo.GetByID(ctx, userID, workspaceID, id)
+	existing, err := s.repo.GetByID(ctx, workspaceID, id)
 	if err != nil {
 		return nil, err
 	}
@@ -168,7 +166,7 @@ func (s *Service) Pause(
 		return nil, track.ErrAlreadyStopped
 	}
 
-	te, err := s.repo.Pause(ctx, userID, workspaceID, id)
+	te, err := s.repo.Pause(ctx, workspaceID, id)
 	if err != nil {
 		s.log.ErrorContext(ctx, "failed to pause timer",
 			slog.String("workspace_id", workspaceID.String()),
@@ -194,8 +192,7 @@ func (s *Service) Resume(
 	workspaceID uuid.UUID,
 	id uuid.UUID,
 ) (*track.Track, error) {
-	userID, err := auth.MustUserIDFrom(ctx)
-	if err != nil {
+	if _, err := auth.MustUserIDFrom(ctx); err != nil {
 		return nil, err
 	}
 	if workspaceID == uuid.Nil {
@@ -205,7 +202,7 @@ func (s *Service) Resume(
 		return nil, fmt.Errorf("%w: invalid track uuid", track.ErrInvalidInput)
 	}
 
-	existing, err := s.repo.GetByID(ctx, userID, workspaceID, id)
+	existing, err := s.repo.GetByID(ctx, workspaceID, id)
 	if err != nil {
 		return nil, err
 	}
@@ -220,11 +217,11 @@ func (s *Service) Resume(
 	}
 
 	// Auto-stop any other active timer before resuming
-	if active, err := s.repo.GetActive(ctx, userID, workspaceID); err == nil && active != nil && active.ID != id {
-		_ = s.repo.StopActive(ctx, userID, workspaceID)
+	if active, err := s.repo.GetActive(ctx, workspaceID); err == nil && active != nil && active.ID != id {
+		_ = s.repo.StopActive(ctx, workspaceID)
 	}
 
-	te, err := s.repo.Resume(ctx, userID, workspaceID, id)
+	te, err := s.repo.Resume(ctx, workspaceID, id)
 	if err != nil {
 		s.log.ErrorContext(ctx, "failed to resume timer",
 			slog.String("workspace_id", workspaceID.String()),
@@ -248,8 +245,7 @@ func (s *Service) Stop(
 	workspaceID uuid.UUID,
 	id uuid.UUID,
 ) (*track.Track, error) {
-	userID, err := auth.MustUserIDFrom(ctx)
-	if err != nil {
+	if _, err := auth.MustUserIDFrom(ctx); err != nil {
 		return nil, err
 	}
 	if workspaceID == uuid.Nil {
@@ -259,7 +255,7 @@ func (s *Service) Stop(
 		return nil, fmt.Errorf("%w: invalid track uuid", track.ErrInvalidInput)
 	}
 
-	existing, err := s.repo.GetByID(ctx, userID, workspaceID, id)
+	existing, err := s.repo.GetByID(ctx, workspaceID, id)
 	if err != nil {
 		return nil, err
 	}
@@ -270,7 +266,7 @@ func (s *Service) Stop(
 		return nil, track.ErrAlreadyStopped
 	}
 
-	te, err := s.repo.Stop(ctx, userID, workspaceID, id)
+	te, err := s.repo.Stop(ctx, workspaceID, id)
 	if err != nil {
 		s.log.ErrorContext(ctx, "failed to stop track entry",
 			slog.String("workspace_id", workspaceID.String()),
@@ -318,7 +314,7 @@ func (s *Service) Create(
 	if isLiveTimer {
 		runningState := track.TimerStateRunning
 		input.TimerState = &runningState
-		if err := s.repo.StopActive(ctx, userID, workspaceID); err != nil {
+		if err := s.repo.StopActive(ctx, workspaceID); err != nil {
 			s.log.ErrorContext(ctx, "failed to stop existing active timer",
 				slog.String("workspace_id", workspaceID.String()),
 				slog.String("user_id", userID.String()),
@@ -331,7 +327,7 @@ func (s *Service) Create(
 		input.TimerState = &stoppedState
 	}
 
-	te, err := s.repo.Create(ctx, userID, workspaceID, input)
+	te, err := s.repo.Create(ctx, workspaceID, input)
 	if err != nil {
 		s.log.ErrorContext(ctx, "failed to create track entry",
 			slog.String("workspace_id", workspaceID.String()),
@@ -358,8 +354,7 @@ func (s *Service) Update(
 	id uuid.UUID,
 	input track.UpdateInput,
 ) (*track.Track, error) {
-	userID, err := auth.MustUserIDFrom(ctx)
-	if err != nil {
+	if _, err := auth.MustUserIDFrom(ctx); err != nil {
 		return nil, err
 	}
 	if workspaceID == uuid.Nil {
@@ -373,7 +368,7 @@ func (s *Service) Update(
 		return nil, err
 	}
 
-	te, err := s.repo.Update(ctx, userID, workspaceID, id, input)
+	te, err := s.repo.Update(ctx, workspaceID, id, input)
 	if err != nil {
 		s.log.ErrorContext(ctx, "failed to update track entry",
 			slog.String("workspace_id", workspaceID.String()),
@@ -396,8 +391,7 @@ func (s *Service) Delete(
 	workspaceID uuid.UUID,
 	id uuid.UUID,
 ) error {
-	userID, err := auth.MustUserIDFrom(ctx)
-	if err != nil {
+	if _, err := auth.MustUserIDFrom(ctx); err != nil {
 		return err
 	}
 	if workspaceID == uuid.Nil {
@@ -407,7 +401,7 @@ func (s *Service) Delete(
 		return fmt.Errorf("%w: invalid track uuid", track.ErrInvalidInput)
 	}
 
-	if err := s.repo.Delete(ctx, userID, workspaceID, id); err != nil {
+	if err := s.repo.Delete(ctx, workspaceID, id); err != nil {
 		s.log.ErrorContext(ctx, "failed to delete track entry",
 			slog.String("workspace_id", workspaceID.String()),
 			slog.String("track_id", id.String()),

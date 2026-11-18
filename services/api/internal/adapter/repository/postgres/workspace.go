@@ -26,7 +26,12 @@ func NewRepository(pool *pgxpool.Pool) *Repository {
 
 var _ ws.Repository = (*Repository)(nil)
 
-func (r *Repository) Create(ctx context.Context, ownerID auth.UserID, input ws.CreateInput) (*ws.Workspace, error) {
+func (r *Repository) Create(ctx context.Context, input ws.CreateInput) (*ws.Workspace, error) {
+	ownerID, err := auth.MustUserIDFrom(ctx)
+	if err != nil {
+		return nil, err
+	}
+
 	row, err := r.q.CreateWorkspace(ctx, gen.CreateWorkspaceParams{
 		OwnerID:           ownerID.String(),
 		Name:              input.Name,
@@ -52,7 +57,12 @@ func (r *Repository) Create(ctx context.Context, ownerID auth.UserID, input ws.C
 	}, nil
 }
 
-func (r *Repository) ListByUser(ctx context.Context, ownerID auth.UserID) ([]ws.Workspace, error) {
+func (r *Repository) ListByUser(ctx context.Context) ([]ws.Workspace, error) {
+	ownerID, err := auth.MustUserIDFrom(ctx)
+	if err != nil {
+		return nil, err
+	}
+
 	rows, err := r.q.ListWorkspaces(ctx, ownerID.String())
 	if err != nil {
 		return nil, fmt.Errorf("db list workspaces: %w", err)
@@ -74,7 +84,12 @@ func (r *Repository) ListByUser(ctx context.Context, ownerID auth.UserID) ([]ws.
 	return result, nil
 }
 
-func (r *Repository) GetByID(ctx context.Context, ownerID auth.UserID, id uuid.UUID) (*ws.Workspace, error) {
+func (r *Repository) GetByID(ctx context.Context, id uuid.UUID) (*ws.Workspace, error) {
+	ownerID, err := auth.MustUserIDFrom(ctx)
+	if err != nil {
+		return nil, err
+	}
+
 	row, err := r.q.GetWorkspaceByID(ctx, gen.GetWorkspaceByIDParams{
 		ID:      id,
 		OwnerID: ownerID.String(),
@@ -99,10 +114,14 @@ func (r *Repository) GetByID(ctx context.Context, ownerID auth.UserID, id uuid.U
 
 func (r *Repository) Update(
 	ctx context.Context,
-	ownerID auth.UserID,
 	id uuid.UUID,
 	input ws.UpdateInput,
 ) (*ws.Workspace, error) {
+	ownerID, err := auth.MustUserIDFrom(ctx)
+	if err != nil {
+		return nil, err
+	}
+
 	var hourlyRate *int32
 	if input.DefaultHourlyRate != nil {
 		rate := int32(*input.DefaultHourlyRate)
@@ -138,7 +157,12 @@ func (r *Repository) Update(
 	}, nil
 }
 
-func (r *Repository) Delete(ctx context.Context, ownerID auth.UserID, id uuid.UUID) error {
+func (r *Repository) Delete(ctx context.Context, id uuid.UUID) error {
+	ownerID, err := auth.MustUserIDFrom(ctx)
+	if err != nil {
+		return err
+	}
+
 	rowsAffected, err := r.q.DeleteWorkspace(ctx, gen.DeleteWorkspaceParams{
 		ID:      id,
 		OwnerID: ownerID.String(),

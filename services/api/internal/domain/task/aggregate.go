@@ -1,4 +1,4 @@
-package ticket
+package task
 
 import (
 	"time"
@@ -6,24 +6,23 @@ import (
 	"github.com/google/uuid"
 )
 
-type Ticket struct {
+type Task struct {
 	ID          uuid.UUID
-	WorkspaceID uuid.UUID
 	ProjectID   uuid.UUID
 	Identifier  string
 	Title       string
 	Description *string
-	Type        Type
 	Status      Status
+	Type        Type
 	Priority    Priority
-	Points      int
-	Tags        []string
+	Position    float64
 	CreatedAt   time.Time
 	UpdatedAt   time.Time
 }
 
-// TransitionStatus validates and transitions the ticket to a new status according to business transition rules.
-func (t *Ticket) TransitionStatus(next Status) error {
+// TransitionStatus validates and applies a status transition according to
+// the task workflow rules defined on Status.
+func (t *Task) TransitionStatus(next Status) error {
 	if err := t.Status.ValidateTransition(next); err != nil {
 		return err
 	}

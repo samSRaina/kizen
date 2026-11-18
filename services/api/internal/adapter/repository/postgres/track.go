@@ -31,10 +31,14 @@ var _ track.Repository = (*TrackRepository)(nil)
 
 func (r *TrackRepository) ListByWorkspace(
 	ctx context.Context,
-	ownerID auth.UserID,
 	workspaceID uuid.UUID,
 	ticketID *uuid.UUID,
 ) ([]track.Track, error) {
+	ownerID, err := auth.MustUserIDFrom(ctx)
+	if err != nil {
+		return nil, err
+	}
+
 	var ticketIDUUID pgtype.UUID
 	if ticketID != nil {
 		ticketIDUUID = pgtype.UUID{Bytes: *ticketID, Valid: true}
@@ -58,10 +62,14 @@ func (r *TrackRepository) ListByWorkspace(
 
 func (r *TrackRepository) GetByID(
 	ctx context.Context,
-	ownerID auth.UserID,
 	workspaceID uuid.UUID,
 	id uuid.UUID,
 ) (*track.Track, error) {
+	ownerID, err := auth.MustUserIDFrom(ctx)
+	if err != nil {
+		return nil, err
+	}
+
 	row, err := r.q.GetTimeEntryByID(ctx, gen.GetTimeEntryByIDParams{
 		ID:          id,
 		WorkspaceID: workspaceID,
@@ -80,9 +88,13 @@ func (r *TrackRepository) GetByID(
 
 func (r *TrackRepository) GetActive(
 	ctx context.Context,
-	ownerID auth.UserID,
 	workspaceID uuid.UUID,
 ) (*track.Track, error) {
+	ownerID, err := auth.MustUserIDFrom(ctx)
+	if err != nil {
+		return nil, err
+	}
+
 	row, err := r.q.GetActiveTimeEntry(ctx, gen.GetActiveTimeEntryParams{
 		WorkspaceID: workspaceID,
 		OwnerID:     ownerID.String(),
@@ -100,10 +112,14 @@ func (r *TrackRepository) GetActive(
 
 func (r *TrackRepository) StopActive(
 	ctx context.Context,
-	ownerID auth.UserID,
 	workspaceID uuid.UUID,
 ) error {
-	err := r.q.StopActiveTimeEntries(ctx, gen.StopActiveTimeEntriesParams{
+	ownerID, err := auth.MustUserIDFrom(ctx)
+	if err != nil {
+		return err
+	}
+
+	err = r.q.StopActiveTimeEntries(ctx, gen.StopActiveTimeEntriesParams{
 		WorkspaceID: workspaceID,
 		OwnerID:     ownerID.String(),
 	})
@@ -115,10 +131,14 @@ func (r *TrackRepository) StopActive(
 
 func (r *TrackRepository) Create(
 	ctx context.Context,
-	ownerID auth.UserID,
 	workspaceID uuid.UUID,
 	input track.CreateInput,
 ) (*track.Track, error) {
+	ownerID, err := auth.MustUserIDFrom(ctx)
+	if err != nil {
+		return nil, err
+	}
+
 	var ticketIDUUID pgtype.UUID
 	if input.TicketID != nil {
 		ticketIDUUID = pgtype.UUID{Bytes: *input.TicketID, Valid: true}
@@ -189,10 +209,14 @@ func (r *TrackRepository) Create(
 
 func (r *TrackRepository) Pause(
 	ctx context.Context,
-	ownerID auth.UserID,
 	workspaceID uuid.UUID,
 	id uuid.UUID,
 ) (*track.Track, error) {
+	ownerID, err := auth.MustUserIDFrom(ctx)
+	if err != nil {
+		return nil, err
+	}
+
 	row, err := r.q.PauseTimeEntry(ctx, gen.PauseTimeEntryParams{
 		ID:          id,
 		WorkspaceID: workspaceID,
@@ -211,10 +235,14 @@ func (r *TrackRepository) Pause(
 
 func (r *TrackRepository) Resume(
 	ctx context.Context,
-	ownerID auth.UserID,
 	workspaceID uuid.UUID,
 	id uuid.UUID,
 ) (*track.Track, error) {
+	ownerID, err := auth.MustUserIDFrom(ctx)
+	if err != nil {
+		return nil, err
+	}
+
 	row, err := r.q.ResumeTimeEntry(ctx, gen.ResumeTimeEntryParams{
 		ID:          id,
 		WorkspaceID: workspaceID,
@@ -233,10 +261,14 @@ func (r *TrackRepository) Resume(
 
 func (r *TrackRepository) Stop(
 	ctx context.Context,
-	ownerID auth.UserID,
 	workspaceID uuid.UUID,
 	id uuid.UUID,
 ) (*track.Track, error) {
+	ownerID, err := auth.MustUserIDFrom(ctx)
+	if err != nil {
+		return nil, err
+	}
+
 	row, err := r.q.StopTimeEntry(ctx, gen.StopTimeEntryParams{
 		ID:          id,
 		WorkspaceID: workspaceID,
@@ -255,11 +287,15 @@ func (r *TrackRepository) Stop(
 
 func (r *TrackRepository) Update(
 	ctx context.Context,
-	ownerID auth.UserID,
 	workspaceID uuid.UUID,
 	id uuid.UUID,
 	input track.UpdateInput,
 ) (*track.Track, error) {
+	ownerID, err := auth.MustUserIDFrom(ctx)
+	if err != nil {
+		return nil, err
+	}
+
 	var ticketIDUUID pgtype.UUID
 	if input.TicketID != nil {
 		ticketIDUUID = pgtype.UUID{Bytes: *input.TicketID, Valid: true}
@@ -320,10 +356,14 @@ func (r *TrackRepository) Update(
 
 func (r *TrackRepository) Delete(
 	ctx context.Context,
-	ownerID auth.UserID,
 	workspaceID uuid.UUID,
 	id uuid.UUID,
 ) error {
+	ownerID, err := auth.MustUserIDFrom(ctx)
+	if err != nil {
+		return err
+	}
+
 	rowsAffected, err := r.q.DeleteTimeEntry(ctx, gen.DeleteTimeEntryParams{
 		ID:          id,
 		WorkspaceID: workspaceID,

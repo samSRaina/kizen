@@ -28,7 +28,12 @@ func NewProjectRepository(pool *pgxpool.Pool) *ProjectRepository {
 
 var _ project.Repository = (*ProjectRepository)(nil)
 
-func (r *ProjectRepository) Create(ctx context.Context, ownerID auth.UserID, input project.CreateInput) (*project.Project, error) {
+func (r *ProjectRepository) Create(ctx context.Context, input project.CreateInput) (*project.Project, error) {
+	ownerID, err := auth.MustUserIDFrom(ctx)
+	if err != nil {
+		return nil, err
+	}
+
 	settingsJSON, err := json.Marshal(input.Settings)
 	if err != nil {
 		return nil, fmt.Errorf("marshal settings: %w", err)
@@ -54,7 +59,12 @@ func (r *ProjectRepository) Create(ctx context.Context, ownerID auth.UserID, inp
 	return mapGenProjectToDomain(row), nil
 }
 
-func (r *ProjectRepository) ListByWorkspace(ctx context.Context, ownerID auth.UserID, workspaceID uuid.UUID) ([]project.Project, error) {
+func (r *ProjectRepository) ListByWorkspace(ctx context.Context, workspaceID uuid.UUID) ([]project.Project, error) {
+	ownerID, err := auth.MustUserIDFrom(ctx)
+	if err != nil {
+		return nil, err
+	}
+
 	rows, err := r.q.ListProjectsByWorkspace(ctx, gen.ListProjectsByWorkspaceParams{
 		WorkspaceID: workspaceID,
 		OwnerID:     ownerID.String(),
@@ -70,7 +80,12 @@ func (r *ProjectRepository) ListByWorkspace(ctx context.Context, ownerID auth.Us
 	return result, nil
 }
 
-func (r *ProjectRepository) GetByID(ctx context.Context, ownerID auth.UserID, workspaceID, projectID uuid.UUID) (*project.Project, error) {
+func (r *ProjectRepository) GetByID(ctx context.Context, workspaceID, projectID uuid.UUID) (*project.Project, error) {
+	ownerID, err := auth.MustUserIDFrom(ctx)
+	if err != nil {
+		return nil, err
+	}
+
 	row, err := r.q.GetProjectByID(ctx, gen.GetProjectByIDParams{
 		ID:          projectID,
 		WorkspaceID: workspaceID,
@@ -88,10 +103,14 @@ func (r *ProjectRepository) GetByID(ctx context.Context, ownerID auth.UserID, wo
 
 func (r *ProjectRepository) Update(
 	ctx context.Context,
-	ownerID auth.UserID,
 	workspaceID, projectID uuid.UUID,
 	input project.UpdateInput,
 ) (*project.Project, error) {
+	ownerID, err := auth.MustUserIDFrom(ctx)
+	if err != nil {
+		return nil, err
+	}
+
 	var settingsJSON []byte
 	if input.Settings != nil {
 		var err error
@@ -131,7 +150,12 @@ func (r *ProjectRepository) Update(
 	return mapGenProjectToDomain(row), nil
 }
 
-func (r *ProjectRepository) Delete(ctx context.Context, ownerID auth.UserID, workspaceID, projectID uuid.UUID) error {
+func (r *ProjectRepository) Delete(ctx context.Context, workspaceID, projectID uuid.UUID) error {
+	ownerID, err := auth.MustUserIDFrom(ctx)
+	if err != nil {
+		return err
+	}
+
 	rowsAffected, err := r.q.DeleteProject(ctx, gen.DeleteProjectParams{
 		ID:          projectID,
 		WorkspaceID: workspaceID,

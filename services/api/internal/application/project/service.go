@@ -34,7 +34,7 @@ func (s *Service) List(ctx context.Context, workspaceID uuid.UUID) ([]project.Pr
 		return nil, fmt.Errorf("%w: invalid workspace uuid", project.ErrInvalidInput)
 	}
 
-	projects, err := s.repo.ListByWorkspace(ctx, userID, workspaceID)
+	projects, err := s.repo.ListByWorkspace(ctx, workspaceID)
 	if err != nil {
 		s.log.ErrorContext(ctx, "failed to list projects",
 			slog.String("workspace_id", workspaceID.String()),
@@ -49,15 +49,14 @@ func (s *Service) List(ctx context.Context, workspaceID uuid.UUID) ([]project.Pr
 
 // GetByID retrieves a single project by id within a workspace.
 func (s *Service) GetByID(ctx context.Context, workspaceID, projectID uuid.UUID) (*project.Project, error) {
-	userID, err := auth.MustUserIDFrom(ctx)
-	if err != nil {
+	if _, err := auth.MustUserIDFrom(ctx); err != nil {
 		return nil, err
 	}
 	if workspaceID == uuid.Nil || projectID == uuid.Nil {
 		return nil, fmt.Errorf("%w: invalid workspace or project uuid", project.ErrInvalidInput)
 	}
 
-	prj, err := s.repo.GetByID(ctx, userID, workspaceID, projectID)
+	prj, err := s.repo.GetByID(ctx, workspaceID, projectID)
 	if err != nil {
 		return nil, err
 	}
@@ -76,7 +75,7 @@ func (s *Service) Create(ctx context.Context, input project.CreateInput) (*proje
 		return nil, err
 	}
 
-	prj, err := s.repo.Create(ctx, userID, input)
+	prj, err := s.repo.Create(ctx, input)
 	if err != nil {
 		s.log.ErrorContext(ctx, "failed to create project",
 			slog.String("workspace_id", input.WorkspaceID.String()),
@@ -114,7 +113,7 @@ func (s *Service) Update(
 		return nil, err
 	}
 
-	prj, err := s.repo.Update(ctx, userID, workspaceID, projectID, input)
+	prj, err := s.repo.Update(ctx, workspaceID, projectID, input)
 	if err != nil {
 		s.log.ErrorContext(ctx, "failed to update project",
 			slog.String("project_id", projectID.String()),
@@ -143,7 +142,7 @@ func (s *Service) Delete(ctx context.Context, workspaceID, projectID uuid.UUID) 
 		return fmt.Errorf("%w: invalid workspace or project uuid", project.ErrInvalidInput)
 	}
 
-	if err := s.repo.Delete(ctx, userID, workspaceID, projectID); err != nil {
+	if err := s.repo.Delete(ctx, workspaceID, projectID); err != nil {
 		s.log.ErrorContext(ctx, "failed to delete project",
 			slog.String("project_id", projectID.String()),
 			slog.String("workspace_id", workspaceID.String()),

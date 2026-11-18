@@ -31,7 +31,7 @@ func (s *Service) List(ctx context.Context) ([]ws.Workspace, error) {
 		return nil, err
 	}
 
-	workspaces, err := s.repo.ListByUser(ctx, userID)
+	workspaces, err := s.repo.ListByUser(ctx)
 	if err != nil {
 		s.log.ErrorContext(ctx, "failed to list workspaces",
 			slog.String("user_id", userID.String()),
@@ -45,15 +45,14 @@ func (s *Service) List(ctx context.Context) ([]ws.Workspace, error) {
 
 // GetByID retrieves a single workspace if owned by the caller.
 func (s *Service) GetByID(ctx context.Context, id uuid.UUID) (*ws.Workspace, error) {
-	userID, err := auth.MustUserIDFrom(ctx)
-	if err != nil {
+	if _, err := auth.MustUserIDFrom(ctx); err != nil {
 		return nil, err
 	}
 	if id == uuid.Nil {
 		return nil, fmt.Errorf("%w: invalid workspace uuid", ws.ErrInvalidInput)
 	}
 
-	workspace, err := s.repo.GetByID(ctx, userID, id)
+	workspace, err := s.repo.GetByID(ctx, id)
 	if err != nil {
 		return nil, err
 	}
@@ -73,7 +72,7 @@ func (s *Service) Create(ctx context.Context, input ws.CreateInput) (*ws.Workspa
 		return nil, err
 	}
 
-	workspace, err := s.repo.Create(ctx, userID, input)
+	workspace, err := s.repo.Create(ctx, input)
 	if err != nil {
 		s.log.ErrorContext(ctx, "failed to create workspace",
 			slog.String("user_id", userID.String()),
@@ -109,7 +108,7 @@ func (s *Service) Update(
 		return nil, err
 	}
 
-	workspace, err := s.repo.Update(ctx, userID, id, input)
+	workspace, err := s.repo.Update(ctx, id, input)
 	if err != nil {
 		s.log.ErrorContext(ctx, "failed to update workspace",
 			slog.String("workspace_id", id.String()),
@@ -137,7 +136,7 @@ func (s *Service) Delete(ctx context.Context, id uuid.UUID) error {
 		return fmt.Errorf("%w: invalid workspace uuid", ws.ErrInvalidInput)
 	}
 
-	if err := s.repo.Delete(ctx, userID, id); err != nil {
+	if err := s.repo.Delete(ctx, id); err != nil {
 		s.log.ErrorContext(ctx, "failed to delete workspace",
 			slog.String("workspace_id", id.String()),
 			slog.String("user_id", userID.String()),

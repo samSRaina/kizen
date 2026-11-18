@@ -44,16 +44,16 @@ func (e CreateTrackRequestTimerState) Valid() bool {
 	}
 }
 
-// Defines values for TicketPriority.
+// Defines values for TaskPriority.
 const (
-	Critical TicketPriority = "Critical"
-	High     TicketPriority = "High"
-	Low      TicketPriority = "Low"
-	Medium   TicketPriority = "Medium"
+	Critical TaskPriority = "Critical"
+	High     TaskPriority = "High"
+	Low      TaskPriority = "Low"
+	Medium   TaskPriority = "Medium"
 )
 
-// Valid indicates whether the value is a known member of the TicketPriority enum.
-func (e TicketPriority) Valid() bool {
+// Valid indicates whether the value is a known member of the TaskPriority enum.
+func (e TaskPriority) Valid() bool {
 	switch e {
 	case Critical:
 		return true
@@ -68,48 +68,51 @@ func (e TicketPriority) Valid() bool {
 	}
 }
 
-// Defines values for TicketStatus.
+// Defines values for TaskStatus.
 const (
-	Backlog  TicketStatus = "backlog"
-	Done     TicketStatus = "done"
-	Progress TicketStatus = "progress"
-	Review   TicketStatus = "review"
-	Todo     TicketStatus = "todo"
+	TaskStatusBacklog  TaskStatus = "backlog"
+	TaskStatusDone     TaskStatus = "done"
+	TaskStatusPaused   TaskStatus = "paused"
+	TaskStatusProgress TaskStatus = "progress"
+	TaskStatusReview   TaskStatus = "review"
+	TaskStatusTodo     TaskStatus = "todo"
 )
 
-// Valid indicates whether the value is a known member of the TicketStatus enum.
-func (e TicketStatus) Valid() bool {
+// Valid indicates whether the value is a known member of the TaskStatus enum.
+func (e TaskStatus) Valid() bool {
 	switch e {
-	case Backlog:
+	case TaskStatusBacklog:
 		return true
-	case Done:
+	case TaskStatusDone:
 		return true
-	case Progress:
+	case TaskStatusPaused:
 		return true
-	case Review:
+	case TaskStatusProgress:
 		return true
-	case Todo:
+	case TaskStatusReview:
+		return true
+	case TaskStatusTodo:
 		return true
 	default:
 		return false
 	}
 }
 
-// Defines values for TicketType.
+// Defines values for TaskType.
 const (
-	Bug     TicketType = "bug"
-	Feature TicketType = "feature"
-	Task    TicketType = "task"
+	TaskTypeBug     TaskType = "bug"
+	TaskTypeFeature TaskType = "feature"
+	TaskTypeTask    TaskType = "task"
 )
 
-// Valid indicates whether the value is a known member of the TicketType enum.
-func (e TicketType) Valid() bool {
+// Valid indicates whether the value is a known member of the TaskType enum.
+func (e TaskType) Valid() bool {
 	switch e {
-	case Bug:
+	case TaskTypeBug:
 		return true
-	case Feature:
+	case TaskTypeFeature:
 		return true
-	case Task:
+	case TaskTypeTask:
 		return true
 	default:
 		return false
@@ -167,16 +170,13 @@ type CreateProjectRequest struct {
 	TicketIdPrefix    *string                 `json:"ticket_id_prefix,omitempty"`
 }
 
-// CreateTicketRequest defines model for CreateTicketRequest.
-type CreateTicketRequest struct {
-	Description *string             `json:"description,omitempty"`
-	Points      *int                `json:"points,omitempty"`
-	Priority    TicketPriority      `json:"priority"`
-	ProjectId   *openapi_types.UUID `json:"project_id,omitempty"`
-	Status      *TicketStatus       `json:"status,omitempty"`
-	Tags        *[]string           `json:"tags,omitempty"`
-	Title       string              `json:"title"`
-	Type        TicketType          `json:"type"`
+// CreateTaskRequest defines model for CreateTaskRequest.
+type CreateTaskRequest struct {
+	Description *string      `json:"description,omitempty"`
+	Priority    TaskPriority `json:"priority"`
+	Status      *TaskStatus  `json:"status,omitempty"`
+	Title       string       `json:"title"`
+	Type        TaskType     `json:"type"`
 }
 
 // CreateTrackRequest defines model for CreateTrackRequest.
@@ -234,30 +234,37 @@ type Project struct {
 	WorkspaceId       openapi_types.UUID     `json:"workspace_id"`
 }
 
-// Ticket defines model for Ticket.
-type Ticket struct {
+// ReorderTaskRequest defines model for ReorderTaskRequest.
+type ReorderTaskRequest struct {
+	// Position New fractional index position for the task within its project column.
+	Position float64 `json:"position"`
+}
+
+// Task defines model for Task.
+type Task struct {
 	CreatedAt   time.Time          `json:"created_at"`
 	Description *string            `json:"description,omitempty"`
 	Id          openapi_types.UUID `json:"id"`
 	Identifier  string             `json:"identifier"`
-	Points      int                `json:"points"`
-	Priority    TicketPriority     `json:"priority"`
-	ProjectId   openapi_types.UUID `json:"project_id"`
-	Status      TicketStatus       `json:"status"`
-	Tags        *[]string          `json:"tags,omitempty"`
-	Title       string             `json:"title"`
-	Type        TicketType         `json:"type"`
-	UpdatedAt   time.Time          `json:"updated_at"`
+
+	// Position Fractional index used for ordering tasks within a project column.
+	Position  float64            `json:"position"`
+	Priority  TaskPriority       `json:"priority"`
+	ProjectId openapi_types.UUID `json:"project_id"`
+	Status    TaskStatus         `json:"status"`
+	Title     string             `json:"title"`
+	Type      TaskType           `json:"type"`
+	UpdatedAt time.Time          `json:"updated_at"`
 }
 
-// TicketPriority defines model for TicketPriority.
-type TicketPriority string
+// TaskPriority defines model for TaskPriority.
+type TaskPriority string
 
-// TicketStatus defines model for TicketStatus.
-type TicketStatus string
+// TaskStatus defines model for TaskStatus.
+type TaskStatus string
 
-// TicketType defines model for TicketType.
-type TicketType string
+// TaskType defines model for TaskType.
+type TaskType string
 
 // Track defines model for Track.
 type Track struct {
@@ -288,16 +295,13 @@ type UpdateProjectRequest struct {
 	TicketIdPrefix    *string                 `json:"ticket_id_prefix,omitempty"`
 }
 
-// UpdateTicketRequest defines model for UpdateTicketRequest.
-type UpdateTicketRequest struct {
-	Description *string             `json:"description,omitempty"`
-	Points      *int                `json:"points,omitempty"`
-	Priority    *TicketPriority     `json:"priority,omitempty"`
-	ProjectId   *openapi_types.UUID `json:"project_id,omitempty"`
-	Status      *TicketStatus       `json:"status,omitempty"`
-	Tags        *[]string           `json:"tags,omitempty"`
-	Title       *string             `json:"title,omitempty"`
-	Type        *TicketType         `json:"type,omitempty"`
+// UpdateTaskRequest defines model for UpdateTaskRequest.
+type UpdateTaskRequest struct {
+	Description *string       `json:"description,omitempty"`
+	Priority    *TaskPriority `json:"priority,omitempty"`
+	Status      *TaskStatus   `json:"status,omitempty"`
+	Title       *string       `json:"title,omitempty"`
+	Type        *TaskType     `json:"type,omitempty"`
 }
 
 // UpdateTrackRequest defines model for UpdateTrackRequest.
@@ -368,11 +372,14 @@ type CreateProjectJSONRequestBody = CreateProjectRequest
 // UpdateProjectJSONRequestBody defines body for UpdateProject for application/json ContentType.
 type UpdateProjectJSONRequestBody = UpdateProjectRequest
 
-// CreateTicketJSONRequestBody defines body for CreateTicket for application/json ContentType.
-type CreateTicketJSONRequestBody = CreateTicketRequest
+// CreateTaskJSONRequestBody defines body for CreateTask for application/json ContentType.
+type CreateTaskJSONRequestBody = CreateTaskRequest
 
-// UpdateTicketJSONRequestBody defines body for UpdateTicket for application/json ContentType.
-type UpdateTicketJSONRequestBody = UpdateTicketRequest
+// UpdateTaskJSONRequestBody defines body for UpdateTask for application/json ContentType.
+type UpdateTaskJSONRequestBody = UpdateTaskRequest
+
+// ReorderTaskJSONRequestBody defines body for ReorderTask for application/json ContentType.
+type ReorderTaskJSONRequestBody = ReorderTaskRequest
 
 // CreateTrackJSONRequestBody defines body for CreateTrack for application/json ContentType.
 type CreateTrackJSONRequestBody = CreateTrackRequest
@@ -536,21 +543,24 @@ type ServerInterface interface {
 	// UpdateProject Update a project
 	// (PATCH /ws/{workspace_id}/p/{project_id})
 	UpdateProject(w http.ResponseWriter, r *http.Request, workspaceId openapi_types.UUID, projectId openapi_types.UUID)
-	// ListTickets List tickets for a project
-	// (GET /ws/{workspace_id}/p/{project_id}/tickets)
-	ListTickets(w http.ResponseWriter, r *http.Request, workspaceId openapi_types.UUID, projectId openapi_types.UUID)
-	// CreateTicket Create a new ticket under a project
-	// (POST /ws/{workspace_id}/p/{project_id}/tickets)
-	CreateTicket(w http.ResponseWriter, r *http.Request, workspaceId openapi_types.UUID, projectId openapi_types.UUID)
-	// DeleteTicket Delete a ticket in a project
-	// (DELETE /ws/{workspace_id}/p/{project_id}/tickets/{identifier})
-	DeleteTicket(w http.ResponseWriter, r *http.Request, workspaceId openapi_types.UUID, projectId openapi_types.UUID, identifier string)
-	// GetTicket Get a ticket by identifier in a project
-	// (GET /ws/{workspace_id}/p/{project_id}/tickets/{identifier})
-	GetTicket(w http.ResponseWriter, r *http.Request, workspaceId openapi_types.UUID, projectId openapi_types.UUID, identifier string)
-	// UpdateTicket Update a ticket in a project
-	// (PATCH /ws/{workspace_id}/p/{project_id}/tickets/{identifier})
-	UpdateTicket(w http.ResponseWriter, r *http.Request, workspaceId openapi_types.UUID, projectId openapi_types.UUID, identifier string)
+	// ListTasks List tasks for a project
+	// (GET /ws/{workspace_id}/p/{project_id}/tasks)
+	ListTasks(w http.ResponseWriter, r *http.Request, workspaceId openapi_types.UUID, projectId openapi_types.UUID)
+	// CreateTask Create a new task under a project
+	// (POST /ws/{workspace_id}/p/{project_id}/tasks)
+	CreateTask(w http.ResponseWriter, r *http.Request, workspaceId openapi_types.UUID, projectId openapi_types.UUID)
+	// DeleteTask Delete a task
+	// (DELETE /ws/{workspace_id}/p/{project_id}/tasks/{identifier})
+	DeleteTask(w http.ResponseWriter, r *http.Request, workspaceId openapi_types.UUID, projectId openapi_types.UUID, identifier string)
+	// GetTask Get a task by identifier
+	// (GET /ws/{workspace_id}/p/{project_id}/tasks/{identifier})
+	GetTask(w http.ResponseWriter, r *http.Request, workspaceId openapi_types.UUID, projectId openapi_types.UUID, identifier string)
+	// UpdateTask Update a task
+	// (PATCH /ws/{workspace_id}/p/{project_id}/tasks/{identifier})
+	UpdateTask(w http.ResponseWriter, r *http.Request, workspaceId openapi_types.UUID, projectId openapi_types.UUID, identifier string)
+	// ReorderTask Reorder a task within its project column
+	// (PATCH /ws/{workspace_id}/p/{project_id}/tasks/{task_id}/reorder)
+	ReorderTask(w http.ResponseWriter, r *http.Request, workspaceId openapi_types.UUID, projectId openapi_types.UUID, taskId openapi_types.UUID)
 	// ListTracks List time entries for a workspace
 	// (GET /ws/{workspace_id}/track)
 	ListTracks(w http.ResponseWriter, r *http.Request, workspaceId openapi_types.UUID, params ListTracksParams)
@@ -641,33 +651,39 @@ func (_ Unimplemented) UpdateProject(w http.ResponseWriter, r *http.Request, wor
 	w.WriteHeader(http.StatusNotImplemented)
 }
 
-// ListTickets List tickets for a project
-// (GET /ws/{workspace_id}/p/{project_id}/tickets)
-func (_ Unimplemented) ListTickets(w http.ResponseWriter, r *http.Request, workspaceId openapi_types.UUID, projectId openapi_types.UUID) {
+// ListTasks List tasks for a project
+// (GET /ws/{workspace_id}/p/{project_id}/tasks)
+func (_ Unimplemented) ListTasks(w http.ResponseWriter, r *http.Request, workspaceId openapi_types.UUID, projectId openapi_types.UUID) {
 	w.WriteHeader(http.StatusNotImplemented)
 }
 
-// CreateTicket Create a new ticket under a project
-// (POST /ws/{workspace_id}/p/{project_id}/tickets)
-func (_ Unimplemented) CreateTicket(w http.ResponseWriter, r *http.Request, workspaceId openapi_types.UUID, projectId openapi_types.UUID) {
+// CreateTask Create a new task under a project
+// (POST /ws/{workspace_id}/p/{project_id}/tasks)
+func (_ Unimplemented) CreateTask(w http.ResponseWriter, r *http.Request, workspaceId openapi_types.UUID, projectId openapi_types.UUID) {
 	w.WriteHeader(http.StatusNotImplemented)
 }
 
-// DeleteTicket Delete a ticket in a project
-// (DELETE /ws/{workspace_id}/p/{project_id}/tickets/{identifier})
-func (_ Unimplemented) DeleteTicket(w http.ResponseWriter, r *http.Request, workspaceId openapi_types.UUID, projectId openapi_types.UUID, identifier string) {
+// DeleteTask Delete a task
+// (DELETE /ws/{workspace_id}/p/{project_id}/tasks/{identifier})
+func (_ Unimplemented) DeleteTask(w http.ResponseWriter, r *http.Request, workspaceId openapi_types.UUID, projectId openapi_types.UUID, identifier string) {
 	w.WriteHeader(http.StatusNotImplemented)
 }
 
-// GetTicket Get a ticket by identifier in a project
-// (GET /ws/{workspace_id}/p/{project_id}/tickets/{identifier})
-func (_ Unimplemented) GetTicket(w http.ResponseWriter, r *http.Request, workspaceId openapi_types.UUID, projectId openapi_types.UUID, identifier string) {
+// GetTask Get a task by identifier
+// (GET /ws/{workspace_id}/p/{project_id}/tasks/{identifier})
+func (_ Unimplemented) GetTask(w http.ResponseWriter, r *http.Request, workspaceId openapi_types.UUID, projectId openapi_types.UUID, identifier string) {
 	w.WriteHeader(http.StatusNotImplemented)
 }
 
-// UpdateTicket Update a ticket in a project
-// (PATCH /ws/{workspace_id}/p/{project_id}/tickets/{identifier})
-func (_ Unimplemented) UpdateTicket(w http.ResponseWriter, r *http.Request, workspaceId openapi_types.UUID, projectId openapi_types.UUID, identifier string) {
+// UpdateTask Update a task
+// (PATCH /ws/{workspace_id}/p/{project_id}/tasks/{identifier})
+func (_ Unimplemented) UpdateTask(w http.ResponseWriter, r *http.Request, workspaceId openapi_types.UUID, projectId openapi_types.UUID, identifier string) {
+	w.WriteHeader(http.StatusNotImplemented)
+}
+
+// ReorderTask Reorder a task within its project column
+// (PATCH /ws/{workspace_id}/p/{project_id}/tasks/{task_id}/reorder)
+func (_ Unimplemented) ReorderTask(w http.ResponseWriter, r *http.Request, workspaceId openapi_types.UUID, projectId openapi_types.UUID, taskId openapi_types.UUID) {
 	w.WriteHeader(http.StatusNotImplemented)
 }
 
@@ -991,8 +1007,8 @@ func (siw *ServerInterfaceWrapper) UpdateProject(w http.ResponseWriter, r *http.
 	handler.ServeHTTP(w, r)
 }
 
-// ListTickets operation middleware
-func (siw *ServerInterfaceWrapper) ListTickets(w http.ResponseWriter, r *http.Request) {
+// ListTasks operation middleware
+func (siw *ServerInterfaceWrapper) ListTasks(w http.ResponseWriter, r *http.Request) {
 
 	var err error
 	_ = err
@@ -1016,7 +1032,7 @@ func (siw *ServerInterfaceWrapper) ListTickets(w http.ResponseWriter, r *http.Re
 	}
 
 	handler := http.Handler(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
-		siw.Handler.ListTickets(w, r, workspaceId, projectId)
+		siw.Handler.ListTasks(w, r, workspaceId, projectId)
 	}))
 
 	for _, middleware := range siw.HandlerMiddlewares {
@@ -1026,8 +1042,8 @@ func (siw *ServerInterfaceWrapper) ListTickets(w http.ResponseWriter, r *http.Re
 	handler.ServeHTTP(w, r)
 }
 
-// CreateTicket operation middleware
-func (siw *ServerInterfaceWrapper) CreateTicket(w http.ResponseWriter, r *http.Request) {
+// CreateTask operation middleware
+func (siw *ServerInterfaceWrapper) CreateTask(w http.ResponseWriter, r *http.Request) {
 
 	var err error
 	_ = err
@@ -1051,7 +1067,7 @@ func (siw *ServerInterfaceWrapper) CreateTicket(w http.ResponseWriter, r *http.R
 	}
 
 	handler := http.Handler(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
-		siw.Handler.CreateTicket(w, r, workspaceId, projectId)
+		siw.Handler.CreateTask(w, r, workspaceId, projectId)
 	}))
 
 	for _, middleware := range siw.HandlerMiddlewares {
@@ -1061,8 +1077,8 @@ func (siw *ServerInterfaceWrapper) CreateTicket(w http.ResponseWriter, r *http.R
 	handler.ServeHTTP(w, r)
 }
 
-// DeleteTicket operation middleware
-func (siw *ServerInterfaceWrapper) DeleteTicket(w http.ResponseWriter, r *http.Request) {
+// DeleteTask operation middleware
+func (siw *ServerInterfaceWrapper) DeleteTask(w http.ResponseWriter, r *http.Request) {
 
 	var err error
 	_ = err
@@ -1095,7 +1111,7 @@ func (siw *ServerInterfaceWrapper) DeleteTicket(w http.ResponseWriter, r *http.R
 	}
 
 	handler := http.Handler(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
-		siw.Handler.DeleteTicket(w, r, workspaceId, projectId, identifier)
+		siw.Handler.DeleteTask(w, r, workspaceId, projectId, identifier)
 	}))
 
 	for _, middleware := range siw.HandlerMiddlewares {
@@ -1105,8 +1121,8 @@ func (siw *ServerInterfaceWrapper) DeleteTicket(w http.ResponseWriter, r *http.R
 	handler.ServeHTTP(w, r)
 }
 
-// GetTicket operation middleware
-func (siw *ServerInterfaceWrapper) GetTicket(w http.ResponseWriter, r *http.Request) {
+// GetTask operation middleware
+func (siw *ServerInterfaceWrapper) GetTask(w http.ResponseWriter, r *http.Request) {
 
 	var err error
 	_ = err
@@ -1139,7 +1155,7 @@ func (siw *ServerInterfaceWrapper) GetTicket(w http.ResponseWriter, r *http.Requ
 	}
 
 	handler := http.Handler(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
-		siw.Handler.GetTicket(w, r, workspaceId, projectId, identifier)
+		siw.Handler.GetTask(w, r, workspaceId, projectId, identifier)
 	}))
 
 	for _, middleware := range siw.HandlerMiddlewares {
@@ -1149,8 +1165,8 @@ func (siw *ServerInterfaceWrapper) GetTicket(w http.ResponseWriter, r *http.Requ
 	handler.ServeHTTP(w, r)
 }
 
-// UpdateTicket operation middleware
-func (siw *ServerInterfaceWrapper) UpdateTicket(w http.ResponseWriter, r *http.Request) {
+// UpdateTask operation middleware
+func (siw *ServerInterfaceWrapper) UpdateTask(w http.ResponseWriter, r *http.Request) {
 
 	var err error
 	_ = err
@@ -1183,7 +1199,51 @@ func (siw *ServerInterfaceWrapper) UpdateTicket(w http.ResponseWriter, r *http.R
 	}
 
 	handler := http.Handler(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
-		siw.Handler.UpdateTicket(w, r, workspaceId, projectId, identifier)
+		siw.Handler.UpdateTask(w, r, workspaceId, projectId, identifier)
+	}))
+
+	for _, middleware := range siw.HandlerMiddlewares {
+		handler = middleware(handler)
+	}
+
+	handler.ServeHTTP(w, r)
+}
+
+// ReorderTask operation middleware
+func (siw *ServerInterfaceWrapper) ReorderTask(w http.ResponseWriter, r *http.Request) {
+
+	var err error
+	_ = err
+
+	// ------------- Path parameter "workspace_id" -------------
+	var workspaceId openapi_types.UUID
+
+	err = runtime.BindStyledParameterWithOptions("simple", "workspace_id", chi.URLParam(r, "workspace_id"), &workspaceId, runtime.BindStyledParameterOptions{ParamLocation: runtime.ParamLocationPath, Explode: false, Required: true, Type: "string", Format: "uuid", ValueIsUnescaped: r.URL.RawPath == ""})
+	if err != nil {
+		siw.ErrorHandlerFunc(w, r, &InvalidParamFormatError{ParamName: "workspace_id", Err: err})
+		return
+	}
+
+	// ------------- Path parameter "project_id" -------------
+	var projectId openapi_types.UUID
+
+	err = runtime.BindStyledParameterWithOptions("simple", "project_id", chi.URLParam(r, "project_id"), &projectId, runtime.BindStyledParameterOptions{ParamLocation: runtime.ParamLocationPath, Explode: false, Required: true, Type: "string", Format: "uuid", ValueIsUnescaped: r.URL.RawPath == ""})
+	if err != nil {
+		siw.ErrorHandlerFunc(w, r, &InvalidParamFormatError{ParamName: "project_id", Err: err})
+		return
+	}
+
+	// ------------- Path parameter "task_id" -------------
+	var taskId openapi_types.UUID
+
+	err = runtime.BindStyledParameterWithOptions("simple", "task_id", chi.URLParam(r, "task_id"), &taskId, runtime.BindStyledParameterOptions{ParamLocation: runtime.ParamLocationPath, Explode: false, Required: true, Type: "string", Format: "uuid", ValueIsUnescaped: r.URL.RawPath == ""})
+	if err != nil {
+		siw.ErrorHandlerFunc(w, r, &InvalidParamFormatError{ParamName: "task_id", Err: err})
+		return
+	}
+
+	handler := http.Handler(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+		siw.Handler.ReorderTask(w, r, workspaceId, projectId, taskId)
 	}))
 
 	for _, middleware := range siw.HandlerMiddlewares {
@@ -1615,19 +1675,22 @@ func HandlerWithOptions(si ServerInterface, options ChiServerOptions) http.Handl
 		r.Patch(options.BaseURL+"/ws/{workspace_id}/p/{project_id}", wrapper.UpdateProject)
 	})
 	r.Group(func(r chi.Router) {
-		r.Get(options.BaseURL+"/ws/{workspace_id}/p/{project_id}/tickets", wrapper.ListTickets)
+		r.Get(options.BaseURL+"/ws/{workspace_id}/p/{project_id}/tasks", wrapper.ListTasks)
 	})
 	r.Group(func(r chi.Router) {
-		r.Post(options.BaseURL+"/ws/{workspace_id}/p/{project_id}/tickets", wrapper.CreateTicket)
+		r.Post(options.BaseURL+"/ws/{workspace_id}/p/{project_id}/tasks", wrapper.CreateTask)
 	})
 	r.Group(func(r chi.Router) {
-		r.Delete(options.BaseURL+"/ws/{workspace_id}/p/{project_id}/tickets/{identifier}", wrapper.DeleteTicket)
+		r.Delete(options.BaseURL+"/ws/{workspace_id}/p/{project_id}/tasks/{identifier}", wrapper.DeleteTask)
 	})
 	r.Group(func(r chi.Router) {
-		r.Get(options.BaseURL+"/ws/{workspace_id}/p/{project_id}/tickets/{identifier}", wrapper.GetTicket)
+		r.Get(options.BaseURL+"/ws/{workspace_id}/p/{project_id}/tasks/{identifier}", wrapper.GetTask)
 	})
 	r.Group(func(r chi.Router) {
-		r.Patch(options.BaseURL+"/ws/{workspace_id}/p/{project_id}/tickets/{identifier}", wrapper.UpdateTicket)
+		r.Patch(options.BaseURL+"/ws/{workspace_id}/p/{project_id}/tasks/{identifier}", wrapper.UpdateTask)
+	})
+	r.Group(func(r chi.Router) {
+		r.Patch(options.BaseURL+"/ws/{workspace_id}/p/{project_id}/tasks/{task_id}/reorder", wrapper.ReorderTask)
 	})
 	r.Group(func(r chi.Router) {
 		r.Get(options.BaseURL+"/ws/{workspace_id}/track", wrapper.ListTracks)
@@ -2440,18 +2503,18 @@ func (response UpdateProject500ApplicationProblemPlusJSONResponse) VisitUpdatePr
 	return err
 }
 
-type ListTicketsRequestObject struct {
+type ListTasksRequestObject struct {
 	WorkspaceId openapi_types.UUID `json:"workspace_id"`
 	ProjectId   openapi_types.UUID `json:"project_id"`
 }
 
-type ListTicketsResponseObject interface {
-	VisitListTicketsResponse(w http.ResponseWriter) error
+type ListTasksResponseObject interface {
+	VisitListTasksResponse(w http.ResponseWriter) error
 }
 
-type ListTickets200JSONResponse []Ticket
+type ListTasks200JSONResponse []Task
 
-func (response ListTickets200JSONResponse) VisitListTicketsResponse(w http.ResponseWriter) error {
+func (response ListTasks200JSONResponse) VisitListTasksResponse(w http.ResponseWriter) error {
 
 	var buf bytes.Buffer
 	if err := json.NewEncoder(&buf).Encode(response); err != nil {
@@ -2463,11 +2526,11 @@ func (response ListTickets200JSONResponse) VisitListTicketsResponse(w http.Respo
 	return err
 }
 
-type ListTickets401ApplicationProblemPlusJSONResponse struct {
+type ListTasks401ApplicationProblemPlusJSONResponse struct {
 	UnauthorizedApplicationProblemPlusJSONResponse
 }
 
-func (response ListTickets401ApplicationProblemPlusJSONResponse) VisitListTicketsResponse(w http.ResponseWriter) error {
+func (response ListTasks401ApplicationProblemPlusJSONResponse) VisitListTasksResponse(w http.ResponseWriter) error {
 
 	var buf bytes.Buffer
 	if err := json.NewEncoder(&buf).Encode(response); err != nil {
@@ -2479,11 +2542,11 @@ func (response ListTickets401ApplicationProblemPlusJSONResponse) VisitListTicket
 	return err
 }
 
-type ListTickets404ApplicationProblemPlusJSONResponse struct {
+type ListTasks404ApplicationProblemPlusJSONResponse struct {
 	NotFoundApplicationProblemPlusJSONResponse
 }
 
-func (response ListTickets404ApplicationProblemPlusJSONResponse) VisitListTicketsResponse(w http.ResponseWriter) error {
+func (response ListTasks404ApplicationProblemPlusJSONResponse) VisitListTasksResponse(w http.ResponseWriter) error {
 
 	var buf bytes.Buffer
 	if err := json.NewEncoder(&buf).Encode(response); err != nil {
@@ -2495,11 +2558,11 @@ func (response ListTickets404ApplicationProblemPlusJSONResponse) VisitListTicket
 	return err
 }
 
-type ListTickets500ApplicationProblemPlusJSONResponse struct {
+type ListTasks500ApplicationProblemPlusJSONResponse struct {
 	InternalErrorApplicationProblemPlusJSONResponse
 }
 
-func (response ListTickets500ApplicationProblemPlusJSONResponse) VisitListTicketsResponse(w http.ResponseWriter) error {
+func (response ListTasks500ApplicationProblemPlusJSONResponse) VisitListTasksResponse(w http.ResponseWriter) error {
 
 	var buf bytes.Buffer
 	if err := json.NewEncoder(&buf).Encode(response); err != nil {
@@ -2511,19 +2574,19 @@ func (response ListTickets500ApplicationProblemPlusJSONResponse) VisitListTicket
 	return err
 }
 
-type CreateTicketRequestObject struct {
+type CreateTaskRequestObject struct {
 	WorkspaceId openapi_types.UUID `json:"workspace_id"`
 	ProjectId   openapi_types.UUID `json:"project_id"`
-	Body        *CreateTicketJSONRequestBody
+	Body        *CreateTaskJSONRequestBody
 }
 
-type CreateTicketResponseObject interface {
-	VisitCreateTicketResponse(w http.ResponseWriter) error
+type CreateTaskResponseObject interface {
+	VisitCreateTaskResponse(w http.ResponseWriter) error
 }
 
-type CreateTicket201JSONResponse Ticket
+type CreateTask201JSONResponse Task
 
-func (response CreateTicket201JSONResponse) VisitCreateTicketResponse(w http.ResponseWriter) error {
+func (response CreateTask201JSONResponse) VisitCreateTaskResponse(w http.ResponseWriter) error {
 
 	var buf bytes.Buffer
 	if err := json.NewEncoder(&buf).Encode(response); err != nil {
@@ -2535,11 +2598,11 @@ func (response CreateTicket201JSONResponse) VisitCreateTicketResponse(w http.Res
 	return err
 }
 
-type CreateTicket400ApplicationProblemPlusJSONResponse struct {
+type CreateTask400ApplicationProblemPlusJSONResponse struct {
 	BadRequestApplicationProblemPlusJSONResponse
 }
 
-func (response CreateTicket400ApplicationProblemPlusJSONResponse) VisitCreateTicketResponse(w http.ResponseWriter) error {
+func (response CreateTask400ApplicationProblemPlusJSONResponse) VisitCreateTaskResponse(w http.ResponseWriter) error {
 
 	var buf bytes.Buffer
 	if err := json.NewEncoder(&buf).Encode(response); err != nil {
@@ -2551,11 +2614,11 @@ func (response CreateTicket400ApplicationProblemPlusJSONResponse) VisitCreateTic
 	return err
 }
 
-type CreateTicket401ApplicationProblemPlusJSONResponse struct {
+type CreateTask401ApplicationProblemPlusJSONResponse struct {
 	UnauthorizedApplicationProblemPlusJSONResponse
 }
 
-func (response CreateTicket401ApplicationProblemPlusJSONResponse) VisitCreateTicketResponse(w http.ResponseWriter) error {
+func (response CreateTask401ApplicationProblemPlusJSONResponse) VisitCreateTaskResponse(w http.ResponseWriter) error {
 
 	var buf bytes.Buffer
 	if err := json.NewEncoder(&buf).Encode(response); err != nil {
@@ -2567,11 +2630,11 @@ func (response CreateTicket401ApplicationProblemPlusJSONResponse) VisitCreateTic
 	return err
 }
 
-type CreateTicket500ApplicationProblemPlusJSONResponse struct {
+type CreateTask500ApplicationProblemPlusJSONResponse struct {
 	InternalErrorApplicationProblemPlusJSONResponse
 }
 
-func (response CreateTicket500ApplicationProblemPlusJSONResponse) VisitCreateTicketResponse(w http.ResponseWriter) error {
+func (response CreateTask500ApplicationProblemPlusJSONResponse) VisitCreateTaskResponse(w http.ResponseWriter) error {
 
 	var buf bytes.Buffer
 	if err := json.NewEncoder(&buf).Encode(response); err != nil {
@@ -2583,29 +2646,29 @@ func (response CreateTicket500ApplicationProblemPlusJSONResponse) VisitCreateTic
 	return err
 }
 
-type DeleteTicketRequestObject struct {
+type DeleteTaskRequestObject struct {
 	WorkspaceId openapi_types.UUID `json:"workspace_id"`
 	ProjectId   openapi_types.UUID `json:"project_id"`
 	Identifier  string             `json:"identifier"`
 }
 
-type DeleteTicketResponseObject interface {
-	VisitDeleteTicketResponse(w http.ResponseWriter) error
+type DeleteTaskResponseObject interface {
+	VisitDeleteTaskResponse(w http.ResponseWriter) error
 }
 
-type DeleteTicket204Response struct {
+type DeleteTask204Response struct {
 }
 
-func (response DeleteTicket204Response) VisitDeleteTicketResponse(w http.ResponseWriter) error {
+func (response DeleteTask204Response) VisitDeleteTaskResponse(w http.ResponseWriter) error {
 	w.WriteHeader(204)
 	return nil
 }
 
-type DeleteTicket401ApplicationProblemPlusJSONResponse struct {
+type DeleteTask401ApplicationProblemPlusJSONResponse struct {
 	UnauthorizedApplicationProblemPlusJSONResponse
 }
 
-func (response DeleteTicket401ApplicationProblemPlusJSONResponse) VisitDeleteTicketResponse(w http.ResponseWriter) error {
+func (response DeleteTask401ApplicationProblemPlusJSONResponse) VisitDeleteTaskResponse(w http.ResponseWriter) error {
 
 	var buf bytes.Buffer
 	if err := json.NewEncoder(&buf).Encode(response); err != nil {
@@ -2617,11 +2680,11 @@ func (response DeleteTicket401ApplicationProblemPlusJSONResponse) VisitDeleteTic
 	return err
 }
 
-type DeleteTicket404ApplicationProblemPlusJSONResponse struct {
+type DeleteTask404ApplicationProblemPlusJSONResponse struct {
 	NotFoundApplicationProblemPlusJSONResponse
 }
 
-func (response DeleteTicket404ApplicationProblemPlusJSONResponse) VisitDeleteTicketResponse(w http.ResponseWriter) error {
+func (response DeleteTask404ApplicationProblemPlusJSONResponse) VisitDeleteTaskResponse(w http.ResponseWriter) error {
 
 	var buf bytes.Buffer
 	if err := json.NewEncoder(&buf).Encode(response); err != nil {
@@ -2633,11 +2696,11 @@ func (response DeleteTicket404ApplicationProblemPlusJSONResponse) VisitDeleteTic
 	return err
 }
 
-type DeleteTicket500ApplicationProblemPlusJSONResponse struct {
+type DeleteTask500ApplicationProblemPlusJSONResponse struct {
 	InternalErrorApplicationProblemPlusJSONResponse
 }
 
-func (response DeleteTicket500ApplicationProblemPlusJSONResponse) VisitDeleteTicketResponse(w http.ResponseWriter) error {
+func (response DeleteTask500ApplicationProblemPlusJSONResponse) VisitDeleteTaskResponse(w http.ResponseWriter) error {
 
 	var buf bytes.Buffer
 	if err := json.NewEncoder(&buf).Encode(response); err != nil {
@@ -2649,19 +2712,19 @@ func (response DeleteTicket500ApplicationProblemPlusJSONResponse) VisitDeleteTic
 	return err
 }
 
-type GetTicketRequestObject struct {
+type GetTaskRequestObject struct {
 	WorkspaceId openapi_types.UUID `json:"workspace_id"`
 	ProjectId   openapi_types.UUID `json:"project_id"`
 	Identifier  string             `json:"identifier"`
 }
 
-type GetTicketResponseObject interface {
-	VisitGetTicketResponse(w http.ResponseWriter) error
+type GetTaskResponseObject interface {
+	VisitGetTaskResponse(w http.ResponseWriter) error
 }
 
-type GetTicket200JSONResponse Ticket
+type GetTask200JSONResponse Task
 
-func (response GetTicket200JSONResponse) VisitGetTicketResponse(w http.ResponseWriter) error {
+func (response GetTask200JSONResponse) VisitGetTaskResponse(w http.ResponseWriter) error {
 
 	var buf bytes.Buffer
 	if err := json.NewEncoder(&buf).Encode(response); err != nil {
@@ -2673,11 +2736,11 @@ func (response GetTicket200JSONResponse) VisitGetTicketResponse(w http.ResponseW
 	return err
 }
 
-type GetTicket401ApplicationProblemPlusJSONResponse struct {
+type GetTask401ApplicationProblemPlusJSONResponse struct {
 	UnauthorizedApplicationProblemPlusJSONResponse
 }
 
-func (response GetTicket401ApplicationProblemPlusJSONResponse) VisitGetTicketResponse(w http.ResponseWriter) error {
+func (response GetTask401ApplicationProblemPlusJSONResponse) VisitGetTaskResponse(w http.ResponseWriter) error {
 
 	var buf bytes.Buffer
 	if err := json.NewEncoder(&buf).Encode(response); err != nil {
@@ -2689,11 +2752,11 @@ func (response GetTicket401ApplicationProblemPlusJSONResponse) VisitGetTicketRes
 	return err
 }
 
-type GetTicket404ApplicationProblemPlusJSONResponse struct {
+type GetTask404ApplicationProblemPlusJSONResponse struct {
 	NotFoundApplicationProblemPlusJSONResponse
 }
 
-func (response GetTicket404ApplicationProblemPlusJSONResponse) VisitGetTicketResponse(w http.ResponseWriter) error {
+func (response GetTask404ApplicationProblemPlusJSONResponse) VisitGetTaskResponse(w http.ResponseWriter) error {
 
 	var buf bytes.Buffer
 	if err := json.NewEncoder(&buf).Encode(response); err != nil {
@@ -2705,11 +2768,11 @@ func (response GetTicket404ApplicationProblemPlusJSONResponse) VisitGetTicketRes
 	return err
 }
 
-type GetTicket500ApplicationProblemPlusJSONResponse struct {
+type GetTask500ApplicationProblemPlusJSONResponse struct {
 	InternalErrorApplicationProblemPlusJSONResponse
 }
 
-func (response GetTicket500ApplicationProblemPlusJSONResponse) VisitGetTicketResponse(w http.ResponseWriter) error {
+func (response GetTask500ApplicationProblemPlusJSONResponse) VisitGetTaskResponse(w http.ResponseWriter) error {
 
 	var buf bytes.Buffer
 	if err := json.NewEncoder(&buf).Encode(response); err != nil {
@@ -2721,20 +2784,20 @@ func (response GetTicket500ApplicationProblemPlusJSONResponse) VisitGetTicketRes
 	return err
 }
 
-type UpdateTicketRequestObject struct {
+type UpdateTaskRequestObject struct {
 	WorkspaceId openapi_types.UUID `json:"workspace_id"`
 	ProjectId   openapi_types.UUID `json:"project_id"`
 	Identifier  string             `json:"identifier"`
-	Body        *UpdateTicketJSONRequestBody
+	Body        *UpdateTaskJSONRequestBody
 }
 
-type UpdateTicketResponseObject interface {
-	VisitUpdateTicketResponse(w http.ResponseWriter) error
+type UpdateTaskResponseObject interface {
+	VisitUpdateTaskResponse(w http.ResponseWriter) error
 }
 
-type UpdateTicket200JSONResponse Ticket
+type UpdateTask200JSONResponse Task
 
-func (response UpdateTicket200JSONResponse) VisitUpdateTicketResponse(w http.ResponseWriter) error {
+func (response UpdateTask200JSONResponse) VisitUpdateTaskResponse(w http.ResponseWriter) error {
 
 	var buf bytes.Buffer
 	if err := json.NewEncoder(&buf).Encode(response); err != nil {
@@ -2746,11 +2809,11 @@ func (response UpdateTicket200JSONResponse) VisitUpdateTicketResponse(w http.Res
 	return err
 }
 
-type UpdateTicket400ApplicationProblemPlusJSONResponse struct {
+type UpdateTask400ApplicationProblemPlusJSONResponse struct {
 	BadRequestApplicationProblemPlusJSONResponse
 }
 
-func (response UpdateTicket400ApplicationProblemPlusJSONResponse) VisitUpdateTicketResponse(w http.ResponseWriter) error {
+func (response UpdateTask400ApplicationProblemPlusJSONResponse) VisitUpdateTaskResponse(w http.ResponseWriter) error {
 
 	var buf bytes.Buffer
 	if err := json.NewEncoder(&buf).Encode(response); err != nil {
@@ -2762,11 +2825,11 @@ func (response UpdateTicket400ApplicationProblemPlusJSONResponse) VisitUpdateTic
 	return err
 }
 
-type UpdateTicket401ApplicationProblemPlusJSONResponse struct {
+type UpdateTask401ApplicationProblemPlusJSONResponse struct {
 	UnauthorizedApplicationProblemPlusJSONResponse
 }
 
-func (response UpdateTicket401ApplicationProblemPlusJSONResponse) VisitUpdateTicketResponse(w http.ResponseWriter) error {
+func (response UpdateTask401ApplicationProblemPlusJSONResponse) VisitUpdateTaskResponse(w http.ResponseWriter) error {
 
 	var buf bytes.Buffer
 	if err := json.NewEncoder(&buf).Encode(response); err != nil {
@@ -2778,11 +2841,11 @@ func (response UpdateTicket401ApplicationProblemPlusJSONResponse) VisitUpdateTic
 	return err
 }
 
-type UpdateTicket404ApplicationProblemPlusJSONResponse struct {
+type UpdateTask404ApplicationProblemPlusJSONResponse struct {
 	NotFoundApplicationProblemPlusJSONResponse
 }
 
-func (response UpdateTicket404ApplicationProblemPlusJSONResponse) VisitUpdateTicketResponse(w http.ResponseWriter) error {
+func (response UpdateTask404ApplicationProblemPlusJSONResponse) VisitUpdateTaskResponse(w http.ResponseWriter) error {
 
 	var buf bytes.Buffer
 	if err := json.NewEncoder(&buf).Encode(response); err != nil {
@@ -2794,11 +2857,100 @@ func (response UpdateTicket404ApplicationProblemPlusJSONResponse) VisitUpdateTic
 	return err
 }
 
-type UpdateTicket500ApplicationProblemPlusJSONResponse struct {
+type UpdateTask500ApplicationProblemPlusJSONResponse struct {
 	InternalErrorApplicationProblemPlusJSONResponse
 }
 
-func (response UpdateTicket500ApplicationProblemPlusJSONResponse) VisitUpdateTicketResponse(w http.ResponseWriter) error {
+func (response UpdateTask500ApplicationProblemPlusJSONResponse) VisitUpdateTaskResponse(w http.ResponseWriter) error {
+
+	var buf bytes.Buffer
+	if err := json.NewEncoder(&buf).Encode(response); err != nil {
+		return err
+	}
+	w.Header().Set("Content-Type", "application/problem+json")
+	w.WriteHeader(500)
+	_, err := buf.WriteTo(w)
+	return err
+}
+
+type ReorderTaskRequestObject struct {
+	WorkspaceId openapi_types.UUID `json:"workspace_id"`
+	ProjectId   openapi_types.UUID `json:"project_id"`
+	TaskId      openapi_types.UUID `json:"task_id"`
+	Body        *ReorderTaskJSONRequestBody
+}
+
+type ReorderTaskResponseObject interface {
+	VisitReorderTaskResponse(w http.ResponseWriter) error
+}
+
+type ReorderTask200JSONResponse Task
+
+func (response ReorderTask200JSONResponse) VisitReorderTaskResponse(w http.ResponseWriter) error {
+
+	var buf bytes.Buffer
+	if err := json.NewEncoder(&buf).Encode(response); err != nil {
+		return err
+	}
+	w.Header().Set("Content-Type", "application/json")
+	w.WriteHeader(200)
+	_, err := buf.WriteTo(w)
+	return err
+}
+
+type ReorderTask400ApplicationProblemPlusJSONResponse struct {
+	BadRequestApplicationProblemPlusJSONResponse
+}
+
+func (response ReorderTask400ApplicationProblemPlusJSONResponse) VisitReorderTaskResponse(w http.ResponseWriter) error {
+
+	var buf bytes.Buffer
+	if err := json.NewEncoder(&buf).Encode(response); err != nil {
+		return err
+	}
+	w.Header().Set("Content-Type", "application/problem+json")
+	w.WriteHeader(400)
+	_, err := buf.WriteTo(w)
+	return err
+}
+
+type ReorderTask401ApplicationProblemPlusJSONResponse struct {
+	UnauthorizedApplicationProblemPlusJSONResponse
+}
+
+func (response ReorderTask401ApplicationProblemPlusJSONResponse) VisitReorderTaskResponse(w http.ResponseWriter) error {
+
+	var buf bytes.Buffer
+	if err := json.NewEncoder(&buf).Encode(response); err != nil {
+		return err
+	}
+	w.Header().Set("Content-Type", "application/problem+json")
+	w.WriteHeader(401)
+	_, err := buf.WriteTo(w)
+	return err
+}
+
+type ReorderTask404ApplicationProblemPlusJSONResponse struct {
+	NotFoundApplicationProblemPlusJSONResponse
+}
+
+func (response ReorderTask404ApplicationProblemPlusJSONResponse) VisitReorderTaskResponse(w http.ResponseWriter) error {
+
+	var buf bytes.Buffer
+	if err := json.NewEncoder(&buf).Encode(response); err != nil {
+		return err
+	}
+	w.Header().Set("Content-Type", "application/problem+json")
+	w.WriteHeader(404)
+	_, err := buf.WriteTo(w)
+	return err
+}
+
+type ReorderTask500ApplicationProblemPlusJSONResponse struct {
+	InternalErrorApplicationProblemPlusJSONResponse
+}
+
+func (response ReorderTask500ApplicationProblemPlusJSONResponse) VisitReorderTaskResponse(w http.ResponseWriter) error {
 
 	var buf bytes.Buffer
 	if err := json.NewEncoder(&buf).Encode(response); err != nil {
@@ -3485,21 +3637,24 @@ type StrictServerInterface interface {
 	// UpdateProject Update a project
 	// (PATCH /ws/{workspace_id}/p/{project_id})
 	UpdateProject(ctx context.Context, request UpdateProjectRequestObject) (UpdateProjectResponseObject, error)
-	// ListTickets List tickets for a project
-	// (GET /ws/{workspace_id}/p/{project_id}/tickets)
-	ListTickets(ctx context.Context, request ListTicketsRequestObject) (ListTicketsResponseObject, error)
-	// CreateTicket Create a new ticket under a project
-	// (POST /ws/{workspace_id}/p/{project_id}/tickets)
-	CreateTicket(ctx context.Context, request CreateTicketRequestObject) (CreateTicketResponseObject, error)
-	// DeleteTicket Delete a ticket in a project
-	// (DELETE /ws/{workspace_id}/p/{project_id}/tickets/{identifier})
-	DeleteTicket(ctx context.Context, request DeleteTicketRequestObject) (DeleteTicketResponseObject, error)
-	// GetTicket Get a ticket by identifier in a project
-	// (GET /ws/{workspace_id}/p/{project_id}/tickets/{identifier})
-	GetTicket(ctx context.Context, request GetTicketRequestObject) (GetTicketResponseObject, error)
-	// UpdateTicket Update a ticket in a project
-	// (PATCH /ws/{workspace_id}/p/{project_id}/tickets/{identifier})
-	UpdateTicket(ctx context.Context, request UpdateTicketRequestObject) (UpdateTicketResponseObject, error)
+	// ListTasks List tasks for a project
+	// (GET /ws/{workspace_id}/p/{project_id}/tasks)
+	ListTasks(ctx context.Context, request ListTasksRequestObject) (ListTasksResponseObject, error)
+	// CreateTask Create a new task under a project
+	// (POST /ws/{workspace_id}/p/{project_id}/tasks)
+	CreateTask(ctx context.Context, request CreateTaskRequestObject) (CreateTaskResponseObject, error)
+	// DeleteTask Delete a task
+	// (DELETE /ws/{workspace_id}/p/{project_id}/tasks/{identifier})
+	DeleteTask(ctx context.Context, request DeleteTaskRequestObject) (DeleteTaskResponseObject, error)
+	// GetTask Get a task by identifier
+	// (GET /ws/{workspace_id}/p/{project_id}/tasks/{identifier})
+	GetTask(ctx context.Context, request GetTaskRequestObject) (GetTaskResponseObject, error)
+	// UpdateTask Update a task
+	// (PATCH /ws/{workspace_id}/p/{project_id}/tasks/{identifier})
+	UpdateTask(ctx context.Context, request UpdateTaskRequestObject) (UpdateTaskResponseObject, error)
+	// ReorderTask Reorder a task within its project column
+	// (PATCH /ws/{workspace_id}/p/{project_id}/tasks/{task_id}/reorder)
+	ReorderTask(ctx context.Context, request ReorderTaskRequestObject) (ReorderTaskResponseObject, error)
 	// ListTracks List time entries for a workspace
 	// (GET /ws/{workspace_id}/track)
 	ListTracks(ctx context.Context, request ListTracksRequestObject) (ListTracksResponseObject, error)
@@ -3852,26 +4007,26 @@ func (sh *strictHandler) UpdateProject(w http.ResponseWriter, r *http.Request, w
 	}
 }
 
-// ListTickets operation middleware
-func (sh *strictHandler) ListTickets(w http.ResponseWriter, r *http.Request, workspaceId openapi_types.UUID, projectId openapi_types.UUID) {
-	var request ListTicketsRequestObject
+// ListTasks operation middleware
+func (sh *strictHandler) ListTasks(w http.ResponseWriter, r *http.Request, workspaceId openapi_types.UUID, projectId openapi_types.UUID) {
+	var request ListTasksRequestObject
 
 	request.WorkspaceId = workspaceId
 	request.ProjectId = projectId
 
 	handler := func(ctx context.Context, w http.ResponseWriter, r *http.Request, request interface{}) (interface{}, error) {
-		return sh.ssi.ListTickets(ctx, request.(ListTicketsRequestObject))
+		return sh.ssi.ListTasks(ctx, request.(ListTasksRequestObject))
 	}
 	for _, middleware := range sh.middlewares {
-		handler = middleware(handler, "ListTickets")
+		handler = middleware(handler, "ListTasks")
 	}
 
 	response, err := handler(r.Context(), w, r, request)
 
 	if err != nil {
 		sh.options.ResponseErrorHandlerFunc(w, r, err)
-	} else if validResponse, ok := response.(ListTicketsResponseObject); ok {
-		if err := validResponse.VisitListTicketsResponse(w); err != nil {
+	} else if validResponse, ok := response.(ListTasksResponseObject); ok {
+		if err := validResponse.VisitListTasksResponse(w); err != nil {
 			sh.options.ResponseErrorHandlerFunc(w, r, err)
 		}
 	} else if response != nil {
@@ -3879,14 +4034,14 @@ func (sh *strictHandler) ListTickets(w http.ResponseWriter, r *http.Request, wor
 	}
 }
 
-// CreateTicket operation middleware
-func (sh *strictHandler) CreateTicket(w http.ResponseWriter, r *http.Request, workspaceId openapi_types.UUID, projectId openapi_types.UUID) {
-	var request CreateTicketRequestObject
+// CreateTask operation middleware
+func (sh *strictHandler) CreateTask(w http.ResponseWriter, r *http.Request, workspaceId openapi_types.UUID, projectId openapi_types.UUID) {
+	var request CreateTaskRequestObject
 
 	request.WorkspaceId = workspaceId
 	request.ProjectId = projectId
 
-	var body CreateTicketJSONRequestBody
+	var body CreateTaskJSONRequestBody
 	if err := json.NewDecoder(r.Body).Decode(&body); err != nil {
 		sh.options.RequestErrorHandlerFunc(w, r, fmt.Errorf("can't decode JSON body: %w", err))
 		return
@@ -3894,18 +4049,18 @@ func (sh *strictHandler) CreateTicket(w http.ResponseWriter, r *http.Request, wo
 	request.Body = &body
 
 	handler := func(ctx context.Context, w http.ResponseWriter, r *http.Request, request interface{}) (interface{}, error) {
-		return sh.ssi.CreateTicket(ctx, request.(CreateTicketRequestObject))
+		return sh.ssi.CreateTask(ctx, request.(CreateTaskRequestObject))
 	}
 	for _, middleware := range sh.middlewares {
-		handler = middleware(handler, "CreateTicket")
+		handler = middleware(handler, "CreateTask")
 	}
 
 	response, err := handler(r.Context(), w, r, request)
 
 	if err != nil {
 		sh.options.ResponseErrorHandlerFunc(w, r, err)
-	} else if validResponse, ok := response.(CreateTicketResponseObject); ok {
-		if err := validResponse.VisitCreateTicketResponse(w); err != nil {
+	} else if validResponse, ok := response.(CreateTaskResponseObject); ok {
+		if err := validResponse.VisitCreateTaskResponse(w); err != nil {
 			sh.options.ResponseErrorHandlerFunc(w, r, err)
 		}
 	} else if response != nil {
@@ -3913,27 +4068,27 @@ func (sh *strictHandler) CreateTicket(w http.ResponseWriter, r *http.Request, wo
 	}
 }
 
-// DeleteTicket operation middleware
-func (sh *strictHandler) DeleteTicket(w http.ResponseWriter, r *http.Request, workspaceId openapi_types.UUID, projectId openapi_types.UUID, identifier string) {
-	var request DeleteTicketRequestObject
+// DeleteTask operation middleware
+func (sh *strictHandler) DeleteTask(w http.ResponseWriter, r *http.Request, workspaceId openapi_types.UUID, projectId openapi_types.UUID, identifier string) {
+	var request DeleteTaskRequestObject
 
 	request.WorkspaceId = workspaceId
 	request.ProjectId = projectId
 	request.Identifier = identifier
 
 	handler := func(ctx context.Context, w http.ResponseWriter, r *http.Request, request interface{}) (interface{}, error) {
-		return sh.ssi.DeleteTicket(ctx, request.(DeleteTicketRequestObject))
+		return sh.ssi.DeleteTask(ctx, request.(DeleteTaskRequestObject))
 	}
 	for _, middleware := range sh.middlewares {
-		handler = middleware(handler, "DeleteTicket")
+		handler = middleware(handler, "DeleteTask")
 	}
 
 	response, err := handler(r.Context(), w, r, request)
 
 	if err != nil {
 		sh.options.ResponseErrorHandlerFunc(w, r, err)
-	} else if validResponse, ok := response.(DeleteTicketResponseObject); ok {
-		if err := validResponse.VisitDeleteTicketResponse(w); err != nil {
+	} else if validResponse, ok := response.(DeleteTaskResponseObject); ok {
+		if err := validResponse.VisitDeleteTaskResponse(w); err != nil {
 			sh.options.ResponseErrorHandlerFunc(w, r, err)
 		}
 	} else if response != nil {
@@ -3941,27 +4096,27 @@ func (sh *strictHandler) DeleteTicket(w http.ResponseWriter, r *http.Request, wo
 	}
 }
 
-// GetTicket operation middleware
-func (sh *strictHandler) GetTicket(w http.ResponseWriter, r *http.Request, workspaceId openapi_types.UUID, projectId openapi_types.UUID, identifier string) {
-	var request GetTicketRequestObject
+// GetTask operation middleware
+func (sh *strictHandler) GetTask(w http.ResponseWriter, r *http.Request, workspaceId openapi_types.UUID, projectId openapi_types.UUID, identifier string) {
+	var request GetTaskRequestObject
 
 	request.WorkspaceId = workspaceId
 	request.ProjectId = projectId
 	request.Identifier = identifier
 
 	handler := func(ctx context.Context, w http.ResponseWriter, r *http.Request, request interface{}) (interface{}, error) {
-		return sh.ssi.GetTicket(ctx, request.(GetTicketRequestObject))
+		return sh.ssi.GetTask(ctx, request.(GetTaskRequestObject))
 	}
 	for _, middleware := range sh.middlewares {
-		handler = middleware(handler, "GetTicket")
+		handler = middleware(handler, "GetTask")
 	}
 
 	response, err := handler(r.Context(), w, r, request)
 
 	if err != nil {
 		sh.options.ResponseErrorHandlerFunc(w, r, err)
-	} else if validResponse, ok := response.(GetTicketResponseObject); ok {
-		if err := validResponse.VisitGetTicketResponse(w); err != nil {
+	} else if validResponse, ok := response.(GetTaskResponseObject); ok {
+		if err := validResponse.VisitGetTaskResponse(w); err != nil {
 			sh.options.ResponseErrorHandlerFunc(w, r, err)
 		}
 	} else if response != nil {
@@ -3969,15 +4124,15 @@ func (sh *strictHandler) GetTicket(w http.ResponseWriter, r *http.Request, works
 	}
 }
 
-// UpdateTicket operation middleware
-func (sh *strictHandler) UpdateTicket(w http.ResponseWriter, r *http.Request, workspaceId openapi_types.UUID, projectId openapi_types.UUID, identifier string) {
-	var request UpdateTicketRequestObject
+// UpdateTask operation middleware
+func (sh *strictHandler) UpdateTask(w http.ResponseWriter, r *http.Request, workspaceId openapi_types.UUID, projectId openapi_types.UUID, identifier string) {
+	var request UpdateTaskRequestObject
 
 	request.WorkspaceId = workspaceId
 	request.ProjectId = projectId
 	request.Identifier = identifier
 
-	var body UpdateTicketJSONRequestBody
+	var body UpdateTaskJSONRequestBody
 	if err := json.NewDecoder(r.Body).Decode(&body); err != nil {
 		sh.options.RequestErrorHandlerFunc(w, r, fmt.Errorf("can't decode JSON body: %w", err))
 		return
@@ -3985,18 +4140,53 @@ func (sh *strictHandler) UpdateTicket(w http.ResponseWriter, r *http.Request, wo
 	request.Body = &body
 
 	handler := func(ctx context.Context, w http.ResponseWriter, r *http.Request, request interface{}) (interface{}, error) {
-		return sh.ssi.UpdateTicket(ctx, request.(UpdateTicketRequestObject))
+		return sh.ssi.UpdateTask(ctx, request.(UpdateTaskRequestObject))
 	}
 	for _, middleware := range sh.middlewares {
-		handler = middleware(handler, "UpdateTicket")
+		handler = middleware(handler, "UpdateTask")
 	}
 
 	response, err := handler(r.Context(), w, r, request)
 
 	if err != nil {
 		sh.options.ResponseErrorHandlerFunc(w, r, err)
-	} else if validResponse, ok := response.(UpdateTicketResponseObject); ok {
-		if err := validResponse.VisitUpdateTicketResponse(w); err != nil {
+	} else if validResponse, ok := response.(UpdateTaskResponseObject); ok {
+		if err := validResponse.VisitUpdateTaskResponse(w); err != nil {
+			sh.options.ResponseErrorHandlerFunc(w, r, err)
+		}
+	} else if response != nil {
+		sh.options.ResponseErrorHandlerFunc(w, r, fmt.Errorf("unexpected response type: %T", response))
+	}
+}
+
+// ReorderTask operation middleware
+func (sh *strictHandler) ReorderTask(w http.ResponseWriter, r *http.Request, workspaceId openapi_types.UUID, projectId openapi_types.UUID, taskId openapi_types.UUID) {
+	var request ReorderTaskRequestObject
+
+	request.WorkspaceId = workspaceId
+	request.ProjectId = projectId
+	request.TaskId = taskId
+
+	var body ReorderTaskJSONRequestBody
+	if err := json.NewDecoder(r.Body).Decode(&body); err != nil {
+		sh.options.RequestErrorHandlerFunc(w, r, fmt.Errorf("can't decode JSON body: %w", err))
+		return
+	}
+	request.Body = &body
+
+	handler := func(ctx context.Context, w http.ResponseWriter, r *http.Request, request interface{}) (interface{}, error) {
+		return sh.ssi.ReorderTask(ctx, request.(ReorderTaskRequestObject))
+	}
+	for _, middleware := range sh.middlewares {
+		handler = middleware(handler, "ReorderTask")
+	}
+
+	response, err := handler(r.Context(), w, r, request)
+
+	if err != nil {
+		sh.options.ResponseErrorHandlerFunc(w, r, err)
+	} else if validResponse, ok := response.(ReorderTaskResponseObject); ok {
+		if err := validResponse.VisitReorderTaskResponse(w); err != nil {
 			sh.options.ResponseErrorHandlerFunc(w, r, err)
 		}
 	} else if response != nil {
@@ -4238,53 +4428,57 @@ func (sh *strictHandler) StopTrack(w http.ResponseWriter, r *http.Request, works
 // const string: with thousands of chunks the chained `+` fold is several
 // times slower for the Go compiler than parsing a slice literal.
 var swaggerSpec = []string{
-	"7FxbUyM3Fv4rKu0+JLWNbbKTStZ5ImQnQ3YyobhUHqYoRm4d2wpqqSOpAYfyf9+S1Ff3xRfAEOOnYWz1",
-	"kc4537l8ktoPOJRRLAUIo/HwASvQsRQa3H9+JPQM/kxAG/u/UAoDwv1J4pizkBgmRT9WcsQh+tcfWgr7",
-	"nQ6nEBH71z8VjPEQ/6NfTNH33+r+qX/qJzCEcTyfzwNMQYeKxVYoHuJfCR9LFQFFyi8BSYVuCWfUTYvG",
-	"hPFEQQ8VA385/+1TgBJxI+SdQGMGnOoAMeGeQiCSyApIQAdoRCi6vDz5SQeICIpUwgHdMsmdbI2+gt6k",
-	"h4hAEMVmhk6PLo4/fI0I54jb4VOwE7+3ExxwuAWOqNMDMYG+pJr1QCmp9Jcengf4WIoxZ+ELmDGbuYcu",
-	"ppCbMpQJp0hIg0aArFgOBiiiCSAjEUFh+hS6Y2aKzBRQmCgFwiBtiAEkx+5DQ9QEDFKgZaJCaxKpENwT",
-	"Ky9AoQJimJgggu6kutExCcELJEiQCJCZEoMIV0DoDME900Y7a50IA0oQ/l9rwe2b7FLAfQyhNYgGdQuq",
-	"wJq3oY8QRIGzEShigM9QSJRioJGQiKXLT0HxAwqlUsCt3W4ZQabkB0YtZNJZuJx4/T9J814mgm5fda/f",
-	"GBSIEGjuWESlU814L7lFXgqSmKlU7C+gL+GjYnYH2TAErZFpXn8PWwmpcDv3sYUmnCr5B4SmlOJiJWNQ",
-	"hvn0R2FMEm6upzJRfHZtPW0/TgGOh99/G2AziwEPsfX5BBReXOgDFgnnZGSHG5VA/oA2iomJHW9DoSIW",
-	"v1fOlhQdxTFueEKDsXHl1kgoZXYqwk9La69MJUdWS/ugYeENmGtGr2MFY3a/MO3Zb58u6vPNA2zhypT1",
-	"82e/3KsG4d6mF26KDpNWjFNTLZYsLUQREyxKIjwcNBk5VkwqZmbLgOSXc5qNdk86p18zh1pbOYjBQ5wk",
-	"jDba2hCT6NWmOfdjraGJ9w4zEOlGRdMPiFJk5l1jOKR6fwQxMVM8PAzanltlNRd25KL3/DSpmJIZOxyq",
-	"SHjT6s8Ry9Cdh8sC+kZSciBik8igiXJJ5FpDKAWtwaJFQAkmICjQa2IqrqbEwIFhEeBg+RoWYn+96Zm+",
-	"johICO9Qt2QfbYgy3eut4yEL6SY0L9XOSlXXrqbb522LZFGiEiHsiADHJNFgRWkj4xgovloqdd4Kpd+z",
-	"LmDdjNudCzZNuJ2R1pT1gsb1NYVOtX4tSdOV9eOz98fou+8H36FUBvJCtG8+XFOJ9JTEgMa22boFNUNC",
-	"ioNv7u+L1oQJVwqPTk966Itd3RfXcfkC6WWEnGj9A/qStqnoq1JvLQWffY0iEmvfRWcPSzRNIiIObMdm",
-	"TYwi0JpMQPdcLql6MlO9qt7Rogi4jzkRfl4dQ8jGLLQzmSnTSIa+7wzzljPtJ3pNscCENkSE0DTr5dlJ",
-	"0Rn4zpNREIaNWWqWfPLOSYsQU6y7XtQ7qw8XF6fID0ChpIAmIFz/SNFo5iaSik2KhtA6eGUzlAIiryWL",
-	"RtBTqUyw6AGdRBFRswXRyMptNHNWgvJ8j8lIJmY44kTc4GAD0y9O2W3klpKWWr4lHN2ftXzjKMqaGfdJ",
-	"usJ8ND7mzPKqtC1B5XErJPAVu5jX3mMGOInp2p7IWeVqzdwCbtyQioggS/M1HUr2aAZAUIZSRZsmPPoG",
-	"7ang2N1Rr4iQPCLVkr78LfXij+6+N8F1E0xLhqq4Kmht6HNr5b7bBKKnJddmzeGxYoaFhOMAf2CTKQ7w",
-	"r0BZEuEAf5R3+KqmUIArLimJGpHwhkvbZxpJpddzokDbxSq4ZXBnw00K6JB6kbokkzkGYhIFOMCjxEkm",
-	"+qb5cUtsuhlNvUV/ggj9u9Oe+nSrppgyG8qbhzHh+nWyoXyJOfkJVmRIr7S6lSwaFDivOnu9LHHpvt5w",
-	"H+3pmNzzdi8r8Ftvh/3e16vb+2rz1MqbWju/i7XftVoS1X+zXauaFvn6n5X+VtTBI6KBMwEorSmPV39N",
-	"olv7Qt4JUCngnqA8N1XbfIqga7twnQLrKlmY2PR9bvNbmp6AKFBHiZkW/3ufrfmX3y29dtnQxan7tlj/",
-	"1JjYn6cxMZbZuR3xeyPeeFiT6IwwQWpuwudMTDgcGBBEGDRWAJzYPZ1s8yIigkxAuSN1a7cDY/MsqF5O",
-	"VIb4f+wvEHZnEgf4FpT2kg97g97A+SkGQWKGh/jfvcPewAWzmTq9+3fun4lnzhbHLq+eUDzEH5k2OdA9",
-	"fSjdY/hmMOg4oqwfTealq6vS5NPVS1r9vPIIcaaN3WLLezKNLGDyrT97ngnCMiu7H5hoa7V5gN8NDtsW",
-	"kqvYr5zFzgP87WCw/KHqKXsZa3j4uYqyz1fzqwCn+4Sptd1tiJIyfrOySQ+c9QSfcclFV67j0Q2+XDgs",
-	"wD7UQJsfJZ2t5ccu97UcScyroW1UAvMamg6fbBUlEDXc3fCJYuHaAfN7ptmtjcIHPXQiQp5Qe+XCjvC7",
-	"yAdEazYBWuy5Kn/nBe5jYhuLdP+XgU4BtwJ2SheDNsXou8F/lj+U35vZAqi9te3dFLgrjNoG3nlg81H/",
-	"gdG5L3/WF3Us/+Q+L2M5JopEYEBptyJmHW1TXFY1hr6YVCEYlOC0jAde1eD6rvk4onQph2ikE3eFYpxw",
-	"PkNeHdp7hHffLX8ov+eyBe96R1SuIo1miNE2/wbNdeZnMC/szMF2ck8VIP40T+8OHH4Gsw4WYmLCaR0N",
-	"CwRha4B4+mrYQnVWqoZbQqRfIi2ctt1qtSaAX1158+Yrg35ZaSvvHs77cWfvnW4B6pVCYGFb8uWy40p9",
-	"fqrael1+nNljZzKm6/kztVy33wylHAnLGvx04Asg5rnIxMI++JapRI7TViKRuW/f5mdtfpxjsAG+LXmw",
-	"/1Bso6/Q+78IzING8ZVT5C0QjHS+N0UvOhHVTireAkoG20h1ZdztKGvJ1FvkLNXK28VYdhRtz0WLNqnr",
-	"WwF7RolepK7vDCF6dBPQ98eZ3acTF+mYfYZfi315s61HvlJ35EcSlfDYGS5W1rIJxBnglvEwP25fC1bj",
-	"eNU7PlumeFkwtDM8k4fLtgrBVvmaVw8lgsIy0K+TuPsPxeHYCpRu5yImaNmpLt0zbhe+GT30jmxihTtI",
-	"ClPYMrE0Ubfxwz3k1oPcYAs511LN1LM7yjRT7RzRzByzCoo7yeceykuh/FxEdoPmZRuBlNHY7Tcvry7u",
-	"clK6aslobnNM9m5LOx21I16Ijf6ZgJoV8ovLwK+PfTo7rkk+I0AgjGKgd45xFqp1nAB6o5VpZxNXQSS/",
-	"wkYLyTP/A0HZnXn7m0/ufrn9LSYSGnYLbqxCX2WX4pGMmDFAv+6hczvS/+CQJwt2IEmMjIh7Y43PkDYy",
-	"1oiI9PeG3OCSWHtRtZEjO5V256Sy8v7Dtkmsj6kuDpuB4U2XgjRMiggoG6YebR2FYMVbii8A8uDlLkAW",
-	"GefNkNAO9HQwz51FxeD5U5qniDnSdpYm5hounkmWeoFOTrhLIHs29rZ20d4Cwgvuti/aVf72iFrddy8w",
-	"2oU2H9yc2q/3ifkRsHUWrPMOEoYqcT+E6q39prHsbFQiXun7tWWj2T/VJgBXoJOoA+Fn7vs9xB8BcW9C",
-	"iniz7940tL1t7NZaLQ9sDGltZNwO6HMj4z2cHwHnc/8qfy1lh4SHCSdmn7U9tK2dFnbLliHbibfvino8",
-	"Vu3+UYaET6W2h1y3wGUMkXVygBPF0xfKh/0+z0b1Scz6t4d4fjX//wA=",
+	"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",
+	"+Xsnhv2+KEb1acr7V6/I/Hz+/wEA",
 }
 
 // decodeSpec returns the embedded OpenAPI spec as raw JSON bytes,

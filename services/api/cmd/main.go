@@ -10,11 +10,10 @@ import (
 	"syscall"
 	"time"
 
-	"github.com/jackc/pgx/v5/pgxpool"
 	"github.com/samSRaina/kizen/api/internal/adapter/auth/jwt"
 	repoPostgres "github.com/samSRaina/kizen/api/internal/adapter/repository/postgres"
 	appProject "github.com/samSRaina/kizen/api/internal/application/project"
-	appTicket "github.com/samSRaina/kizen/api/internal/application/ticket"
+	appTask "github.com/samSRaina/kizen/api/internal/application/task"
 	appTrack "github.com/samSRaina/kizen/api/internal/application/track"
 	appWorkspace "github.com/samSRaina/kizen/api/internal/application/workspace"
 	transportHTTP "github.com/samSRaina/kizen/api/internal/transport/http"
@@ -22,50 +21,41 @@ import (
 )
 
 func main() {
-	logger := slog.New(slog.NewJSONHandler(os.Stdout, nil))
+	logger := slog.New(slog.NewJSONHandler(os.Stdout, &slog.HandlerOptions{
+		Level: slog.LevelInfo,
+	}))
 
-	ctx, cancel := context.WithCancel(context.Background())
-	defer cancel()
+	ctx := context.Background()
 
 	dbURL := os.Getenv("DATABASE_URL")
 	if dbURL == "" {
 		dbURL = "postgres://postgres:postgres@localhost:5432/kizen?sslmode=disable"
 	}
 
-	poolConfig, err := pgxpool.ParseConfig(dbURL)
+	pool, err := repoPostgres.NewPool(ctx, dbURL)
 	if err != nil {
-		logger.Error("failed to parse database url", slog.Any("error", err))
-		os.Exit(1)
-	}
-
-	pool, err := pgxpool.NewWithConfig(ctx, poolConfig)
-	if err != nil {
-		logger.Error("failed to create connection pool", slog.Any("error", err))
+		logger.Error("failed to initialize postgresql connection pool", slog.Any("error", err))
 		os.Exit(1)
 	}
 	defer pool.Close()
 
-	if err := pool.Ping(ctx); err != nil {
-		logger.Error("failed to ping postgresql database", slog.Any("error", err))
-		os.Exit(1)
-	}
 	logger.Info("connected to postgresql successfully")
 
 	wsRepo := repoPostgres.NewRepository(pool)
 	projectRepo := repoPostgres.NewProjectRepository(pool)
-	ticketRepo := repoPostgres.NewTicketRepository(pool)
+	taskRepo := repoPostgres.NewTaskRepository(pool)
 	trackRepo := repoPostgres.NewTrackRepository(pool)
 
 	wsService := appWorkspace.NewService(wsRepo, logger)
 	projectService := appProject.NewService(projectRepo, logger)
-	ticketService := appTicket.NewService(ticketRepo, logger)
+	taskService := appTask.NewService(taskRepo, logger)
 	trackService := appTrack.NewService(trackRepo, logger)
 
 	wsHandler := handler.NewWorkspaceHandler(wsService)
 	projectHandler := handler.NewProjectHandler(projectService)
-	ticketHandler := handler.NewTicketHandler(ticketService)
+	taskHandler := handler.NewTaskHandler(taskService)
 	trackHandler := handler.NewTrackHandler(trackService)
-	server := handler.NewServer(wsHandler, projectHandler, ticketHandler, trackHandler)
+	server := handler.NewServer(wsHandler, projectHandler, taskHandler, trackHandler)
 
 	jwksURL := os.Getenv("AUTH_JWKS_URL")
 	if jwksURL == "" {
@@ -120,5 +110,5 @@ func main() {
 		os.Exit(1)
 	}
 
-	logger.Info("server exited cleanly")
+	logger.Info("server exited gracefully")
 }

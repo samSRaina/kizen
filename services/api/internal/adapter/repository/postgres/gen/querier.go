@@ -6,34 +6,43 @@ package gen
 
 import (
 	"context"
+
+	"github.com/google/uuid"
 )
 
 type Querier interface {
 	CreateProject(ctx context.Context, arg CreateProjectParams) (Project, error)
+	CreateTask(ctx context.Context, arg CreateTaskParams) (Task, error)
 	CreateTicket(ctx context.Context, arg CreateTicketParams) (Ticket, error)
 	CreateTimeEntry(ctx context.Context, arg CreateTimeEntryParams) (TimeEntry, error)
 	CreateWorkspace(ctx context.Context, arg CreateWorkspaceParams) (Workspace, error)
 	DeleteProject(ctx context.Context, arg DeleteProjectParams) (int64, error)
+	DeleteTask(ctx context.Context, id uuid.UUID) (int64, error)
 	DeleteTicket(ctx context.Context, arg DeleteTicketParams) (int64, error)
 	DeleteTimeEntry(ctx context.Context, arg DeleteTimeEntryParams) (int64, error)
 	DeleteWorkspace(ctx context.Context, arg DeleteWorkspaceParams) (int64, error)
 	GetActiveTimeEntry(ctx context.Context, arg GetActiveTimeEntryParams) (TimeEntry, error)
 	GetFirstProjectByWorkspace(ctx context.Context, arg GetFirstProjectByWorkspaceParams) (Project, error)
 	GetProjectByID(ctx context.Context, arg GetProjectByIDParams) (Project, error)
+	GetTaskByID(ctx context.Context, id uuid.UUID) (Task, error)
+	GetTaskByIdentifier(ctx context.Context, identifier string) (Task, error)
 	GetTicketByIdentifier(ctx context.Context, arg GetTicketByIdentifierParams) (Ticket, error)
 	GetTicketByProjectAndIdentifier(ctx context.Context, arg GetTicketByProjectAndIdentifierParams) (Ticket, error)
 	GetTimeEntryByID(ctx context.Context, arg GetTimeEntryByIDParams) (TimeEntry, error)
 	GetWorkspaceByID(ctx context.Context, arg GetWorkspaceByIDParams) (Workspace, error)
 	ListProjectsByWorkspace(ctx context.Context, arg ListProjectsByWorkspaceParams) ([]Project, error)
+	ListTasksByProject(ctx context.Context, projectID uuid.UUID) ([]Task, error)
 	ListTicketsByProject(ctx context.Context, arg ListTicketsByProjectParams) ([]Ticket, error)
 	ListTicketsByWorkspace(ctx context.Context, arg ListTicketsByWorkspaceParams) ([]Ticket, error)
 	ListTimeEntries(ctx context.Context, arg ListTimeEntriesParams) ([]TimeEntry, error)
 	ListWorkspaces(ctx context.Context, ownerID string) ([]Workspace, error)
 	PauseTimeEntry(ctx context.Context, arg PauseTimeEntryParams) (TimeEntry, error)
+	ReorderTask(ctx context.Context, arg ReorderTaskParams) (Task, error)
 	ResumeTimeEntry(ctx context.Context, arg ResumeTimeEntryParams) (TimeEntry, error)
 	StopActiveTimeEntries(ctx context.Context, arg StopActiveTimeEntriesParams) error
 	StopTimeEntry(ctx context.Context, arg StopTimeEntryParams) (TimeEntry, error)
 	UpdateProject(ctx context.Context, arg UpdateProjectParams) (Project, error)
+	UpdateTask(ctx context.Context, arg UpdateTaskParams) (Task, error)
 	UpdateTicket(ctx context.Context, arg UpdateTicketParams) (Ticket, error)
 	UpdateTimeEntry(ctx context.Context, arg UpdateTimeEntryParams) (TimeEntry, error)
 	UpdateWorkspace(ctx context.Context, arg UpdateWorkspaceParams) (Workspace, error)

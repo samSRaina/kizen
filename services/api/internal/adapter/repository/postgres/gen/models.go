@@ -24,6 +24,21 @@ type Project struct {
 	DeletedAt         pgtype.Timestamptz `json:"deleted_at"`
 }
 
+type Task struct {
+	ID          uuid.UUID `json:"id"`
+	ProjectID   uuid.UUID `json:"project_id"`
+	TaskNum     int64     `json:"task_num"`
+	Identifier  string    `json:"identifier"`
+	Title       string    `json:"title"`
+	Description *string   `json:"description"`
+	Type        string    `json:"type"`
+	Status      string    `json:"status"`
+	Priority    string    `json:"priority"`
+	Position    float64   `json:"position"`
+	CreatedAt   time.Time `json:"created_at"`
+	UpdatedAt   time.Time `json:"updated_at"`
+}
+
 type Ticket struct {
 	ID          uuid.UUID `json:"id"`
 	WorkspaceID uuid.UUID `json:"workspace_id"`
