@@ -1012,7 +1012,6 @@ components:
       type: string
       enum:
       - backlog
-      - todo
       - progress
       - paused
       - review
